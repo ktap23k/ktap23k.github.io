@@ -209,6 +209,18 @@ body {
   color: var(--text);
   background: var(--bg-alt);
 }
+.nav__link--cv {
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+  padding: 5px 13px;
+  font-weight: 600;
+}
+.nav__link--cv:hover,
+.nav__link--cv.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
 
 /* Header actions */
 .header__actions { display: flex; align-items: center; gap: 8px; }
