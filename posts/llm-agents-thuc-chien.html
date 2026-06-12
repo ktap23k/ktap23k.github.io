@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Agents thực chiến — tuanta</title>
+  <meta name="description" content="Xây dựng LLM Agents thực tế với ReAct, Tool Use, Function Calling, memory và những điều cần biết trước khi đưa vào production." />
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<main>
+  <div class="container">
+
+    <nav class="breadcrumb">
+      <a href="../index.html">Trang chủ</a>
+      <span class="breadcrumb__sep">/</span>
+      <a href="../index.html#posts">Bài viết</a>
+      <span class="breadcrumb__sep">/</span>
+      <span>LLM Agents thực chiến</span>
+    </nav>
+
+    <header class="article-header">
+      <div class="article-header__tags">
+        <span class="tag tag--cat">LLM</span>
+        <span class="tag">AI</span>
+        <span class="tag">Agents</span>
+        <span class="tag">Tool Use</span>
+      </div>
+      <h1 class="article-title">LLM Agents thực chiến — từ prompt đến autonomous tool use</h1>
+      <div class="article-meta">
+        <span class="article-meta__author">
+          <span class="article-meta__avatar">TA</span>
+          Tuan Anh
+        </span>
+        <span class="article-meta__sep">·</span>
+        <span>29 tháng 3, 2026</span>
+        <span class="article-meta__sep">·</span>
+        <span>⏱ 12 phút đọc</span>
+      </div>
+    </header>
+
+    <div class="post-layout">
+      <article class="article-body">
+
+        <p>
+          Nếu Prompt Engineering giúp bạn lấy được câu trả lời tốt từ LLM trong một lượt gọi,
+          thì <strong>LLM Agents</strong> đưa điều đó lên một tầm cao mới: model có thể
+          <strong>suy luận nhiều bước, gọi tools bên ngoài, và tự quyết định hành động tiếp theo</strong>.
+          Đây là nền tảng của nhiều hệ thống AI hiện đại, từ coding assistant đến autonomous
+          research agents.
+        </p>
+
+        <h2 id="agent-la-gi">Agent khác gì với một prompt thông thường?</h2>
+
+        <p>
+          Một cuộc gọi LLM thông thường là <strong>stateless và one-shot</strong>: input →
+          output. Ngược lại, agent chạy trong một <strong>loop</strong>: quan sát → suy nghĩ →
+          hành động → quan sát kết quả → lặp lại cho đến khi đạt mục tiêu.
+        </p>
+
+        <p>Các thành phần của một agent điển hình:</p>
+
+        <ul>
+          <li><strong>LLM</strong>: bộ não đưa ra quyết định.</li>
+          <li><strong>Tools</strong>: các hàm bên ngoài agent có thể gọi (search, calculator, API, database).</li>
+          <li><strong>Memory</strong>: lưu lại những gì đã xảy ra trong phiên làm việc.</li>
+          <li><strong>Planning / Reasoning</strong>: chiến lược để phân rã task phức tạp.</li>
+        </ul>
+
+        <h2 id="react-pattern">ReAct — Reasoning + Acting</h2>
+
+        <p>
+          <strong>ReAct</strong> là pattern phổ biến nhất cho agent. Thay vì yêu cầu LLM trả lời
+          ngay, bạn bắt model output theo chu kỳ <em>Thought → Action → Observation</em>.
+        </p>
+
+<pre><code>Question: Tổng dân số của Việt Nam và Thái Lan cộng lại là bao nhiêu?
+
+Thought: Tôi cần tìm dân số của hai quốc gia này. Tôi sẽ dùng search tool.
+Action: search("population of Vietnam 2024")
+Observation: Dân số Việt Nam năm 2024 ước tính khoảng 100.3 triệu người.
+
+Thought: Bây giờ tôi cần tìm dân số Thái Lan.
+Action: search("population of Thailand 2024")
+Observation: Dân số Thái Lan năm 2024 ước tính khoảng 71.8 triệu người.
+
+Thought: Tôi có thể cộng hai con số: 100.3 + 71.8 = 172.1.
+Action: calculate("100.3 + 71.8")
+Observation: 172.1
+
+Final Answer: Tổng dân số khoảng 172.1 triệu người.</code></pre>
+
+        <p>
+          Điểm mạnh của ReAct là <strong>interpretability</strong>: bạn có thể đọc được quá
+          trình suy nghĩ của model, từ đó debug dễ hơn nhiều so với một câu trả lời bí ẩn.
+        </p>
+
+        <h2 id="tool-use">Tool use / Function calling</h2>
+
+        <p>
+          Các model hiện đại như GPT-4, Claude, Gemini đều hỗ trợ <strong>function calling</strong>:
+          model không trực tiếp chạy hàm, mà trả về JSON mô tả hàm cần gọi và arguments. Code
+          của bạn sẽ thực thi hàm đó và đưa kết quả trở lại model.
+        </p>
+
+<pre><code>import json
+from openai import OpenAI
+
+client = OpenAI()
+
+def search(query: str) -> str:
+    # Giả lập search
+    return f"Kết quả tìm kiếm cho: {query}"
+
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "search",
+        "description": "Tìm kiếm thông tin trên internet",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"}
+            },
+            "required": ["query"]
+        }
+    }
+}]
+
+messages = [
+    {"role": "user", "content": "Tìm kiếm thông tin về vector database Qdrant."}
+]
+
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=messages,
+    tools=tools,
+)
+
+tool_call = response.choices[0].message.tool_calls[0]
+args = json.loads(tool_call.function.arguments)
+result = search(args["query"])
+
+messages.append(response.choices[0].message)
+messages.append({
+    "role": "tool",
+    "tool_call_id": tool_call.id,
+    "content": result,
+})
+
+final = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=messages,
+    tools=tools,
+)
+print(final.choices[0].message.content)</code></pre>
+
+        <p>
+          Việc tách biệt "quyết định gọi tool" và "thực thi tool" giúp bạn kiểm soát hoàn toàn
+          những gì agent có thể làm — một yếu tố bảo mật rất quan trọng.
+        </p>
+
+        <h2 id="xay-dung-agent">Xây dựng agent đơn giản từ đầu</h2>
+
+        <p>
+          Bạn không cần framework nặng để bắt đầu. Một agent loop tối thiểu trông như thế này:
+        </p>
+
+<pre><code>def run_agent(question: str, max_steps: int = 5) -> str:
+    messages = [
+        {"role": "system", "content": "Bạn là một assistant hữu ích. "
+         "Suy nghĩ từng bước và gọi tool khi cần."},
+        {"role": "user", "content": question}
+    ]
+
+    for _ in range(max_steps):
+        response = client.chat.completions.create(
+            model="gpt-4o-mini", messages=messages, tools=tools
+        )
+        msg = response.choices[0].message
+
+        if not msg.tool_calls:
+            return msg.content
+
+        messages.append(msg)
+        for tc in msg.tool_calls:
+            fn_name = tc.function.name
+            args = json.loads(tc.function.arguments)
+            result = call_tool(fn_name, args)  # dispatcher của bạn
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tc.id,
+                "content": str(result),
+            })
+
+    return "Agent đã dừng sau số bước tối đa."</code></pre>
+
+        <h2 id="memory">Memory trong agent</h2>
+
+        <p>
+          Agent không thông minh nếu không nhớ. Có hai loại memory chính:
+        </p>
+
+        <ul>
+          <li>
+            <strong>Short-term memory</strong>: chính là conversation history đưa vào context
+            window. Giới hạn bởi số token model hỗ trợ.
+          </li>
+          <li>
+            <strong>Long-term memory</strong>: lưu trữ ngoài, thường dùng vector database để
+            retrieve thông tin liên quan khi cần. Đây là cách agent "học" từ các phiên trước.
+          </li>
+        </ul>
+
+        <p>
+          Trong production, đừng chỉ append toàn bộ history vào context. Hãy dùng
+          <strong>summarization</strong> hoặc <strong>retrieval</strong> để giữ context window
+          hiệu quả.
+        </p>
+
+        <h2 id="khi-nao-dung-agent">Khi nào nên dùng agent?</h2>
+
+        <p>Agent rất mạnh nhưng cũng dễ over-engineer. Mình dùng agent khi:</p>
+
+        <ul>
+          <li>Task không thể hoàn thành trong một lượt gọi LLM.</li>
+          <li>Cần kết hợp nhiều nguồn dữ liệu hoặc tools khác nhau.</li>
+          <li>Cần model tự quyết định workflow dựa trên kết quả trung gian.</li>
+        </ul>
+
+        <p>Và <strong>không</strong> dùng agent khi:</p>
+
+        <ul>
+          <li>Một prompt đơn giản đã đủ.</li>
+          <li>Cần determinism cao (agent có thể chọn sai tool hoặc loop vô hạn).</li>
+          <li>Latency và cost quan trọng hơn flexibility.</li>
+        </ul>
+
+        <h2 id="ket-luan">Kết luận</h2>
+
+        <p>
+          LLM Agents mở ra một cách tiếp cận mới để xây dựng phần mềm: thay vì lập trình từng
+          bước cụ thể, bạn định nghĩa mục tiêu, cung cấp tools, và để model tự quyết định. Tuy
+          nhiên, đi kèm với sức mạnh là sự phức tạp: bạn cần theo dõi cost, latency, error
+          handling và đặc biệt là bảo mật khi gọi external tools.
+        </p>
+
+        <hr />
+
+        <p><em>Bạn đã thử xây dựng agent nào chưa? Mình rất muốn nghe về use case và những vấn đề bạn gặp phải.</em></p>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc__title">Mục lục</p>
+        <div id="toc"></div>
+      </aside>
+    </div>
+
+  </div>
+
+  <div class="container">
+    <nav class="post-nav">
+      <a href="airflow-thuc-chien.html" class="post-nav__item">
+        <span class="post-nav__label">← Bài trước</span>
+        <span class="post-nav__title">Apache Airflow thực chiến — orchestrate data pipeline như một pro</span>
+      </a>
+      <a href="qdrant-thuc-chien.html" class="post-nav__item post-nav__item--next">
+        <span class="post-nav__label">Bài tiếp theo →</span>
+        <span class="post-nav__title">Qdrant thực chiến — vector database mạnh mẽ và dễ dùng</span>
+      </a>
+    </nav>
+  </div>
+</main>
+
+<script src="../shared.js"></script>
+<script src="../antigravity.js"></script>
+</body>
+</html>

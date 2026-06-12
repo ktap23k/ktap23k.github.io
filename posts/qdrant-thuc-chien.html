@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Qdrant thực chiến — tuanta</title>
+  <meta name="description" content="Làm chủ Qdrant vector database: từ cài đặt, indexing, filtering đến hybrid search và tích hợp vào RAG pipeline." />
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<main>
+  <div class="container">
+
+    <nav class="breadcrumb">
+      <a href="../index.html">Trang chủ</a>
+      <span class="breadcrumb__sep">/</span>
+      <a href="../index.html#posts">Bài viết</a>
+      <span class="breadcrumb__sep">/</span>
+      <span>Qdrant thực chiến</span>
+    </nav>
+
+    <header class="article-header">
+      <div class="article-header__tags">
+        <span class="tag tag--cat">Vector Database</span>
+        <span class="tag">Qdrant</span>
+        <span class="tag">RAG</span>
+        <span class="tag">LLM</span>
+      </div>
+      <h1 class="article-title">Qdrant thực chiến — vector database mạnh mẽ và dễ dùng</h1>
+      <div class="article-meta">
+        <span class="article-meta__author">
+          <span class="article-meta__avatar">TA</span>
+          Tuan Anh
+        </span>
+        <span class="article-meta__sep">·</span>
+        <span>5 tháng 4, 2026</span>
+        <span class="article-meta__sep">·</span>
+        <span>⏱ 11 phút đọc</span>
+      </div>
+    </header>
+
+    <div class="post-layout">
+      <article class="article-body">
+
+        <p>
+          Khi xây dựng ứng dụng AI hiện đại — đặc biệt là RAG và recommendation — bạn cần một
+          nơi lưu trữ và tìm kiếm vector hiệu quả. Trong khi nhiều người nghĩ ngay đến Pinecone
+          hoặc Weaviate, mình muốn giới thiệu <strong>Qdrant</strong>: một vector database mã
+          nguồn mở, viết bằng Rust, chạy nhanh, dễ deploy và có Python client rất tiện.
+        </p>
+
+        <h2 id="tai-sao-qdrant">Tại sao chọn Qdrant?</h2>
+
+        <p>
+          Qdrant không phải là lựa chọn duy nhất, nhưng nó có vài điểm mạnh khiến mình thích:
+        </p>
+
+        <ul>
+          <li><strong>Mã nguồn mở</strong>: có thể self-host miễn phí, không bị lock-in.</li>
+          <li><strong>Hiệu năng</strong>: viết bằng Rust, sử dụng HNSW để tìm kiếm gần đúng nhanh.</li>
+          <li><strong>Payload filtering</strong>: kết hợp vector search với metadata filter mạnh mẽ.</li>
+          <li><strong>Hybrid search</strong>: hỗ trợ kết hợp dense vector và sparse vector (BM25).</li>
+          <li><strong>Dễ deploy</strong>: Docker image nhẹ, hoặc dùng Qdrant Cloud.</li>
+        </ul>
+
+        <h2 id="cai-dat">Cài đặt và chạy Qdrant</h2>
+
+        <p>Cách nhanh nhất để thử Qdrant là Docker:</p>
+
+<pre><code>docker run -p 6333:6333 -p 6334:6334 \
+  -v $(pwd)/qdrant_storage:/qdrant/storage \
+  qdrant/qdrant</code></pre>
+
+        <p>
+          Port <code>6333</code> là REST API, <code>6334</code> là gRPC. Nếu dùng Python, gRPC
+          thường nhanh hơn đáng kể cho batch operations.
+        </p>
+
+        <h2 id="khai-niem">Các khái niệm cốt lõi</h2>
+
+        <p>
+          <strong>Collection</strong> tương đương table trong relational database. Mỗi collection
+          có một vector configuration cố định (kích thước vector, distance metric). Trong một
+          collection, bạn lưu <strong>points</strong> — mỗi point gồm id, vector và payload
+          (metadata tùy ý).
+        </p>
+
+        <p>
+          <strong>Distance metric</strong>: phổ biến nhất là <code>Cosine</code> cho semantic
+          search, <code>Euclid</code> cho embedding chuẩn hóa, và <code>Dot</code> cho một số
+          model đặc biệt.
+        </p>
+
+        <h2 id="tao-collection">Tạo collection và indexing</h2>
+
+<pre><code>from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams
+
+client = QdrantClient("http://localhost:6333")
+
+COLLECTION = "articles"
+EMBED_DIM = 1536  # text-embedding-3-small
+
+client.create_collection(
+    collection_name=COLLECTION,
+    vectors_config=VectorParams(size=EMBED_DIM, distance=Distance.COSINE),
+)</code></pre>
+
+        <p>
+          Qdrant tự động build HNSW index khi bạn upsert dữ liệu. Bạn cũng có thể cấu hình
+          index parameters như <code>m</code> (số kết nối mỗi node) và
+          <code>ef_construct</code> (độ chính xác khi build) để cân bằng giữa recall và build
+          time.
+        </p>
+
+        <h2 id="upsert-va-search">Upsert dữ liệu và search</h2>
+
+<pre><code>from qdrant_client.models import PointStruct
+import uuid
+
+def embed(text: str) -> list[float]:
+    # Giả lập embedding function
+    return [0.0] * EMBED_DIM
+
+points = [
+    PointStruct(
+        id=str(uuid.uuid4()),
+        vector=embed("Qdrant là vector database mã nguồn mở"),
+        payload={
+            "title": "Giới thiệu Qdrant",
+            "category": "database",
+            "published": "2026-01-15"
+        }
+    ),
+    PointStruct(
+        id=str(uuid.uuid4()),
+        vector=embed("RAG kết hợp LLM với retrieval"),
+        payload={
+            "title": "RAG thực chiến",
+            "category": "ai",
+            "published": "2026-03-05"
+        }
+    ),
+]
+
+client.upsert(collection_name=COLLECTION, points=points)
+
+# Search
+results = client.search(
+    collection_name=COLLECTION,
+    query_vector=embed("vector database open source"),
+    limit=3,
+)
+
+for r in results:
+    print(r.payload["title"], r.score)</code></pre>
+
+        <h2 id="payload-filtering">Payload filtering mạnh mẽ</h2>
+
+        <p>
+          Đây là tính năng mình dùng nhiều nhất. Bạn có thể kết hợp vector search với điều kiện
+          metadata để loại bỏ kết quả không mong muốn trước hoặc sau khi search.
+        </p>
+
+<pre><code>from qdrant_client.models import Filter, FieldCondition, MatchValue
+
+results = client.search(
+    collection_name=COLLECTION,
+    query_vector=embed("RAG pipeline"),
+    query_filter=Filter(
+        must=[
+            FieldCondition(
+                key="category",
+                match=MatchValue(value="ai")
+            )
+        ]
+    ),
+    limit=3,
+)</code></pre>
+
+        <p>
+          Qdrant hỗ trợ nhiều loại payload index: keyword, integer, float, geo, text. Hãy tạo
+          index cho các field thường dùng để filter để tránh full-scan.
+        </p>
+
+        <h2 id="hybrid-search">Hybrid search: kết hợp semantic + keyword</h2>
+
+        <p>
+          Dense embedding rất tốt cho semantic similarity, nhưng đôi khi thua từ khóa chính
+          xác (ví dụ: tên sản phẩm, mã lỗi). Qdrant hỗ trợ sparse vectors để kết hợp cả hai:
+        </p>
+
+<pre><code>from qdrant_client.models import SparseVectorParams, SparseIndexParams
+
+# Tạo collection với cả dense và sparse vectors
+client.create_collection(
+    collection_name=COLLECTION,
+    vectors_config=VectorParams(size=EMBED_DIM, distance=Distance.COSINE),
+    sparse_vectors_config={
+        "text-sparse": SparseVectorParams(index=SparseIndexParams())
+    }
+)</code></pre>
+
+        <p>
+          Sau đó bạn có thể gọi <code>query_points</code> với <code>prefetch</code> để kết hợp
+          kết quả từ nhiều nguồn vector khác nhau. Đây là cách hiện đại nhất để cải thiện
+          chất lượng RAG mà không cần thay đổi embedding model.
+        </p>
+
+        <h2 id="production-tips">Tips cho production</h2>
+
+        <ul>
+          <li>
+            <strong>Batch upsert</strong>: đừng upsert từng point một. Qdrant xử lý batch vài
+            nghìn points rất tốt.
+          </li>
+          <li>
+            <strong>Snapshot</strong>: định kỳ tạo snapshot để backup. Qdrant hỗ trợ snapshot
+            toàn bộ collection hoặc một phần.
+          </li>
+          <li>
+            <strong>Replication</strong>: trong production cluster, bật replication để tăng
+            availability và throughput read.
+          </li>
+          <li>
+            <strong>Quantization</strong>: dùng scalar hoặc binary quantization để giảm memory
+            footprint khi có hàng trăm triệu vectors.
+          </li>
+        </ul>
+
+        <h2 id="ket-luan">Kết luận</h2>
+
+        <p>
+          Qdrant là một lựa chọn vector database đáng cân nhắc cho cả dự án nhỏ và hệ thống
+          production. Với API rõ ràng, hiệu năng tốt và khả năng self-host, nó giúp bạn xây
+          dựng RAG, search và recommendation mà không bị ràng buộc vào dịch vụ độc quyền. Nếu
+          đang làm việc với embeddings, hãy dành một buổi chiều thử Qdrant — có thể bạn sẽ
+          không quay lại giải pháp cũ.
+        </p>
+
+        <hr />
+
+        <p><em>Bạn đang dùng vector database nào? Mình muốn so sánh trải nghiệm Qdrant với Pinecone hay Weaviate từ góc nhìn thực tế.</em></p>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc__title">Mục lục</p>
+        <div id="toc"></div>
+      </aside>
+    </div>
+
+  </div>
+
+  <div class="container">
+    <nav class="post-nav">
+      <a href="llm-agents-thuc-chien.html" class="post-nav__item">
+        <span class="post-nav__label">← Bài trước</span>
+        <span class="post-nav__title">LLM Agents thực chiến — từ prompt đến autonomous tool use</span>
+      </a>
+      <span></span><!-- newest post, no next -->
+    </nav>
+  </div>
+</main>
+
+<script src="../shared.js"></script>
+<script src="../antigravity.js"></script>
+</body>
+</html>

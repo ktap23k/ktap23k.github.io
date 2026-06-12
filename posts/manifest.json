@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-02",
+  "generated": "2026-06-12",
   "posts": [
     {
       "slug": "microservices-architecture",
@@ -13,6 +13,51 @@
         "Architecture"
       ],
       "featured": true
+    },
+    {
+      "slug": "qdrant-thuc-chien",
+      "title": "Qdrant thực chiến — vector database mạnh mẽ và dễ dùng",
+      "excerpt": "Làm chủ Qdrant vector database: từ cài đặt, indexing, filtering đến hybrid search và tích hợp vào RAG pipeline.",
+      "date": "5 tháng 4, 2026",
+      "dateISO": "2026-04-05",
+      "readTime": 11,
+      "tags": [
+        "Vector Database",
+        "Qdrant",
+        "RAG",
+        "LLM"
+      ],
+      "featured": false
+    },
+    {
+      "slug": "llm-agents-thuc-chien",
+      "title": "LLM Agents thực chiến — từ prompt đến autonomous tool use",
+      "excerpt": "Xây dựng LLM Agents thực tế với ReAct, Tool Use, Function Calling, memory và những điều cần biết trước khi đưa vào production.",
+      "date": "29 tháng 3, 2026",
+      "dateISO": "2026-03-29",
+      "readTime": 12,
+      "tags": [
+        "LLM",
+        "AI",
+        "Agents",
+        "Tool Use"
+      ],
+      "featured": false
+    },
+    {
+      "slug": "airflow-thuc-chien",
+      "title": "Apache Airflow thực chiến — orchestrate data pipeline như một pro",
+      "excerpt": "Xây dựng và vận hành data pipeline với Apache Airflow: DAG, Operators, Sensors, TaskFlow API và các best practices trong thực tế.",
+      "date": "22 tháng 3, 2026",
+      "dateISO": "2026-03-22",
+      "readTime": 13,
+      "tags": [
+        "Data Engineering",
+        "Airflow",
+        "Python",
+        "DevOps"
+      ],
+      "featured": false
     },
     {
       "slug": "prompt-engineering-thuc-chien",

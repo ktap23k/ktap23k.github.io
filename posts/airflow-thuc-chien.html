@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apache Airflow thực chiến — tuanta</title>
+  <meta name="description" content="Xây dựng và vận hành data pipeline với Apache Airflow: DAG, Operators, Sensors, TaskFlow API và các best practices trong thực tế." />
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<main>
+  <div class="container">
+
+    <nav class="breadcrumb">
+      <a href="../index.html">Trang chủ</a>
+      <span class="breadcrumb__sep">/</span>
+      <a href="../index.html#posts">Bài viết</a>
+      <span class="breadcrumb__sep">/</span>
+      <span>Apache Airflow thực chiến</span>
+    </nav>
+
+    <header class="article-header">
+      <div class="article-header__tags">
+        <span class="tag tag--cat">Data Engineering</span>
+        <span class="tag">Airflow</span>
+        <span class="tag">Python</span>
+        <span class="tag">DevOps</span>
+      </div>
+      <h1 class="article-title">Apache Airflow thực chiến — orchestrate data pipeline như một pro</h1>
+      <div class="article-meta">
+        <span class="article-meta__author">
+          <span class="article-meta__avatar">TA</span>
+          Tuan Anh
+        </span>
+        <span class="article-meta__sep">·</span>
+        <span>22 tháng 3, 2026</span>
+        <span class="article-meta__sep">·</span>
+        <span>⏱ 13 phút đọc</span>
+      </div>
+    </header>
+
+    <div class="post-layout">
+      <article class="article-body">
+
+        <p>
+          Trong thế giới data-driven, hầu hết công việc của data engineer không phải là viết
+          Spark job phức tạp, mà là đảm bảo hàng chục bước xử lý dữ liệu chạy đúng lịch, đúng
+          thứ tự và có thể retry khi lỗi. <strong>Apache Airflow</strong> đã trở thành công cụ
+          chuẩn để giải quyết bài toán đó — và sau vài năm dùng, mình nhận ra Airflow mạnh ở
+          chỗ nó ép bạn nghĩ rõ ràng về workflow hơn là chỉ chạy script.
+        </p>
+
+        <h2 id="airflow-la-gi">Airflow là gì và khi nào cần?</h2>
+
+        <p>
+          Airflow là một platform open-source để <strong>lập lịch và monitor workflows</strong>.
+          Workflow trong Airflow được định nghĩa bằng code Python — gọi là DAG
+          (Directed Acyclic Graph). Mỗi node trong DAG là một task, và các edge thể hiện
+          dependency.
+        </p>
+
+        <p>Bạn nên dùng Airflow khi:</p>
+
+        <ul>
+          <li>Có nhiều bước xử lý dữ liệu phụ thuộc nhau (ETL/ELT pipeline).</li>
+          <li>Cần lập lịch chạy định kỳ (hàng giờ, hàng ngày, hàng tuần).</li>
+          <li>Cần retry, alerting và observability cho data jobs.</li>
+          <li>Muốn pipeline có thể tái sử dụng và version control.</li>
+        </ul>
+
+        <blockquote>
+          <p>Nếu chỉ có một vài script Python chạy bằng cron, Airflow có thể là overkill. Nhưng khi cron bắt đầu có 20 dòng và bạn không biết cái nào chạy trước cái nào, đó là lúc nên migrate.</p>
+        </blockquote>
+
+        <h2 id="thanh-phan-co-ban">Các thành phần cơ bản</h2>
+
+        <p>
+          <strong>DAG</strong> là container cho toàn bộ workflow. <strong>Task</strong> là một
+          đơn vị công việc. <strong>Operator</strong> là template để tạo task — PythonOperator,
+          BashOperator, PostgresOperator, v.v. <strong>Sensor</strong> là một loại operator
+          đặc biệt chờ điều kiện nào đó thỏa mãn (file xuất hiện, query trả về kết quả...).
+        </p>
+
+        <p>Kiến trúc Airflow gồm:</p>
+
+        <ul>
+          <li><strong>Scheduler</strong>: quét DAGs và quyết định task nào cần chạy.</li>
+          <li><strong>Worker</strong>: thực thi task (có thể là LocalExecutor, Celery, Kubernetes).</li>
+          <li><strong>Webserver</strong>: UI để theo dõi và trigger DAG.</li>
+          <li><strong>Metadata database</strong>: PostgreSQL hoặc MySQL lưu trạng thái DAG runs.</li>
+        </ul>
+
+        <h2 id="dag-dau-tien">DAG đầu tiên với TaskFlow API</h2>
+
+        <p>
+          Mình khuyến khích dùng <strong>TaskFlow API</strong> (có từ Airflow 2.0+) thay vì
+          operator truyền thống vì code gọn, dễ đọc và tự động handle XCom.
+        </p>
+
+<pre><code>from airflow.decorators import dag, task
+from airflow.utils.dates import days_ago
+from datetime import timedelta
+
+@dag(
+    dag_id="etl_daily_orders",
+    start_date=days_ago(1),
+    schedule_interval="@daily",
+    catchup=False,
+    default_args={"retries": 2, "retry_delay": timedelta(minutes=5)},
+    tags=["etl", "sales"],
+)
+def etl_daily_orders():
+
+    @task
+    def extract(date: str) -> list[dict]:
+        # Đọc dữ liệu từ source
+        return [{"id": 1, "amount": 100, "date": date}]
+
+    @task
+    def transform(rows: list[dict]) -> list[dict]:
+        return [{**r, "amount_vat": r["amount"] * 1.1} for r in rows]
+
+    @task
+    def load(rows: list[dict]) -> None:
+        print(f"Loaded {len(rows)} rows")
+
+    load(transform(extract("{{ ds }}")))
+
+etl_daily_orders()</code></pre>
+
+        <p>
+          Biến <code>{{ ds }}</code> là một Jinja template trả về logical date của DAG run.
+          TaskFlow API tự động push/pull dữ liệu qua XCom, bạn không cần viết
+          <code>xcom_pull</code> thủ công.
+        </p>
+
+        <h2 id="scheduling">Scheduling, catchup và backfill</h2>
+
+        <p>
+          Đây là phần nhiều người nhầm lẫn nhất. <code>start_date</code> là ngày bắt đầu của
+          DAG, <code>schedule_interval</code> là khoảng cách giữa các lần chạy. Airflow chạy
+          DAG cho một <em>interval</em> đã kết thúc, không phải chạy ngay tại
+          <code>start_date</code>.
+        </p>
+
+        <ul>
+          <li>
+            <strong>Catchup</strong>: nếu <code>catchup=True</code> và bạn deploy DAG có
+            <code>start_date</code> từ 1 năm trước, Airflow sẽ tạo run cho tất cả các interval
+            chưa chạy. Trong production thường để <code>catchup=False</code>.
+          </li>
+          <li>
+            <strong>Backfill</strong>: chạy lại dữ liệu quá khứ bằng lệnh
+            <code>airflow dags backfill</code>. Hữu ích khi bạn thay đổi logic và muốn tính
+            lại dữ liệu cũ.
+          </li>
+        </ul>
+
+        <h2 id="idempotency">Idempotency — nguyên tắc vàng</h2>
+
+        <p>
+          Một task được gọi là <strong>idempotent</strong> nếu chạy nhiều lần vẫn cho cùng kết
+          quả. Điều này cực kỳ quan trọng vì Airflow retry task khi lỗi. Nếu task thứ hai
+          insert thêm dữ liệu thay vì upsert, bạn sẽ có duplicate.
+        </p>
+
+        <p>Các pattern idempotent phổ biến:</p>
+
+        <ul>
+          <li>Load dữ liệu theo partition: <code>DELETE WHERE date = '{{ ds }}'</code> rồi insert.</li>
+          <li>Dùng <code>MERGE</code> hoặc <code>INSERT ... ON CONFLICT</code> với PostgreSQL.</li>
+          <li>Đặt tên file output có chứa logical date để tránh ghi đè nhầm.</li>
+        </ul>
+
+        <h2 id="sensors">Sensors và external triggers</h2>
+
+        <p>
+          Thay vì chạy DAG theo lịch cố định, đôi khi bạn muốn chờ một file đến từ upstream
+          hoặc một job bên ngoài hoàn thành. Sensors giúp làm điều đó:
+        </p>
+
+<pre><code>from airflow.providers.http.sensors.http import HttpSensor
+from airflow.providers.filesystem.sensors.filesystem import FileSensor
+
+wait_for_file = FileSensor(
+    task_id="wait_for_source_file",
+    filepath="/data/raw/orders_{{ ds }}.csv",
+    fs_conn_id="fs_default",
+    poke_interval=60,
+    timeout=3600,
+)</code></pre>
+
+        <p>
+          Sensors có thể chạy ở chế độ <strong>poke</strong> (liên tục kiểm tra, chiếm worker
+          slot) hoặc <strong>reschedule</strong> (nhả slot khi đang chờ, tiết kiệm tài nguyên).
+          Trên production, hãy dùng <code>mode="reschedule"</code>.
+        </p>
+
+        <h2 id="chay-production">Chạy Airflow trong production</h2>
+
+        <p>Những điều mình luôn làm khi deploy Airflow:</p>
+
+        <ul>
+          <li>
+            <strong>Executor</strong>: LocalExecutor cho dev/test, CeleryExecutor hoặc
+            KubernetesExecutor cho production. KubernetesExecutor giúp isolate resource theo
+            task.
+          </li>
+          <li>
+            <strong>Secrets</strong>: đừng hardcode password trong DAG. Dùng Airflow
+            Connections và Variables, hoặc tích hợp AWS Secrets Manager / Vault.
+          </li>
+          <li>
+            <strong>Resource</strong>: đặt <code>pool</code> và <code>priority_weight</code> để
+            kiểm soát concurrency với các hệ thống bên ngoài.
+          </li>
+          <li>
+            <strong>SLA và alerting</strong>: cấu hình <code>sla</code> trên task và gửi alert
+            qua Slack/Email khi DAG chậm hoặc fail.
+          </li>
+        </ul>
+
+        <h2 id="common-mistakes">Những sai lầm phổ biến</h2>
+
+        <ul>
+          <li>
+            <strong>Đặt top-level code nặng trong file DAG</strong>: Airflow scheduler parse
+            DAG liên tục. Nếu file DAG kết nối database ở top level, scheduler sẽ spam DB.
+            Chuyển logic vào trong task function.
+          </li>
+          <li>
+            <strong>Pass object lớn qua XCom</strong>: XCom không phải data warehouse. Với
+            dữ liệu lớn, lưu vào S3/MinIO và truyền URL qua XCom.
+          </li>
+          <li>
+            <strong>Dynamic tasks quá nhiều</strong>: <code>expand()</code> tạo hàng nghìn task
+            map sẽ làm metadata DB phình to. Cân nhắc batch processing thay vì task per item.
+          </li>
+        </ul>
+
+        <h2 id="ket-luan">Kết luận</h2>
+
+        <p>
+          Airflow không phải silver bullet, nhưng nếu bạn cần orchestrate workflows phức tạp
+          với khả năng observability tốt, đây vẫn là lựa chọn an toàn. Hãy bắt đầu với TaskFlow
+          API, giữ task idempotent, và đừng quên set catchup=False trước khi deploy lên production.
+        </p>
+
+        <hr />
+
+        <p><em>Bạn đang dùng Airflow hay Prefect/Dagster? Mình tò mò về lý do bạn chọn tool đó.</em></p>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc__title">Mục lục</p>
+        <div id="toc"></div>
+      </aside>
+    </div>
+
+  </div>
+
+  <div class="container">
+    <nav class="post-nav">
+      <a href="prompt-engineering-thuc-chien.html" class="post-nav__item">
+        <span class="post-nav__label">← Bài trước</span>
+        <span class="post-nav__title">Prompt Engineering thực chiến — viết prompt để LLM làm đúng ý</span>
+      </a>
+      <a href="llm-agents-thuc-chien.html" class="post-nav__item post-nav__item--next">
+        <span class="post-nav__label">Bài tiếp theo →</span>
+        <span class="post-nav__title">LLM Agents thực chiến — từ prompt đến autonomous tool use</span>
+      </a>
+    </nav>
+  </div>
+</main>
+
+<script src="../shared.js"></script>
+<script src="../antigravity.js"></script>
+</body>
+</html>
