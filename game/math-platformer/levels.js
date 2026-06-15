@@ -1174,6 +1174,14 @@ function getLevel(index) {
     });
   }
 
+  // Raise answer items higher above platforms so players can pass
+  // underneath them more easily without accidentally touching.
+  if (base.answers) {
+    base.answers.forEach(a => {
+      a.y = Math.max(30, a.y - 30);
+    });
+  }
+
   return base;
 }
 
