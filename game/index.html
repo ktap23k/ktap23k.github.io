@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game — Ktap Arcade</title>
+  <meta name="description" content="Khu vực trò chơi HTML/CSS/JS: Pikachu, Math Jump Adventure và nhiều trò chơi giáo dục khác." />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    .games-page { padding: 48px 0 80px; }
+    .games-hero {
+      text-align: center;
+      padding: 32px 0 40px;
+    }
+    .games-hero__title {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+    .games-hero__desc {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .game-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+      transition: transform var(--transition), box-shadow var(--transition);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .game-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--accent);
+    }
+    .game-card__icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      background: var(--accent-light);
+    }
+    .game-card__title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .game-card__tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .game-card__desc {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.65;
+      flex: 1;
+    }
+    .game-card__cta {
+      margin-top: auto;
+      align-self: flex-start;
+    }
+    .game-card__meta {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .coming-soon {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+    .coming-soon .game-card__icon { filter: grayscale(0.6); }
+  </style>
+</head>
+<body>
+  <main class="games-page">
+    <div class="container">
+      <div class="games-hero">
+        <h1 class="games-hero__title">🎮 Ktap Arcade</h1>
+        <p class="games-hero__desc">
+          Tập hợp những trò chơi nhỏ được xây dựng bằng HTML, CSS và JavaScript thuần.
+          Vừa giải trí, vừa rèn luyện trí nhớ, toán học và tiếng Anh.
+        </p>
+      </div>
+
+      <div class="games-grid">
+        <a href="pikachu.html" class="game-card">
+          <div class="game-card__icon">⚡</div>
+          <div>
+            <h2 class="game-card__title">Pikachu Classic</h2>
+            <div class="game-card__tags">
+              <span class="tag tag--cat">Trí nhớ</span>
+              <span class="tag">Onet</span>
+            </div>
+          </div>
+          <p class="game-card__desc">
+            Nối các cặp thú cưng giống nhau bằng đường gấp khúc tối đa 2 lần.
+            Tự động tạo màn mới, xáo trộn khi kẹt, lưu điểm cao local.
+          </p>
+          <div class="game-card__meta" id="pikaHigh">Điểm cao: 0</div>
+          <span class="btn btn--primary game-card__cta">Chơi ngay →</span>
+        </a>
+
+        <a href="math-platformer.html" class="game-card">
+          <div class="game-card__icon">🦊</div>
+          <div>
+            <h2 class="game-card__title">Math Jump Adventure</h2>
+            <div class="game-card__tags">
+              <span class="tag tag--cat">Hành động</span>
+              <span class="tag">Toán & TA</span>
+            </div>
+          </div>
+          <p class="game-card__desc">
+            Platformer 2D kết hợp giải toán và từ vựng tiếng Anh.
+            Nhảy qua nền tảng, thu thập đáp án đúng, mở khóa nhiều màn chơi.
+          </p>
+          <span class="btn btn--primary game-card__cta">Chơi ngay →</span>
+        </a>
+
+        <div class="game-card coming-soon">
+          <div class="game-card__icon">🧩</div>
+          <div>
+            <h2 class="game-card__title">Word Puzzle</h2>
+            <div class="game-card__tags">
+              <span class="tag tag--cat">Từ vựng</span>
+              <span class="tag">Sắp ra mắt</span>
+            </div>
+          </div>
+          <p class="game-card__desc">
+            Ghép chữ, đoán từ và hoàn thành thử thách tiếng Anh theo chủ đề.
+            Đang được phát triển.
+          </p>
+          <span class="btn btn--ghost game-card__cta">Sắp có</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../assets/js/shared.js"></script>
+  <script>
+    (function() {
+      const pikaHigh = localStorage.getItem('pikachu_highscore') || '0';
+      document.getElementById('pikaHigh').textContent = 'Điểm cao: ' + pikaHigh;
+    })();
+  </script>
+</body>
+</html>

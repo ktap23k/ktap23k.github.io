@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Jump Adventure — Ktap Arcade</title>
+  <meta name="description" content="Platformer giáo dục 2D: nhảy qua chướng ngại, thu thập đáp án đúng của câu hỏi toán và tiếng Anh." />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    .jmp-page { padding: 24px 0 80px; }
+    .jmp-shell {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .jmp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .jmp-title { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; }
+    .jmp-stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .jmp-stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 7px 13px;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .jmp-stat span { color: var(--accent); }
+
+    .jmp-question {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .jmp-question__label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .jmp-question__text {
+      font-size: clamp(1.1rem, 3vw, 1.45rem);
+      font-weight: 700;
+    }
+
+    .jmp-canvas-wrap {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      aspect-ratio: 16 / 10;
+    }
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 60%, #e0f2fe 100%);
+    }
+    [data-theme="dark"] #gameCanvas {
+      background: linear-gradient(180deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
+    }
+
+    .jmp-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: rgba(0,0,0,.55);
+      color: #fff;
+      text-align: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .jmp-overlay.show { opacity: 1; pointer-events: auto; }
+    .jmp-overlay h2 { font-size: 1.8rem; font-weight: 800; }
+    .jmp-overlay p { max-width: 420px; line-height: 1.6; }
+
+    .jmp-controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .jmp-controls .btn { padding: 8px 16px; font-size: 0.85rem; }
+
+    .jmp-touch {
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+    }
+    .jmp-touch__group { display: flex; gap: 10px; }
+    .jmp-touch__btn {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      touch-action: manipulation;
+      box-shadow: var(--shadow);
+    }
+    .jmp-touch__btn:active { background: var(--accent-light); }
+
+    .jmp-help {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+    .jmp-help strong { color: var(--text); }
+
+    @media (max-width: 720px) {
+      .jmp-touch { display: flex; }
+    }
+  </style>
+</head>
+<body>
+  <main class="jmp-page">
+    <div class="container jmp-shell">
+      <div class="jmp-header">
+        <h1 class="jmp-title">🦊 Math Jump Adventure</h1>
+        <div class="jmp-stats">
+          <div class="jmp-stat">Màn <span id="levelStat">1</span></div>
+          <div class="jmp-stat">Điểm <span id="scoreStat">0</span></div>
+          <div class="jmp-stat">Mạng <span id="livesStat">3</span></div>
+        </div>
+      </div>
+
+      <div class="jmp-question">
+        <div class="jmp-question__label">Nhiệm vụ</div>
+        <div class="jmp-question__text" id="questionText">Đang tải...</div>
+      </div>
+
+      <div class="jmp-canvas-wrap" id="canvasWrap">
+        <canvas id="gameCanvas" width="960" height="600"></canvas>
+        <div class="jmp-overlay" id="overlay">
+          <h2 id="overlayTitle">Sẵn sàng?</h2>
+          <p id="overlayDesc">Dùng phím mũi tên hoặc WASD để di chuyển, Space để nhảy. Thu thập đáp án đúng!</p>
+          <button class="btn btn--primary" id="overlayBtn">Bắt đầu</button>
+        </div>
+      </div>
+
+      <div class="jmp-controls">
+        <button class="btn btn--primary" id="restartBtn">🔄 Chơi lại màn</button>
+        <button class="btn btn--ghost" id="resetProgressBtn">Xóa tiến trình</button>
+        <button class="btn btn--ghost" id="backBtn">← Quay lại</button>
+      </div>
+
+      <div class="jmp-touch">
+        <div class="jmp-touch__group">
+          <button class="jmp-touch__btn" data-key="left">←</button>
+          <button class="jmp-touch__btn" data-key="right">→</button>
+        </div>
+        <button class="jmp-touch__btn" data-key="jump">↑</button>
+      </div>
+
+      <div class="jmp-help">
+        <strong>Hướng dẫn:</strong> Di chuyển nhân vật đến vật phẩm chứa đáp án đúng.
+        Tránh chướng ngại vật màu đỏ và đừng rơi xuống vực.
+        Mỗi màn là một chủ đề toán hoặc tiếng Anh khác nhau — càng về sau càng thử thách!
+      </div>
+    </div>
+  </main>
+
+  <script src="../assets/js/shared.js"></script>
+  <script>
+    /* ========== LEVELS ========== */
+    const LEVELS = [
+      {
+        topic: 'Cộng cơ bản',
+        question: '1 + 2 = ?',
+        correct: '3',
+        playerStart: { x: 60, y: 480 },
+        platforms: [
+          { x: 0, y: 560, w: 320, h: 40 },
+          { x: 400, y: 480, w: 200, h: 32 },
+          { x: 680, y: 400, w: 280, h: 32 },
+          { x: 520, y: 280, w: 160, h: 32 },
+          { x: 200, y: 200, w: 240, h: 32 },
+          { x: 0, y: 120, w: 160, h: 32 }
+        ],
+        hazards: [
+          { x: 320, y: 580, w: 80, h: 20 },
+          { x: 600, y: 580, w: 360, h: 20 }
+        ],
+        answers: [
+          { x: 460, y: 420, value: '3', correct: true },
+          { x: 760, y: 340, value: '4', correct: false },
+          { x: 260, y: 140, value: '2', correct: false }
+        ]
+      },
+      {
+        topic: 'Trừ cơ bản',
+        question: '5 - 2 = ?',
+        correct: '3',
+        playerStart: { x: 40, y: 480 },
+        platforms: [
+          { x: 0, y: 560, w: 240, h: 40 },
+          { x: 300, y: 500, w: 120, h: 28 },
+          { x: 500, y: 430, w: 120, h: 28 },
+          { x: 700, y: 360, w: 120, h: 28 },
+          { x: 500, y: 260, w: 120, h: 28 },
+          { x: 260, y: 180, w: 160, h: 28 },
+          { x: 40, y: 100, w: 140, h: 28 }
+        ],
+        hazards: [
+          { x: 240, y: 580, w: 720, h: 20 }
+        ],
+        movingPlatforms: [
+          { x: 120, y: 360, w: 100, h: 24, dx: 1.2, range: 140 }
+        ],
+        answers: [
+          { x: 540, y: 380, value: '3', correct: true },
+          { x: 320, y: 130, value: '2', correct: false },
+          { x: 80, y: 50, value: '4', correct: false }
+        ]
+      },
+      {
+        topic: 'Từ vựng tiếng Anh',
+        question: '"Con mèo" tiếng Anh là?',
+        correct: 'cat',
+        playerStart: { x: 50, y: 500 },
+        platforms: [
+          { x: 0, y: 560, w: 200, h: 40 },
+          { x: 240, y: 500, w: 100, h: 24 },
+          { x: 400, y: 440, w: 100, h: 24 },
+          { x: 560, y: 380, w: 100, h: 24 },
+          { x: 720, y: 320, w: 100, h: 24 },
+          { x: 560, y: 240, w: 100, h: 24 },
+          { x: 360, y: 180, w: 140, h: 24 },
+          { x: 120, y: 140, w: 120, h: 24 },
+          { x: 800, y: 160, w: 160, h: 24 }
+        ],
+        hazards: [
+          { x: 200, y: 580, w: 760, h: 20 }
+        ],
+        answers: [
+          { x: 440, y: 390, value: 'cat', correct: true },
+          { x: 180, y: 90, value: 'dog', correct: false },
+          { x: 860, y: 110, value: 'fish', correct: false }
+        ]
+      },
+      {
+        topic: 'Nhân cơ bản',
+        question: '2 × 3 = ?',
+        correct: '6',
+        playerStart: { x: 30, y: 500 },
+        platforms: [
+          { x: 0, y: 560, w: 180, h: 40 },
+          { x: 220, y: 500, w: 90, h: 22 },
+          { x: 360, y: 440, w: 90, h: 22 },
+          { x: 500, y: 380, w: 90, h: 22 },
+          { x: 640, y: 320, w: 90, h: 22 },
+          { x: 780, y: 260, w: 180, h: 22 },
+          { x: 600, y: 180, w: 120, h: 22 },
+          { x: 400, y: 140, w: 120, h: 22 },
+          { x: 180, y: 120, w: 120, h: 22 }
+        ],
+        hazards: [
+          { x: 180, y: 580, w: 780, h: 20 },
+          { x: 420, y: 300, w: 60, h: 20 }
+        ],
+        movingPlatforms: [
+          { x: 300, y: 260, w: 90, h: 22, dx: 1.5, range: 120 }
+        ],
+        answers: [
+          { x: 400, y: 90, value: '6', correct: true },
+          { x: 840, y: 210, value: '5', correct: false },
+          { x: 220, y: 70, value: '7', correct: false }
+        ]
+      },
+      {
+        topic: 'Tổng hợp',
+        question: '10 - 3 + 2 = ?',
+        correct: '9',
+        playerStart: { x: 30, y: 500 },
+        platforms: [
+          { x: 0, y: 560, w: 150, h: 40 },
+          { x: 190, y: 500, w: 80, h: 20 },
+          { x: 320, y: 440, w: 80, h: 20 },
+          { x: 450, y: 380, w: 80, h: 20 },
+          { x: 580, y: 320, w: 80, h: 20 },
+          { x: 710, y: 260, w: 80, h: 20 },
+          { x: 840, y: 200, w: 120, h: 20 },
+          { x: 650, y: 150, w: 120, h: 20 },
+          { x: 420, y: 120, w: 160, h: 20 },
+          { x: 180, y: 100, w: 160, h: 20 }
+        ],
+        hazards: [
+          { x: 150, y: 580, w: 810, h: 20 },
+          { x: 350, y: 250, w: 50, h: 20 },
+          { x: 750, y: 350, w: 50, h: 20 }
+        ],
+        movingPlatforms: [
+          { x: 500, y: 220, w: 80, h: 20, dx: 1.8, range: 100 },
+          { x: 250, y: 300, w: 80, h: 20, dx: -1.4, range: 90 }
+        ],
+        answers: [
+          { x: 250, y: 50, value: '9', correct: true },
+          { x: 880, y: 150, value: '8', correct: false },
+          { x: 480, y: 70, value: '7', correct: false }
+        ]
+      }
+    ];
+
+    /* ========== STATE ========== */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlayTitle');
+    const overlayDesc = document.getElementById('overlayDesc');
+    const overlayBtn = document.getElementById('overlayBtn');
+
+    let levelIndex = 0;
+    let score = 0;
+    let lives = 3;
+    let running = false;
+    let lastTime = 0;
+
+    const keys = { left: false, right: false, jump: false };
+
+    const player = {
+      x: 0, y: 0, w: 28, h: 28,
+      vx: 0, vy: 0,
+      onGround: false,
+      facing: 1
+    };
+
+    let currentLevel = null;
+    let cameraX = 0;
+
+    /* ========== INPUT ========== */
+    window.addEventListener('keydown', e => {
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+      if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') {
+        keys.jump = true;
+        if (e.code === 'Space') e.preventDefault();
+      }
+    });
+    window.addEventListener('keyup', e => {
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+      if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.jump = false;
+    });
+
+    // Touch controls
+    document.querySelectorAll('.jmp-touch__btn').forEach(btn => {
+      const k = btn.dataset.key;
+      const start = e => { e.preventDefault(); keys[k] = true; };
+      const end = e => { e.preventDefault(); keys[k] = false; };
+      btn.addEventListener('touchstart', start, { passive: false });
+      btn.addEventListener('touchend', end);
+      btn.addEventListener('mousedown', start);
+      btn.addEventListener('mouseup', end);
+      btn.addEventListener('mouseleave', end);
+    });
+
+    /* ========== LOAD PROGRESS ========== */
+    function loadProgress() {
+      const saved = localStorage.getItem('mathjump_progress');
+      if (saved) {
+        try {
+          const p = JSON.parse(saved);
+          levelIndex = Math.max(0, Math.min(LEVELS.length - 1, p.level || 0));
+          score = p.score || 0;
+          lives = p.lives || 3;
+        } catch (e) { levelIndex = 0; score = 0; lives = 3; }
+      }
+    }
+    function saveProgress() {
+      localStorage.setItem('mathjump_progress', JSON.stringify({ level: levelIndex, score, lives }));
+    }
+
+    /* ========== LEVEL SETUP ========== */
+    function setupLevel(idx) {
+      levelIndex = idx;
+      currentLevel = JSON.parse(JSON.stringify(LEVELS[idx]));
+      player.x = currentLevel.playerStart.x;
+      player.y = currentLevel.playerStart.y;
+      player.vx = 0; player.vy = 0;
+      cameraX = 0;
+      document.getElementById('questionText').textContent = currentLevel.question;
+      updateStats();
+      saveProgress();
+    }
+
+    function updateStats() {
+      document.getElementById('levelStat').textContent = levelIndex + 1;
+      document.getElementById('scoreStat').textContent = score;
+      document.getElementById('livesStat').textContent = lives;
+    }
+
+    /* ========== PHYSICS ========== */
+    const GRAVITY = 0.6;
+    const MOVE_SPEED = 4.5;
+    const JUMP_FORCE = -12;
+    const FRICTION = 0.82;
+
+    function update(dt) {
+      if (!running || !currentLevel) return;
+
+      // Horizontal
+      if (keys.left) { player.vx -= 0.8; player.facing = -1; }
+      if (keys.right) { player.vx += 0.8; player.facing = 1; }
+      player.vx *= FRICTION;
+      player.vx = Math.max(-MOVE_SPEED, Math.min(MOVE_SPEED, player.vx));
+      player.x += player.vx;
+      handleCollisions('x');
+
+      // Vertical
+      player.vy += GRAVITY;
+      player.y += player.vy;
+      player.onGround = false;
+      handleCollisions('y');
+
+      // Jump
+      if (keys.jump && player.onGround) {
+        player.vy = JUMP_FORCE;
+        player.onGround = false;
+      }
+
+      // Moving platforms
+      if (currentLevel.movingPlatforms) {
+        currentLevel.movingPlatforms.forEach(p => {
+          p.x += p.dx;
+          if (Math.abs(p.x - p.originX) > p.range) p.dx *= -1;
+        });
+      }
+
+      // Hazards / death
+      if (player.y > canvas.height + 60) {
+        loseLife();
+        return;
+      }
+      const hazardHit = currentLevel.hazards.some(h => rectIntersect(player, h));
+      if (hazardHit) {
+        loseLife();
+        return;
+      }
+
+      // Answers
+      for (let i = currentLevel.answers.length - 1; i >= 0; i--) {
+        const ans = currentLevel.answers[i];
+        const box = { x: ans.x, y: ans.y, w: 34, h: 34 };
+        if (rectIntersect(player, box)) {
+          if (ans.correct) {
+            score += 100 + levelIndex * 20;
+            showOverlay('🎉 Chính xác!', `Bạn đã vượt qua màn ${levelIndex + 1}.`, 'Màn tiếp theo');
+            running = false;
+            saveProgress();
+            overlayBtn.onclick = () => {
+              if (levelIndex + 1 < LEVELS.length) {
+                setupLevel(levelIndex + 1);
+                hideOverlay();
+                running = true;
+              } else {
+                showOverlay('🏆 Chiến thắng!', `Tổng điểm: ${score}. Bạn đã hoàn thành tất cả các màn!`, 'Chơi lại từ đầu');
+                overlayBtn.onclick = () => {
+                  levelIndex = 0; score = 0; lives = 3;
+                  setupLevel(0);
+                  hideOverlay();
+                  running = true;
+                };
+              }
+            };
+          } else {
+            loseLife('Sai đáp án!');
+          }
+          return;
+        }
+      }
+
+      // Camera follow
+      const targetCam = player.x - canvas.width / 3;
+      cameraX += (targetCam - cameraX) * 0.1;
+      cameraX = Math.max(0, Math.min(cameraX, 1200 - canvas.width));
+
+      updateStats();
+    }
+
+    function handleCollisions(axis) {
+      const platforms = currentLevel.platforms.concat(currentLevel.movingPlatforms || []);
+      for (const p of platforms) {
+        if (rectIntersect(player, p)) {
+          if (axis === 'x') {
+            if (player.vx > 0) player.x = p.x - player.w;
+            else if (player.vx < 0) player.x = p.x + p.w;
+            player.vx = 0;
+          } else {
+            if (player.vy > 0) {
+              player.y = p.y - player.h;
+              player.onGround = true;
+              player.vy = 0;
+              // Move with platform
+              if (p.dx) player.x += p.dx;
+            } else if (player.vy < 0) {
+              player.y = p.y + p.h;
+              player.vy = 0;
+            }
+          }
+        }
+      }
+    }
+
+    function rectIntersect(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x &&
+             a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function loseLife(msg) {
+      lives--;
+      saveProgress();
+      if (lives <= 0) {
+        showOverlay('💔 Game Over', `Điểm của bạn: ${score}. Hãy thử lại!`, 'Chơi lại');
+        overlayBtn.onclick = () => {
+          levelIndex = 0; score = 0; lives = 3;
+          setupLevel(0);
+          hideOverlay();
+          running = true;
+        };
+      } else {
+        showOverlay('😅 Ôi không!', msg || 'Bạn đã mất một mạng.', 'Thử lại màn này');
+        overlayBtn.onclick = () => {
+          setupLevel(levelIndex);
+          hideOverlay();
+          running = true;
+        };
+      }
+      running = false;
+    }
+
+    /* ========== RENDER ========== */
+    function draw() {
+      // Background
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        grad.addColorStop(0, '#0f172a'); grad.addColorStop(0.6, '#1e293b'); grad.addColorStop(1, '#0f172a');
+      } else {
+        grad.addColorStop(0, '#dbeafe'); grad.addColorStop(0.6, '#eff6ff'); grad.addColorStop(1, '#e0f2fe');
+      }
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (!currentLevel) return;
+      ctx.save();
+      ctx.translate(-cameraX, 0);
+
+      // Platforms
+      ctx.fillStyle = isDark ? '#334155' : '#94a3b8';
+      currentLevel.platforms.forEach(p => {
+        roundRect(ctx, p.x, p.y, p.w, p.h, 6);
+        ctx.fill();
+        // top grass
+        ctx.fillStyle = isDark ? '#475569' : '#22c55e';
+        ctx.fillRect(p.x, p.y, p.w, 6);
+        ctx.fillStyle = isDark ? '#334155' : '#94a3b8';
+      });
+
+      // Moving platforms
+      if (currentLevel.movingPlatforms) {
+        currentLevel.movingPlatforms.forEach(p => {
+          ctx.fillStyle = isDark ? '#475569' : '#64748b';
+          roundRect(ctx, p.x, p.y, p.w, p.h, 6);
+          ctx.fill();
+        });
+      }
+
+      // Hazards
+      ctx.fillStyle = '#ef4444';
+      currentLevel.hazards.forEach(h => {
+        ctx.beginPath();
+        ctx.moveTo(h.x, h.y + h.h);
+        ctx.lineTo(h.x + h.w / 2, h.y);
+        ctx.lineTo(h.x + h.w, h.y + h.h);
+        ctx.fill();
+      });
+
+      // Answers
+      currentLevel.answers.forEach(a => {
+        ctx.fillStyle = a.correct ? '#22c55e' : '#f59e0b';
+        roundRect(ctx, a.x, a.y, 34, 34, 8);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(a.value, a.x + 17, a.y + 17);
+      });
+
+      // Player
+      ctx.fillStyle = '#e85d04';
+      roundRect(ctx, player.x, player.y, player.w, player.h, 8);
+      ctx.fill();
+      // Eyes
+      ctx.fillStyle = '#fff';
+      const eyeX = player.facing > 0 ? player.x + 18 : player.x + 6;
+      ctx.beginPath();
+      ctx.arc(eyeX, player.y + 10, 4, 0, Math.PI * 2);
+      ctx.arc(eyeX + (player.facing > 0 ? -8 : 8), player.y + 10, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      const rr = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.lineTo(x + w - rr, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+      ctx.lineTo(x + w, y + h - rr);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+      ctx.lineTo(x + rr, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+      ctx.lineTo(x, y + rr);
+      ctx.quadraticCurveTo(x, y, x + rr, y);
+      ctx.closePath();
+    }
+
+    /* ========== LOOP ========== */
+    function loop(ts) {
+      const dt = ts - lastTime;
+      lastTime = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    /* ========== OVERLAY ========== */
+    function showOverlay(title, desc, btnText) {
+      overlayTitle.textContent = title;
+      overlayDesc.textContent = desc;
+      overlayBtn.textContent = btnText;
+      overlay.classList.add('show');
+    }
+    function hideOverlay() {
+      overlay.classList.remove('show');
+    }
+
+    /* ========== CONTROLS ========== */
+    document.getElementById('restartBtn').addEventListener('click', () => {
+      running = false;
+      showOverlay('Chơi lại màn', 'Bạn sẽ bắt đầu lại màn hiện tại.', 'Bắt đầu');
+      overlayBtn.onclick = () => {
+        setupLevel(levelIndex);
+        hideOverlay();
+        running = true;
+      };
+    });
+
+    document.getElementById('resetProgressBtn').addEventListener('click', () => {
+      if (confirm('Xóa toàn bộ tiến trình và điểm số?')) {
+        localStorage.removeItem('mathjump_progress');
+        levelIndex = 0; score = 0; lives = 3;
+        setupLevel(0);
+        running = true;
+      }
+    });
+
+    document.getElementById('backBtn').addEventListener('click', () => {
+      location.href = 'index.html';
+    });
+
+    // Initialize moving platform origins
+    LEVELS.forEach(l => {
+      if (l.movingPlatforms) {
+        l.movingPlatforms.forEach(p => { p.originX = p.x; });
+      }
+    });
+
+    /* ========== BOOT ========== */
+    loadProgress();
+    setupLevel(levelIndex);
+    showOverlay('🦊 Math Jump Adventure', 'Dùng phím mũi tên / WASD để di chuyển, Space để nhảy. Thu thập đáp án đúng!', 'Bắt đầu');
+    overlayBtn.onclick = () => {
+      hideOverlay();
+      running = true;
+      requestAnimationFrame(loop);
+    };
+  </script>
+</body>
+</html>
