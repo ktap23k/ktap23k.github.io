@@ -180,6 +180,8 @@
 
 .jmp-effect--invincible { background: #f59e0b; }
 .jmp-effect--highjump { background: #3b82f6; }
+.jmp-effect--combo { background: #ef4444; }
+.jmp-effect--bonus { background: #a855f7; }
 
 .jmp-canvas-wrap {
   position: relative;
@@ -232,7 +234,7 @@
 }
 
 .jmp-overlay p {
-  max-width: 440px;
+  max-width: 520px;
   line-height: 1.65;
   opacity: 0.92;
 }
@@ -242,6 +244,107 @@
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
+/* Pause menu */
+.jmp-pause-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.jmp-pause-menu .btn {
+  min-width: 200px;
+}
+
+/* Shop */
+.jmp-shop__coins {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: #fbbf24;
+}
+
+.jmp-shop__section {
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.jmp-shop__section h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.jmp-shop__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.08);
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.jmp-shop__item small {
+  opacity: 0.75;
+}
+
+.jmp-shop__buy {
+  white-space: nowrap;
+  padding: 7px 12px;
+  font-size: 0.8rem;
+}
+
+.jmp-shop__skins {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+}
+
+.jmp-shop__skin {
+  background: rgba(255,255,255,0.08);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 10px 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.jmp-shop__skin:hover { transform: translateY(-3px); }
+.jmp-shop__skin--current { border-color: #22c55e; }
+.jmp-shop__skin--locked { opacity: 0.55; cursor: not-allowed; }
+
+.jmp-shop__swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin: 0 auto 6px;
+  border: 2px solid rgba(255,255,255,0.4);
+}
+
+/* Leaderboard */
+.jmp-leaderboard {
+  width: 100%;
+  max-width: 420px;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+}
+
+.jmp-leaderboard th,
+.jmp-leaderboard td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+
+.jmp-leaderboard th {
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+/* Controls */
 .jmp-controls {
   display: flex;
   gap: 10px;
@@ -303,4 +406,6 @@
   .jmp-touch { display: flex; }
   .jmp-title { font-size: 1.2rem; }
   .jmp-canvas-wrap { border-radius: 14px; }
+  .jmp-controls { justify-content: center; }
+  .jmp-controls .btn { padding: 8px 12px; font-size: 0.8rem; }
 }

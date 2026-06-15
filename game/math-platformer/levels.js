@@ -321,6 +321,28 @@ const QUESTION_BANK = {
       { q: '2, 3, 5, 7, 11, ... số tiếp theo?', a: '13' },
     ],
   },
+  hard: {
+    math: [
+      { q: '15² = ?', a: '225' },
+      { q: '√225 = ?', a: '15' },
+      { q: '1 + 2 + 3 + ... + 10 = ?', a: '55' },
+      { q: 'Tổng góc trong tam giác?', a: '180' },
+      { q: 'Số nguyên tố nhỏ nhất?', a: '2' },
+      { q: '1/2 + 1/3 = ?', a: '5/6' },
+      { q: '20% của 120 = ?', a: '24' },
+      { q: '3! = ?', a: '6' }
+    ],
+    mixed: [
+      { q: 'Thủ đô của Úc?', a: 'Canberra' },
+      { q: 'Nguyên tố hóa học có ký hiệu Fe?', a: 'Sắt' },
+      { q: 'Năm Columbus phát hiện châu Mỹ?', a: '1492' },
+      { q: 'Quốc gia đông dân nhất thế giới?', a: 'Ấn Độ' },
+      { q: 'Đơn vị đo cường độ dòng điện?', a: 'Ampe' },
+      { q: 'Tác giả Truyện Kiều?', a: 'Nguyễn Du' },
+      { q: 'Hành tinh lớn nhất Hệ Mặt Trờ?', a: 'Sao Mộc' },
+      { q: 'Đại dương nhỏ nhất?', a: 'Bắc Băng Dương' }
+    ]
+  }
 };
 
 /* ---------- Distractor generators ---------- */
@@ -524,17 +546,28 @@ function seededShuffle(rng, arr) {
 }
 
 /* ---------- Endless segment generator ---------- */
-function generateSegment(startX, startY, difficulty, seed, addStartPad = true) {
+function generateSegment(startX, startY, difficulty, seed, addStartPad = true, segmentIndex) {
   const rng = makeSeededRandom(seed);
   const platforms = [];
   const movingPlatforms = [];
   const hazards = [];
+  const windZones = [];
+  const enemies = [];
   const candidateSpots = [];
 
   let x = startX;
   let y = startY;
   const yRange = { min: 130, max: 500 };
   const minLength = 1500 + difficulty * 90;
+
+  // Determine segment index if not passed explicitly
+  if (segmentIndex === undefined) {
+    segmentIndex = Math.max(0, Math.round((seed - (typeof runState !== 'undefined' ? runState.seedOffset : 0)) / 999983));
+  }
+
+  // Boss segment: harder layout every 10 segments (index % 10 === 9 and index > 0)
+  const isBoss = segmentIndex > 0 && segmentIndex % 10 === 9;
+  const bossBoost = isBoss ? 1.35 : 1;
 
   // First platform: landing pad from previous segment
   if (addStartPad) {
@@ -544,9 +577,9 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true) {
   }
 
   // Build platforms until the segment reaches a reasonable length
-  while (x - startX < minLength) {
-    const gapMin = 70 + difficulty * 2;
-    const gapMax = Math.min(150, 85 + difficulty * 8);
+  while (x - startX < minLength * bossBoost) {
+    const gapMin = (70 + difficulty * 2) * bossBoost;
+    const gapMax = Math.min(170, (85 + difficulty * 8) * bossBoost);
     const gap = seededRandInt(rng, gapMin, gapMax);
     const w = seededRandInt(rng, 90, 180);
 
@@ -563,7 +596,14 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true) {
       x = lastP.x + lastP.w + 30;
     }
 
-    platforms.push({ x, y, w, h: 24 });
+    // Platform type: ice (segment 15+) or crumble (segment 20+)
+    let type = 'normal';
+    if (segmentIndex >= 20 && rng() < 0.22) type = 'crumble';
+    else if (segmentIndex >= 15 && rng() < 0.28) type = 'ice';
+
+    const platform = { x, y, w, h: 24, type };
+    if (type === 'crumble') platform.crumbleTimer = null;
+    platforms.push(platform);
 
     // Candidate collectable spot above this platform
     if (platforms.length > 1) {
@@ -585,7 +625,7 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true) {
     }
 
     // Spike patch on this platform
-    if (difficulty > 0 && rng() < 0.20 + difficulty * 0.03) {
+    if (difficulty > 0 && rng() < (0.20 + difficulty * 0.03) * bossBoost) {
       const sw = Math.min(w - 30, seededRandInt(rng, 30, 50));
       const sx = seededRandInt(rng, x - w + 15, x - 15 - sw);
       hazards.push({ x: sx, y: y - 20, w: sw, h: 20 });
@@ -597,15 +637,37 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true) {
       const fx = x - gap / 2 - fw / 2;
       hazards.push({ x: fx, y: 585, w: fw, h: 15 });
     }
+
+    // Wind zones from segment 10+
+    if (segmentIndex >= 10 && rng() < 0.18) {
+      const wzW = seededRandInt(rng, 160, 300);
+      const wzH = seededRandInt(rng, 250, 420);
+      const wzX = x - gap - w / 2;
+      const wzY = yRange.max - wzH + 40;
+      const force = -0.18 - rng() * 0.22;
+      windZones.push({ x: wzX, y: wzY, w: wzW, h: wzH, force });
+    }
+
+    // Moving enemies from segment 25+
+    if (segmentIndex >= 25 && rng() < 0.16) {
+      const ex = x - w / 2 - 15;
+      const ey = y - 30;
+      const range = seededRandInt(rng, 40, 90);
+      enemies.push({
+        x: ex, y: ey, w: 30, h: 30,
+        dx: seededRand(rng, 0.9, 1.8) * (rng() > 0.5 ? 1 : -1),
+        range, originX: ex, type: 'walker'
+      });
+    }
   }
 
   // End reward platform (always reachable from the last generated platform)
   const finalW = 180;
-  const finalGap = seededRandInt(rng, 70, 110);
+  const finalGap = seededRandInt(rng, 70, 110) * bossBoost;
   const finalDy = seededRandInt(rng, -70, 70);
   const finalX = x + finalGap;
   const finalY = Math.max(yRange.min, Math.min(yRange.max, y + finalDy));
-  platforms.push({ x: finalX, y: finalY, w: finalW, h: 28 });
+  platforms.push({ x: finalX, y: finalY, w: finalW, h: 28, type: 'normal' });
   candidateSpots.push({ x: finalX + finalW / 2 - 17, y: finalY - 85 });
 
   // Last 3 spots are reserved for answers (correct one at the very end)
@@ -622,10 +684,13 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true) {
     platforms,
     movingPlatforms,
     hazards,
+    windZones,
+    enemies,
     answerXs,
     powerupSpots,
     endX: finalX + finalW,
-    endY: finalY
+    endY: finalY,
+    isBoss
   };
 }
 
@@ -1285,6 +1350,44 @@ HARDCODED_LEVELS.push(
   }
 );
 
+/* ---------- Hard / Boss question pool ---------- */
+const HARD_QUESTIONS = (() => {
+  const arr = [];
+  Object.values(QUESTION_BANK.hard || {}).forEach(pool => arr.push(...pool));
+  return shuffle(arr);
+})();
+
+function getBossQuestion(index) {
+  return HARD_QUESTIONS[index % HARD_QUESTIONS.length];
+}
+
+/* ---------- Bonus stage generator ---------- */
+function generateBonusSegment(startX, startY, seed) {
+  const rng = makeSeededRandom(seed);
+  const platforms = [];
+  const hazards = [];
+  const enemies = [];
+  const coins = [];
+
+  // Long flat run with coins
+  const length = 2000;
+  const groundY = 480;
+  platforms.push({ x: startX, y: groundY, w: length, h: 40, type: 'normal' });
+
+  for (let cx = startX + 120; cx < startX + length - 80; cx += 90) {
+    if (rng() < 0.85) {
+      const cy = groundY - 40 - rng() * 120;
+      coins.push({ x: cx, y: cy, w: 24, h: 24, value: 10 });
+    }
+  }
+
+  return {
+    platforms, movingPlatforms: [], hazards, windZones: [], enemies,
+    answerXs: [], powerupSpots: [], coins,
+    endX: startX + length, endY: groundY, isBonus: true
+  };
+}
+
 /* ---------- Compose final LEVELS array ---------- */
 // Add question alternatives to hand-crafted levels so replays stay fresh.
 HARDCODED_LEVELS[0].alternatives = QUESTION_BANK.math.addEasy;
@@ -1362,5 +1465,8 @@ if (typeof window !== 'undefined') {
   window.makeSegmentAnswers = makeSegmentAnswers;
   window.makeSegmentPowerups = makeSegmentPowerups;
   window.getSegmentQuestion = getSegmentQuestion;
+  window.getBossQuestion = getBossQuestion;
+  window.generateBonusSegment = generateBonusSegment;
   window.POWERUP_TYPES = POWERUP_TYPES;
+  window.HARD_QUESTIONS = HARD_QUESTIONS;
 }

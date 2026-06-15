@@ -20,6 +20,7 @@
           <div class="jmp-stat">Màn <span id="levelStat">1</span></div>
           <div class="jmp-stat">Điểm <span id="scoreStat">0</span></div>
           <div class="jmp-stat">Mạng <span id="livesStat">3</span></div>
+          <div class="jmp-stat">🪙 <span id="coinStat">0</span></div>
         </div>
       </div>
 
@@ -41,6 +42,9 @@
 
       <div class="jmp-controls">
         <button class="btn btn--primary" id="restartBtn">🔄 Chơi lại màn</button>
+        <button class="btn btn--ghost" id="shopBtn">🛒 Cửa hàng</button>
+        <button class="btn btn--ghost" id="leaderboardBtn">🏆 Bảng xếp hạng</button>
+        <button class="btn btn--ghost" id="audioBtn" title="Tắt/bật nhạc">🔊</button>
         <button class="btn btn--ghost" id="resetProgressBtn">Xóa tiến trình</button>
         <button class="btn btn--ghost" id="backBtn">← Quay lại</button>
       </div>
@@ -59,13 +63,16 @@
         Nhấn phím lên / Space / W hai lần để nhảy đôi bay cao hơn.
         Thu thập vật phẩm: ❤️ +1 mạng, ★ bất tử, ↑ bay cao.
         Tránh chướng ngại vật màu đỏ, đừng rơi xuống vực, nhấn Enter để thử lại từ checkpoint gần nhất.
-        Kiến thức ngẫu nhiên: toán học, tiếng Anh, khoa học, địa lý, lịch sử và logic — càng về sau càng thử thách!
+        Nhấn ESC/P để tạm dừng, H để dùng gợi ý loại đáp án sai. Kiến thức ngẫu nhiên: toán học, tiếng Anh, khoa học, địa lý, lịch sử và logic — càng về sau càng thử thách!
       </div>
     </div>
   </main>
 
   <script src="../../assets/js/shared.js"></script>
   <script src="levels.js"></script>
+  <script src="audio.js"></script>
+  <script src="effects.js"></script>
+  <script src="shop.js"></script>
   <script src="math-platformer.js"></script>
 </body>
 </html>
