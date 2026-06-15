@@ -110,7 +110,8 @@ function saveProgress() {
 /* ========== LEVEL SETUP ========== */
 function setupLevel(idx) {
   levelIndex = idx;
-  currentLevel = JSON.parse(JSON.stringify(LEVELS[idx]));
+  // Use the levels API if available; it deep-clones and randomizes questions.
+  currentLevel = (typeof getLevel === 'function') ? getLevel(idx) : JSON.parse(JSON.stringify(LEVELS[idx]));
   player.x = currentLevel.playerStart.x;
   player.y = currentLevel.playerStart.y;
   player.vx = 0; player.vy = 0;
@@ -118,6 +119,15 @@ function setupLevel(idx) {
   document.getElementById('questionText').textContent = currentLevel.question;
   updateStats();
   saveProgress();
+}
+
+function getLevelWidth() {
+  if (!currentLevel) return 1300;
+  let maxX = 0;
+  currentLevel.platforms.forEach(p => { maxX = Math.max(maxX, p.x + p.w); });
+  (currentLevel.movingPlatforms || []).forEach(p => { maxX = Math.max(maxX, p.x + p.w + p.range); });
+  currentLevel.answers.forEach(a => { maxX = Math.max(maxX, a.x + 80); });
+  return Math.max(960, maxX + 240);
 }
 
 function updateStats() {
@@ -205,7 +215,7 @@ function update(dt) {
 
   const targetCam = player.x - canvas.width / 3;
   cameraX += (targetCam - cameraX) * 0.1;
-  cameraX = Math.max(0, Math.min(cameraX, 1300 - canvas.width));
+  cameraX = Math.max(0, Math.min(cameraX, getLevelWidth() - canvas.width));
 
   updateParticles();
   updateStats();
@@ -397,9 +407,16 @@ function draw() {
     ctx.fill();
 
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 15px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    let fontSize = 15;
+    ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+    let tw = ctx.measureText(a.value).width;
+    while (tw > 30 && fontSize > 8) {
+      fontSize--;
+      ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+      tw = ctx.measureText(a.value).width;
+    }
     ctx.fillText(a.value, a.x + 17, a.y + bounce + 17);
   });
 
@@ -620,13 +637,7 @@ document.getElementById('backBtn').addEventListener('click', () => {
 });
 
 /* ========== BOOT ========== */
-// Initialize moving platform origins
-LEVELS.forEach(l => {
-  if (l.movingPlatforms) {
-    l.movingPlatforms.forEach(p => { p.originX = p.x; });
-  }
-});
-
+// Moving-platform origins are now handled by getLevel/setupLevel.
 initBackground();
 loadProgress();
 setupLevel(levelIndex);
