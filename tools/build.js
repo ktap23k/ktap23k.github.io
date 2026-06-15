@@ -12,7 +12,7 @@
 const fs   = require('fs');
 const path = require('path');
 
-const postsDir     = path.join(__dirname, 'posts');
+const postsDir     = path.join(__dirname, '..', 'posts');
 const manifestPath = path.join(postsDir, 'manifest.json');
 
 // ── Helpers ──────────────────────────────────────────────────
