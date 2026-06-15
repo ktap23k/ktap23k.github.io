@@ -156,6 +156,31 @@
   line-height: 1.25;
 }
 
+.jmp-effects {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 5px;
+  min-height: 22px;
+}
+
+.jmp-effect {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--text-muted);
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+}
+
+.jmp-effect--invincible { background: #f59e0b; }
+.jmp-effect--highjump { background: #3b82f6; }
+
 .jmp-canvas-wrap {
   position: relative;
   background: var(--bg-card);

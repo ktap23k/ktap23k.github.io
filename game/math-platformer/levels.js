@@ -529,69 +529,104 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true) {
   const platforms = [];
   const movingPlatforms = [];
   const hazards = [];
-  const answerXs = [];
+  const candidateSpots = [];
 
   let x = startX;
   let y = startY;
-  const yRange = { min: 110, max: 520 };
-  const steps = 6 + Math.min(10, Math.floor(difficulty / 2)) + seededRandInt(rng, 0, 3);
+  const yRange = { min: 130, max: 500 };
+  const minLength = 1500 + difficulty * 90;
 
   // First platform: landing pad from previous segment
   if (addStartPad) {
-    const startW = 140;
+    const startW = 170;
     platforms.push({ x: startX, y: startY, w: startW, h: 28 });
     x += startW;
   }
 
-  for (let i = 0; i < steps; i++) {
-    const gapMin = 55 + difficulty * 2;
-    const gapMax = Math.min(160, 80 + difficulty * 10);
+  // Build platforms until the segment reaches a reasonable length
+  while (x - startX < minLength) {
+    const gapMin = 70 + difficulty * 2;
+    const gapMax = Math.min(150, 85 + difficulty * 8);
     const gap = seededRandInt(rng, gapMin, gapMax);
-    const w = seededRandInt(rng, 60, 170);
-    const dy = seededRandInt(rng, -90, 90);
+    const w = seededRandInt(rng, 90, 180);
+
+    // Keep vertical shifts playable: the larger the gap, the smaller the dy
+    const maxDy = Math.max(35, 105 - gap * 0.35);
+    const dy = seededRandInt(rng, -maxDy, maxDy);
+
     x += gap;
     y = Math.max(yRange.min, Math.min(yRange.max, y + dy));
 
+    // Avoid overlapping with the previous platform
+    const lastP = platforms[platforms.length - 1];
+    if (lastP && x < lastP.x + lastP.w + 30) {
+      x = lastP.x + lastP.w + 30;
+    }
+
     platforms.push({ x, y, w, h: 24 });
-    answerXs.push({ x: x + w / 2 - 17, y: y - 85 });
+
+    // Candidate collectable spot above this platform
+    if (platforms.length > 1) {
+      candidateSpots.push({ x: x + w / 2 - 17, y: y - 85 });
+    }
 
     x += w;
 
     // Moving bridge platform across the gap
-    if (rng() < 0.30 + difficulty * 0.04) {
+    if (rng() < 0.28 + difficulty * 0.04) {
       const mx = x - w - gap / 2 - 45;
-      const my = Math.max(130, Math.min(480, y + seededRandInt(rng, -90, 90)));
+      const my = Math.max(150, Math.min(470, y + seededRandInt(rng, -80, 80)));
       movingPlatforms.push({
         x: mx, y: my, w: 90, h: 22,
-        dx: seededRand(rng, 0.9, 2.4) * (rng() > 0.5 ? 1 : -1),
-        range: seededRandInt(rng, 60, 150),
+        dx: seededRand(rng, 0.9, 2.2) * (rng() > 0.5 ? 1 : -1),
+        range: seededRandInt(rng, 70, 140),
         originX: mx
       });
     }
 
     // Spike patch on this platform
-    if (difficulty > 0 && rng() < 0.22 + difficulty * 0.03) {
-      const sw = seededRandInt(rng, 24, 48);
-      const sx = seededRandInt(rng, x - w + 12, x - 12 - sw);
+    if (difficulty > 0 && rng() < 0.20 + difficulty * 0.03) {
+      const sw = Math.min(w - 30, seededRandInt(rng, 30, 50));
+      const sx = seededRandInt(rng, x - w + 15, x - 15 - sw);
       hazards.push({ x: sx, y: y - 20, w: sw, h: 20 });
     }
 
     // Floor spikes below a gap
-    if (rng() < 0.18) {
-      const fw = seededRandInt(rng, 40, 90);
+    if (rng() < 0.16) {
+      const fw = seededRandInt(rng, 40, 80);
       const fx = x - gap / 2 - fw / 2;
       hazards.push({ x: fx, y: 585, w: fw, h: 15 });
     }
   }
 
-  // End reward platform
-  const finalW = 170;
-  const finalX = x + seededRandInt(rng, 70, 130);
-  const finalY = Math.max(yRange.min, y - seededRandInt(rng, 40, 110));
+  // End reward platform (always reachable from the last generated platform)
+  const finalW = 180;
+  const finalGap = seededRandInt(rng, 70, 110);
+  const finalDy = seededRandInt(rng, -70, 70);
+  const finalX = x + finalGap;
+  const finalY = Math.max(yRange.min, Math.min(yRange.max, y + finalDy));
   platforms.push({ x: finalX, y: finalY, w: finalW, h: 28 });
-  answerXs.push({ x: finalX + finalW / 2 - 17, y: finalY - 85 });
+  candidateSpots.push({ x: finalX + finalW / 2 - 17, y: finalY - 85 });
 
-  return { platforms, movingPlatforms, hazards, answerXs, endX: finalX + finalW, endY: finalY };
+  // Last 3 spots are reserved for answers (correct one at the very end)
+  const answerXs = candidateSpots.slice(-3);
+  let powerupSpots = [];
+  const available = candidateSpots.slice(0, -3);
+  const powerupCount = available.length > 0 ? (rng() < 0.65 ? 1 : 2) : 0;
+  while (powerupSpots.length < powerupCount && available.length > 0) {
+    const idx = Math.floor(rng() * available.length);
+    powerupSpots.push(available.splice(idx, 1)[0]);
+  }
+
+  return {
+    platforms,
+    movingPlatforms,
+    hazards,
+    answerXs,
+    powerupSpots,
+    endX: finalX + finalW,
+    endY: finalY
+  };
 }
 
 function makeSegmentAnswers(rng, correct, answerXs) {
@@ -606,6 +641,24 @@ function makeSegmentAnswers(rng, correct, answerXs) {
     value: i === positions.length - 1 ? correct : distractors[i],
     correct: i === positions.length - 1
   }));
+}
+
+/* ---------- Power-ups ---------- */
+const POWERUP_TYPES = [
+  { type: 'life', label: '+1', color: '#ef4444', glow: 'rgba(239,68,68,0.45)' },
+  { type: 'invincible', label: '★', color: '#f59e0b', glow: 'rgba(245,158,11,0.45)' },
+  { type: 'highjump', label: '↑', color: '#3b82f6', glow: 'rgba(59,130,246,0.45)' }
+];
+
+function makeSegmentPowerups(rng, spots) {
+  return spots.map(spot => {
+    const p = seededPick(rng, POWERUP_TYPES);
+    return {
+      x: Math.round(spot.x),
+      y: Math.round(spot.y),
+      ...p
+    };
+  });
 }
 
 /* ---------- Procedural level factory ---------- */
@@ -1307,5 +1360,7 @@ if (typeof window !== 'undefined') {
   window.getTotalLevels = getTotalLevels;
   window.generateSegment = generateSegment;
   window.makeSegmentAnswers = makeSegmentAnswers;
+  window.makeSegmentPowerups = makeSegmentPowerups;
   window.getSegmentQuestion = getSegmentQuestion;
+  window.POWERUP_TYPES = POWERUP_TYPES;
 }

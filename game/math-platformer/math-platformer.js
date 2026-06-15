@@ -20,7 +20,11 @@ const player = {
   x: 0, y: 0, w: 28, h: 28,
   vx: 0, vy: 0,
   onGround: false,
-  facing: 1
+  facing: 1,
+  airJumps: 1,
+  maxAirJumpsBase: 1,
+  invincibleTimer: 0,
+  highJumpTimer: 0
 };
 
 // Endless run state
@@ -30,7 +34,7 @@ let runState = {
   checkpoints: [],
   question: '',
   correctAnswer: '',
-  world: { platforms: [], movingPlatforms: [], hazards: [], answers: [] }
+  world: { platforms: [], movingPlatforms: [], hazards: [], answers: [], powerups: [] }
 };
 
 let cameraX = 0;
@@ -44,6 +48,7 @@ window.addEventListener('keydown', e => {
   if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
   if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
   if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') {
+    if (!keys.jump) tryJump();
     keys.jump = true;
     if (e.code === 'Space') e.preventDefault();
   }
@@ -61,7 +66,11 @@ window.addEventListener('keyup', e => {
 
 document.querySelectorAll('.jmp-touch__btn').forEach(btn => {
   const k = btn.dataset.key;
-  const start = e => { e.preventDefault(); keys[k] = true; };
+  const start = e => {
+    e.preventDefault();
+    if (k === 'jump' && !keys[k]) tryJump();
+    keys[k] = true;
+  };
   const end = e => { e.preventDefault(); keys[k] = false; };
   btn.addEventListener('touchstart', start, { passive: false });
   btn.addEventListener('touchend', end);
@@ -138,7 +147,7 @@ function resetRunState() {
     checkpoints: [],
     question: '',
     correctAnswer: '',
-    world: { platforms: [], movingPlatforms: [], hazards: [], answers: [] }
+    world: { platforms: [], movingPlatforms: [], hazards: [], answers: [], powerups: [] }
   };
 }
 
@@ -151,8 +160,8 @@ function startRun(fresh = false) {
   }
 
   // Rebuild the world up to the current segment index deterministically.
-  // Only the active segment keeps its answers to avoid recollecting old ones.
-  runState.world = { platforms: [], movingPlatforms: [], hazards: [], answers: [] };
+  // Only the active segment keeps its answers/powerups to avoid recollecting old ones.
+  runState.world = { platforms: [], movingPlatforms: [], hazards: [], answers: [], powerups: [] };
   let startX = 0;
   let startY = 480;
 
@@ -181,10 +190,11 @@ function startRun(fresh = false) {
   cameraX = Math.max(0, player.x - canvas.width / 3);
 
   updateStats();
+  updateEffectsUI();
   saveProgress();
 }
 
-function appendSegment(startX, startY, segmentIndex, isFirst = false, withAnswers = true) {
+function appendSegment(startX, startY, segmentIndex, isFirst = false, withCollectables = true) {
   const difficulty = Math.min(18, Math.floor(segmentIndex / 2));
   const seed = runState.seedOffset + segmentIndex * 999983;
   const seg = generateSegment(startX, startY, difficulty, seed, isFirst);
@@ -194,8 +204,8 @@ function appendSegment(startX, startY, segmentIndex, isFirst = false, withAnswer
   runState.world.movingPlatforms.push(...seg.movingPlatforms);
   runState.world.hazards.push(...seg.hazards);
 
-  if (withAnswers) {
-    // Local seeded RNG for answer placement
+  if (withCollectables) {
+    // Local seeded RNG for collectable placement
     let s = seed >>> 0;
     if (s === 0) s = 12345;
     const rng = () => {
@@ -204,6 +214,8 @@ function appendSegment(startX, startY, segmentIndex, isFirst = false, withAnswer
     };
     const answers = makeSegmentAnswers(rng, q.a, seg.answerXs);
     runState.world.answers.push(...answers);
+    const powerups = makeSegmentPowerups(rng, seg.powerupSpots);
+    runState.world.powerups.push(...powerups);
   }
 
   return { endX: seg.endX, endY: seg.endY };
@@ -238,11 +250,45 @@ function updateStats() {
   document.getElementById('livesStat').textContent = lives;
 }
 
+function updateEffectsUI() {
+  const panel = document.getElementById('effectsPanel');
+  if (!panel) return;
+  const items = [];
+  if (player.invincibleTimer > 0) {
+    items.push(`<span class="jmp-effect jmp-effect--invincible">★ Bất tử ${Math.ceil(player.invincibleTimer / 1000)}s</span>`);
+  }
+  if (player.highJumpTimer > 0) {
+    items.push(`<span class="jmp-effect jmp-effect--highjump">↑ Bay cao ${Math.ceil(player.highJumpTimer / 1000)}s</span>`);
+  }
+  panel.innerHTML = items.join('');
+}
+
 /* ========== PHYSICS ========== */
 const GRAVITY = 0.6;
 const MOVE_SPEED = 4.5;
 const JUMP_FORCE = -12;
 const FRICTION = 0.82;
+const HIGH_JUMP_FORCE = -15;
+const DOUBLE_JUMP_FORCE = -10;
+const MAX_LIVES = 5;
+
+function getMaxAirJumps() {
+  return player.highJumpTimer > 0 ? 2 : player.maxAirJumpsBase;
+}
+
+function tryJump() {
+  if (player.onGround) {
+    player.vy = player.highJumpTimer > 0 ? HIGH_JUMP_FORCE : JUMP_FORCE;
+    player.onGround = false;
+    player.airJumps = getMaxAirJumps();
+  } else if (player.airJumps > 0) {
+    // Double jump / air jump: press up again while in the air to fly higher
+    const force = player.highJumpTimer > 0 ? HIGH_JUMP_FORCE : DOUBLE_JUMP_FORCE;
+    player.vy = force;
+    player.airJumps--;
+    spawnParticles(player.x + player.w / 2, player.y + player.h, '#60a5fa');
+  }
+}
 
 function update(dt) {
   if (!running) return;
@@ -259,10 +305,9 @@ function update(dt) {
   player.onGround = false;
   handleCollisions('y');
 
-  if (keys.jump && player.onGround) {
-    player.vy = JUMP_FORCE;
-    player.onGround = false;
-  }
+  // Timers
+  if (player.invincibleTimer > 0) player.invincibleTimer = Math.max(0, player.invincibleTimer - dt);
+  if (player.highJumpTimer > 0) player.highJumpTimer = Math.max(0, player.highJumpTimer - dt);
 
   if (runState.world.movingPlatforms) {
     runState.world.movingPlatforms.forEach(p => {
@@ -277,9 +322,20 @@ function update(dt) {
   }
 
   const hazardHit = runState.world.hazards.some(h => rectIntersect(player, h));
-  if (hazardHit) {
+  if (hazardHit && player.invincibleTimer <= 0) {
     loseLife();
     return;
+  }
+
+  // Power-ups
+  for (let i = runState.world.powerups.length - 1; i >= 0; i--) {
+    const pup = runState.world.powerups[i];
+    const box = { x: pup.x, y: pup.y, w: 32, h: 32 };
+    if (rectIntersect(player, box)) {
+      applyPowerup(pup);
+      runState.world.powerups.splice(i, 1);
+      saveProgress();
+    }
   }
 
   for (let i = runState.world.answers.length - 1; i >= 0; i--) {
@@ -299,7 +355,7 @@ function update(dt) {
 
         // Extend the world to the right with a new segment
         extendRun();
-      } else {
+      } else if (player.invincibleTimer <= 0) {
         spawnParticles(ans.x + 17, ans.y + 17, '#ef4444');
         loseLife('Sai đáp án!');
       }
@@ -314,6 +370,7 @@ function update(dt) {
 
   updateParticles();
   updateStats();
+  updateEffectsUI();
 }
 
 function findCheckpointPlatform(ans) {
@@ -325,6 +382,20 @@ function findCheckpointPlatform(ans) {
     }
   }
   return { x: ans.x + 17, y: ans.y + 85 };
+}
+
+function applyPowerup(pup) {
+  spawnParticles(pup.x + 16, pup.y + 16, pup.color);
+  if (pup.type === 'life') {
+    lives = Math.min(MAX_LIVES, lives + 1);
+  } else if (pup.type === 'invincible') {
+    player.invincibleTimer = 6000;
+  } else if (pup.type === 'highjump') {
+    player.highJumpTimer = 6000;
+    // Refresh air jumps immediately so the player can use the boost right away
+    player.airJumps = getMaxAirJumps();
+  }
+  updateStats();
 }
 
 function extendRun() {
@@ -530,8 +601,29 @@ function draw() {
   // Hazards
   runState.world.hazards.forEach(h => drawSpikes(ctx, h));
 
-  // Answers
+  // Power-ups
   const t = Date.now() * 0.003;
+  runState.world.powerups.forEach((pup, i) => {
+    const bounce = 3 * Math.sin(t + i * 1.2);
+    ctx.shadowColor = pup.glow;
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = pup.color;
+    roundRect(ctx, pup.x, pup.y + bounce, 32, 32, 10);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    roundRect(ctx, pup.x + 3, pup.y + bounce + 3, 26, 11, 5);
+    ctx.fill();
+
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 16px Inter, sans-serif';
+    ctx.fillText(pup.label, pup.x + 16, pup.y + bounce + 16);
+  });
+
+  // Answers
   runState.world.answers.forEach((a, i) => {
     const bounce = 2 * Math.sin(t + i * 0.8);
     const glow = a.correct ? 'rgba(34,197,94,0.35)' : 'rgba(245,158,11,0.35)';
@@ -560,7 +652,20 @@ function draw() {
     ctx.fillText(a.value, a.x + 17, a.y + bounce + 17);
   });
 
-  // Player
+  // Player — with active power-up effects
+  if (player.invincibleTimer > 0) {
+    const pulse = 1 + 0.15 * Math.sin(Date.now() * 0.015);
+    ctx.fillStyle = `rgba(245,158,11,${0.18 + 0.1 * Math.sin(Date.now() * 0.01)})`;
+    ctx.beginPath();
+    ctx.arc(player.x + player.w / 2, player.y + player.h / 2, player.w * pulse, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (player.highJumpTimer > 0) {
+    ctx.fillStyle = 'rgba(59,130,246,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(player.x + player.w / 2, player.y + player.h + 4, player.w * 0.7, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
   drawFox(ctx, player.x, player.y, player.w, player.h, player.facing);
 
   // Particles
@@ -766,7 +871,7 @@ document.getElementById('backBtn').addEventListener('click', () => {
 initBackground();
 loadProgress();
 startRun(false);
-showOverlay('🦊 Math Jump Adventure', 'Dùng phím mũi tên / WASD để di chuyển, Space để nhảy, Enter để thử lại. Thu thập đáp án đúng để mở rộng đường đi!', 'Bắt đầu');
+showOverlay('🦊 Math Jump Adventure', 'Dùng phím mũi tên / WASD để di chuyển, Space để nhảy, nhấn 2 lần để bay cao hơn. Thu thập đáp án đúng để mở rộng đường đi và các vật phẩm đặc biệt! Nhấn Enter để thử lại.', 'Bắt đầu');
 overlayBtn.onclick = () => {
   hideOverlay();
   running = true;
