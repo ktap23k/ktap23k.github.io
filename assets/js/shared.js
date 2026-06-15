@@ -4,11 +4,12 @@
  */
 
 const path = location.pathname;
-const ROOT = /\/(posts|game)\//.test(path) ? '../' : './';
+const ROOT = /\/game\/[^/]+\//.test(path) ? '../../'
+           : /\/(posts|game)\//.test(path) ? '../'
+           : './';
 
 // Game nav link needs special handling to avoid /game/game/index.html
 const GAME_LINK = /\/game\/(index\.html)?$/.test(path) ? './index.html'
-                : /\/game\//.test(path) ? '../index.html'
                 : ROOT + 'game/index.html';
 
 /* ── RENDER HEADER ─────────────────────────────────────────── */

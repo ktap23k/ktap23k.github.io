@@ -1,5 +1,5 @@
 /* =========================================
-   MATH JUMP ADVENTURE — GAME ENGINE
+   MATH JUMP ADVENTURE — ENDLESS RUN ENGINE
    ========================================= */
 
 const canvas = document.getElementById('gameCanvas');
@@ -9,7 +9,6 @@ const overlayTitle = document.getElementById('overlayTitle');
 const overlayDesc = document.getElementById('overlayDesc');
 const overlayBtn = document.getElementById('overlayBtn');
 
-let levelIndex = 0;
 let score = 0;
 let lives = 3;
 let running = false;
@@ -24,7 +23,16 @@ const player = {
   facing: 1
 };
 
-let currentLevel = null;
+// Endless run state
+let runState = {
+  segmentIndex: 0,
+  seedOffset: Math.floor(Math.random() * 100000),
+  checkpoints: [],
+  question: '',
+  correctAnswer: '',
+  world: { platforms: [], movingPlatforms: [], hazards: [], answers: [] }
+};
+
 let cameraX = 0;
 let particles = [];
 let stars = [];
@@ -38,6 +46,10 @@ window.addEventListener('keydown', e => {
   if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') {
     keys.jump = true;
     if (e.code === 'Space') e.preventDefault();
+  }
+  if (e.code === 'Enter') {
+    e.preventDefault();
+    retryFromCheckpoint();
   }
 });
 
@@ -96,42 +108,132 @@ function loadProgress() {
   if (saved) {
     try {
       const p = JSON.parse(saved);
-      levelIndex = Math.max(0, Math.min(LEVELS.length - 1, p.level || 0));
+      runState.segmentIndex = Math.max(0, p.segmentIndex || 0);
+      runState.seedOffset = p.seedOffset || Math.floor(Math.random() * 100000);
+      runState.checkpoints = Array.isArray(p.checkpoints) ? p.checkpoints : [];
       score = p.score || 0;
-      lives = p.lives || 3;
-    } catch (e) { levelIndex = 0; score = 0; lives = 3; }
+      lives = Math.max(1, Math.min(5, p.lives || 3));
+    } catch (e) {
+      resetRunState();
+    }
+  } else {
+    resetRunState();
   }
 }
 
 function saveProgress() {
-  localStorage.setItem('mathjump_progress', JSON.stringify({ level: levelIndex, score, lives }));
+  localStorage.setItem('mathjump_progress', JSON.stringify({
+    segmentIndex: runState.segmentIndex,
+    seedOffset: runState.seedOffset,
+    checkpoints: runState.checkpoints,
+    score,
+    lives
+  }));
 }
 
-/* ========== LEVEL SETUP ========== */
-function setupLevel(idx) {
-  levelIndex = idx;
-  // Use the levels API if available; it deep-clones and randomizes questions.
-  currentLevel = (typeof getLevel === 'function') ? getLevel(idx) : JSON.parse(JSON.stringify(LEVELS[idx]));
-  player.x = currentLevel.playerStart.x;
-  player.y = currentLevel.playerStart.y;
-  player.vx = 0; player.vy = 0;
-  cameraX = 0;
-  document.getElementById('questionText').textContent = currentLevel.question;
+function resetRunState() {
+  runState = {
+    segmentIndex: 0,
+    seedOffset: Math.floor(Math.random() * 100000),
+    checkpoints: [],
+    question: '',
+    correctAnswer: '',
+    world: { platforms: [], movingPlatforms: [], hazards: [], answers: [] }
+  };
+}
+
+/* ========== RUN SETUP ========== */
+function startRun(fresh = false) {
+  if (fresh) {
+    resetRunState();
+    score = 0;
+    lives = 3;
+  }
+
+  // Rebuild the world up to the current segment index deterministically.
+  // Only the active segment keeps its answers to avoid recollecting old ones.
+  runState.world = { platforms: [], movingPlatforms: [], hazards: [], answers: [] };
+  let startX = 0;
+  let startY = 480;
+
+  for (let i = 0; i <= runState.segmentIndex; i++) {
+    const isActive = i === runState.segmentIndex;
+    const segEnd = appendSegment(startX, startY, i, i === 0, isActive);
+    startX = segEnd.endX;
+    startY = segEnd.endY;
+  }
+
+  // Pick question for the active (next) segment
+  const q = getSegmentQuestion(runState.segmentIndex);
+  runState.question = q.q;
+  runState.correctAnswer = q.a;
+  document.getElementById('questionText').textContent = q.q;
+
+  // Spawn player at last checkpoint or beginning
+  const cp = runState.checkpoints.length > 0
+    ? runState.checkpoints[runState.checkpoints.length - 1]
+    : { x: 60, y: 480 };
+  player.x = cp.x - player.w / 2;
+  player.y = cp.y - player.h - 2;
+  player.vx = 0;
+  player.vy = 0;
+  player.facing = 1;
+  cameraX = Math.max(0, player.x - canvas.width / 3);
+
   updateStats();
   saveProgress();
 }
 
-function getLevelWidth() {
-  if (!currentLevel) return 1300;
-  let maxX = 0;
-  currentLevel.platforms.forEach(p => { maxX = Math.max(maxX, p.x + p.w); });
-  (currentLevel.movingPlatforms || []).forEach(p => { maxX = Math.max(maxX, p.x + p.w + p.range); });
-  currentLevel.answers.forEach(a => { maxX = Math.max(maxX, a.x + 80); });
-  return Math.max(960, maxX + 240);
+function appendSegment(startX, startY, segmentIndex, isFirst = false, withAnswers = true) {
+  const difficulty = Math.min(18, Math.floor(segmentIndex / 2));
+  const seed = runState.seedOffset + segmentIndex * 999983;
+  const seg = generateSegment(startX, startY, difficulty, seed, isFirst);
+  const q = getSegmentQuestion(segmentIndex);
+
+  runState.world.platforms.push(...seg.platforms);
+  runState.world.movingPlatforms.push(...seg.movingPlatforms);
+  runState.world.hazards.push(...seg.hazards);
+
+  if (withAnswers) {
+    // Local seeded RNG for answer placement
+    let s = seed >>> 0;
+    if (s === 0) s = 12345;
+    const rng = () => {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
+    const answers = makeSegmentAnswers(rng, q.a, seg.answerXs);
+    runState.world.answers.push(...answers);
+  }
+
+  return { endX: seg.endX, endY: seg.endY };
+}
+
+function findSegmentEnd(segmentIndex) {
+  // The last platform of the requested segment is the reward platform.
+  // We regenerate only the geometry (no answers) to find its end cheaply.
+  let startX = 0;
+  let startY = 480;
+  for (let i = 0; i <= segmentIndex; i++) {
+    const difficulty = Math.min(18, Math.floor(i / 2));
+    const seed = runState.seedOffset + i * 999983;
+    const seg = generateSegment(startX, startY, difficulty, seed, i === 0);
+    startX = seg.endX;
+    startY = seg.endY;
+  }
+  return { x: startX, y: startY };
+}
+
+function getWorldWidth() {
+  let maxX = canvas.width;
+  runState.world.platforms.forEach(p => { maxX = Math.max(maxX, p.x + p.w); });
+  runState.world.movingPlatforms.forEach(p => { maxX = Math.max(maxX, p.x + p.w + p.range); });
+  runState.world.answers.forEach(a => { maxX = Math.max(maxX, a.x + 80); });
+  return maxX + 240;
 }
 
 function updateStats() {
-  document.getElementById('levelStat').textContent = levelIndex + 1;
+  document.getElementById('levelStat').textContent = runState.segmentIndex + 1;
   document.getElementById('scoreStat').textContent = score;
   document.getElementById('livesStat').textContent = lives;
 }
@@ -143,7 +245,7 @@ const JUMP_FORCE = -12;
 const FRICTION = 0.82;
 
 function update(dt) {
-  if (!running || !currentLevel) return;
+  if (!running) return;
 
   if (keys.left) { player.vx -= 0.8; player.facing = -1; }
   if (keys.right) { player.vx += 0.8; player.facing = 1; }
@@ -162,67 +264,91 @@ function update(dt) {
     player.onGround = false;
   }
 
-  if (currentLevel.movingPlatforms) {
-    currentLevel.movingPlatforms.forEach(p => {
+  if (runState.world.movingPlatforms) {
+    runState.world.movingPlatforms.forEach(p => {
       p.x += p.dx;
       if (Math.abs(p.x - p.originX) > p.range) p.dx *= -1;
     });
   }
 
-  if (player.y > canvas.height + 60) {
+  if (player.y > canvas.height + 80) {
     loseLife();
     return;
   }
 
-  const hazardHit = currentLevel.hazards.some(h => rectIntersect(player, h));
+  const hazardHit = runState.world.hazards.some(h => rectIntersect(player, h));
   if (hazardHit) {
     loseLife();
     return;
   }
 
-  for (let i = currentLevel.answers.length - 1; i >= 0; i--) {
-    const ans = currentLevel.answers[i];
+  for (let i = runState.world.answers.length - 1; i >= 0; i--) {
+    const ans = runState.world.answers[i];
     const box = { x: ans.x, y: ans.y, w: 34, h: 34 };
     if (rectIntersect(player, box)) {
       if (ans.correct) {
         spawnParticles(ans.x + 17, ans.y + 17, '#22c55e');
-        score += 100 + levelIndex * 20;
-        showOverlay('🎉 Chính xác!', `Bạn đã vượt qua màn ${levelIndex + 1}.`, 'Màn tiếp theo');
-        running = false;
-        saveProgress();
-        overlayBtn.onclick = () => {
-          if (levelIndex + 1 < LEVELS.length) {
-            setupLevel(levelIndex + 1);
-            hideOverlay();
-            running = true;
-          } else {
-            showOverlay('🏆 Chiến thắng!', `Tổng điểm: ${score}. Bạn đã hoàn thành tất cả các màn!`, 'Chơi lại từ đầu');
-            overlayBtn.onclick = () => {
-              levelIndex = 0; score = 0; lives = 3;
-              setupLevel(0);
-              hideOverlay();
-              running = true;
-            };
-          }
-        };
+        score += 100 + runState.segmentIndex * 25;
+
+        // Save checkpoint at the platform under the answer
+        const cp = findCheckpointPlatform(ans);
+        runState.checkpoints.push(cp);
+
+        // Remove this answer so it can't be collected again
+        runState.world.answers.splice(i, 1);
+
+        // Extend the world to the right with a new segment
+        extendRun();
       } else {
         spawnParticles(ans.x + 17, ans.y + 17, '#ef4444');
         loseLife('Sai đáp án!');
       }
+      saveProgress();
       return;
     }
   }
 
   const targetCam = player.x - canvas.width / 3;
   cameraX += (targetCam - cameraX) * 0.1;
-  cameraX = Math.max(0, Math.min(cameraX, getLevelWidth() - canvas.width));
+  cameraX = Math.max(0, Math.min(cameraX, getWorldWidth() - canvas.width));
 
   updateParticles();
   updateStats();
 }
 
+function findCheckpointPlatform(ans) {
+  const allPlatforms = runState.world.platforms.concat(runState.world.movingPlatforms || []);
+  const ax = ans.x + 17;
+  for (const p of allPlatforms) {
+    if (ax >= p.x - 10 && ax <= p.x + p.w + 10 && ans.y + 85 >= p.y - 5 && ans.y + 85 <= p.y + p.h + 5) {
+      return { x: p.x + p.w / 2, y: p.y };
+    }
+  }
+  return { x: ans.x + 17, y: ans.y + 85 };
+}
+
+function extendRun() {
+  runState.segmentIndex++;
+
+  // Find current end of world
+  let startX = 0;
+  let startY = 480;
+  for (let i = 0; i < runState.segmentIndex; i++) {
+    const segEnd = findSegmentEnd(i);
+    startX = segEnd.x;
+    startY = segEnd.y;
+  }
+
+  appendSegment(startX, startY, runState.segmentIndex, false, true);
+
+  const q = getSegmentQuestion(runState.segmentIndex);
+  runState.question = q.q;
+  runState.correctAnswer = q.a;
+  document.getElementById('questionText').textContent = q.q;
+}
+
 function handleCollisions(axis) {
-  const platforms = currentLevel.platforms.concat(currentLevel.movingPlatforms || []);
+  const platforms = runState.world.platforms.concat(runState.world.movingPlatforms || []);
   for (const p of platforms) {
     if (rectIntersect(player, p)) {
       if (axis === 'x') {
@@ -252,23 +378,47 @@ function rectIntersect(a, b) {
 function loseLife(msg) {
   lives--;
   saveProgress();
+  running = false;
+
   if (lives <= 0) {
-    showOverlay('💔 Game Over', `Điểm của bạn: ${score}. Hãy thử lại!`, 'Chơi lại');
+    showOverlay('💔 Game Over', `Bạn đạt ${runState.segmentIndex} đoạn — Điểm: ${score}. Thử lại từ đầu?`, 'Chơi lại');
     overlayBtn.onclick = () => {
-      levelIndex = 0; score = 0; lives = 3;
-      setupLevel(0);
+      startRun(true);
       hideOverlay();
       running = true;
     };
   } else {
-    showOverlay('😅 Ôi không!', msg || 'Bạn đã mất một mạng.', 'Thử lại màn này');
+    const hasCheckpoint = runState.checkpoints.length > 0;
+    showOverlay('😅 Ôi không!', msg || 'Bạn đã mất một mạng.', hasCheckpoint ? 'Thử lại từ checkpoint' : 'Thử lại');
     overlayBtn.onclick = () => {
-      setupLevel(levelIndex);
+      respawnAtCheckpoint();
       hideOverlay();
       running = true;
     };
   }
-  running = false;
+}
+
+function respawnAtCheckpoint() {
+  const cp = runState.checkpoints.length > 0
+    ? runState.checkpoints[runState.checkpoints.length - 1]
+    : { x: 60, y: 480 };
+  player.x = cp.x - player.w / 2;
+  player.y = cp.y - player.h - 2;
+  player.vx = 0;
+  player.vy = 0;
+  cameraX = Math.max(0, player.x - canvas.width / 3);
+}
+
+function retryFromCheckpoint() {
+  if (overlay.classList.contains('show')) {
+    overlayBtn.click();
+    return;
+  }
+  // If running, instantly respawn at checkpoint
+  if (running) {
+    spawnParticles(player.x + player.w / 2, player.y + player.h / 2, '#f59e0b');
+    respawnAtCheckpoint();
+  }
 }
 
 /* ========== PARTICLES ========== */
@@ -368,30 +518,21 @@ function draw() {
     drawCloud(ctx, drawX, c.y, c.w);
   });
 
-  if (!currentLevel) return;
   ctx.save();
   ctx.translate(-cameraX, 0);
 
   // Platforms
-  currentLevel.platforms.forEach(p => {
-    drawPlatform(ctx, p, isDark);
-  });
+  runState.world.platforms.forEach(p => drawPlatform(ctx, p, isDark));
 
   // Moving platforms
-  if (currentLevel.movingPlatforms) {
-    currentLevel.movingPlatforms.forEach(p => {
-      drawPlatform(ctx, p, isDark, true);
-    });
-  }
+  runState.world.movingPlatforms.forEach(p => drawPlatform(ctx, p, isDark, true));
 
-  // Hazards (softer red-orange spikes)
-  currentLevel.hazards.forEach(h => {
-    drawSpikes(ctx, h);
-  });
+  // Hazards
+  runState.world.hazards.forEach(h => drawSpikes(ctx, h));
 
   // Answers
   const t = Date.now() * 0.003;
-  currentLevel.answers.forEach((a, i) => {
+  runState.world.answers.forEach((a, i) => {
     const bounce = 2 * Math.sin(t + i * 0.8);
     const glow = a.correct ? 'rgba(34,197,94,0.35)' : 'rgba(245,158,11,0.35)';
     ctx.shadowColor = glow;
@@ -401,7 +542,6 @@ function draw() {
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // Inner highlight
     ctx.fillStyle = 'rgba(255,255,255,0.25)';
     roundRect(ctx, a.x + 3, a.y + bounce + 3, 28, 12, 6);
     ctx.fill();
@@ -420,7 +560,7 @@ function draw() {
     ctx.fillText(a.value, a.x + 17, a.y + bounce + 17);
   });
 
-  // Player — cute fox
+  // Player
   drawFox(ctx, player.x, player.y, player.w, player.h, player.facing);
 
   // Particles
@@ -441,26 +581,21 @@ function drawPlatform(ctx, p, isDark, moving = false) {
   const top = isDark ? '#34d399' : '#4ade80';
   const rim = isDark ? '#6ee7b7' : '#86efac';
 
-  // Soft shadow
   ctx.fillStyle = 'rgba(0,0,0,0.12)';
   roundRect(ctx, p.x + 2, p.y + 4, p.w, p.h, 6);
   ctx.fill();
 
-  // Earth body
   ctx.fillStyle = base;
   roundRect(ctx, p.x, p.y, p.w, p.h, 6);
   ctx.fill();
 
-  // Grass top
   ctx.fillStyle = top;
   roundRect(ctx, p.x, p.y, p.w, 8, 6);
   ctx.fill();
 
-  // Lighter rim
   ctx.fillStyle = rim;
   ctx.fillRect(p.x, p.y + 6, p.w, 3);
 
-  // Tiny flowers / dots
   ctx.fillStyle = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.55)';
   for (let i = 16; i < p.w - 8; i += 32) {
     ctx.beginPath();
@@ -481,7 +616,6 @@ function drawSpikes(ctx, h) {
   ctx.lineTo(h.x + h.w, h.y + h.h);
   ctx.fill();
 
-  // Highlight
   ctx.clip();
   ctx.fillStyle = '#fb923c';
   ctx.fillRect(h.x, h.y, h.w, h.h * 0.45);
@@ -502,13 +636,11 @@ function drawFox(ctx, x, y, w, h, facing) {
   const cx = x + w / 2;
   const cy = y + h / 2;
 
-  // Shadow
   ctx.fillStyle = 'rgba(0,0,0,0.12)';
   ctx.beginPath();
   ctx.ellipse(cx, y + h - 2, w * 0.55, 5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Tail
   ctx.fillStyle = '#ea580c';
   ctx.beginPath();
   const tx = facing > 0 ? x - 4 : x + w + 4;
@@ -519,7 +651,6 @@ function drawFox(ctx, x, y, w, h, facing) {
   ctx.ellipse(tx + facing * 3, y + h * 0.7, 5, 8, facing * 0.35, 0, Math.PI * 2);
   ctx.fill();
 
-  // Ears
   ctx.fillStyle = '#c2410c';
   ctx.beginPath();
   const earLeftX = facing > 0 ? x + 5 : x + w - 5;
@@ -534,18 +665,15 @@ function drawFox(ctx, x, y, w, h, facing) {
   ctx.lineTo(earRightX + (facing > 0 ? 5 : -5), y + 4);
   ctx.fill();
 
-  // Body
   ctx.fillStyle = '#f97316';
   roundRect(ctx, x, y, w, h, 10);
   ctx.fill();
 
-  // White belly / muzzle
   ctx.fillStyle = '#fff7ed';
   ctx.beginPath();
   ctx.ellipse(cx, y + h * 0.62, w * 0.35, h * 0.32, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Eyes
   ctx.fillStyle = '#1f2937';
   const eyeBaseX = facing > 0 ? x + 18 : x + w - 18;
   ctx.beginPath();
@@ -553,14 +681,12 @@ function drawFox(ctx, x, y, w, h, facing) {
   ctx.arc(eyeBaseX - (facing > 0 ? 7 : -7), y + 11, 3, 0, Math.PI * 2);
   ctx.fill();
 
-  // Eye shine
   ctx.fillStyle = '#fff';
   ctx.beginPath();
   ctx.arc(eyeBaseX + 1, y + 10, 1.2, 0, Math.PI * 2);
   ctx.arc(eyeBaseX - (facing > 0 ? 6 : -6), y + 10, 1.2, 0, Math.PI * 2);
   ctx.fill();
 
-  // Nose
   ctx.fillStyle = '#1f2937';
   ctx.beginPath();
   ctx.arc(cx + facing * 7, y + 17, 2.5, 0, Math.PI * 2);
@@ -615,9 +741,10 @@ function hideOverlay() {
 /* ========== CONTROLS ========== */
 document.getElementById('restartBtn').addEventListener('click', () => {
   running = false;
-  showOverlay('Chơi lại màn', 'Bạn sẽ bắt đầu lại màn hiện tại.', 'Bắt đầu');
+  const hasCheckpoint = runState.checkpoints.length > 0;
+  showOverlay('Chơi lại', hasCheckpoint ? 'Bắt đầu lại từ checkpoint cuối.' : 'Bắt đầu lại từ đầu.', hasCheckpoint ? 'Thử lại từ checkpoint' : 'Thử lại');
   overlayBtn.onclick = () => {
-    setupLevel(levelIndex);
+    respawnAtCheckpoint();
     hideOverlay();
     running = true;
   };
@@ -626,8 +753,7 @@ document.getElementById('restartBtn').addEventListener('click', () => {
 document.getElementById('resetProgressBtn').addEventListener('click', () => {
   if (confirm('Xóa toàn bộ tiến trình và điểm số?')) {
     localStorage.removeItem('mathjump_progress');
-    levelIndex = 0; score = 0; lives = 3;
-    setupLevel(0);
+    startRun(true);
     running = true;
   }
 });
@@ -637,11 +763,10 @@ document.getElementById('backBtn').addEventListener('click', () => {
 });
 
 /* ========== BOOT ========== */
-// Moving-platform origins are now handled by getLevel/setupLevel.
 initBackground();
 loadProgress();
-setupLevel(levelIndex);
-showOverlay('🦊 Math Jump Adventure', 'Dùng phím mũi tên / WASD để di chuyển, Space để nhảy. Thu thập đáp án đúng!', 'Bắt đầu');
+startRun(false);
+showOverlay('🦊 Math Jump Adventure', 'Dùng phím mũi tên / WASD để di chuyển, Space để nhảy, Enter để thử lại. Thu thập đáp án đúng để mở rộng đường đi!', 'Bắt đầu');
 overlayBtn.onclick = () => {
   hideOverlay();
   running = true;

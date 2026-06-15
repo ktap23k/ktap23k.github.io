@@ -24,12 +24,12 @@
       </div>
 
       <div class="jmp-canvas-wrap" id="canvasWrap">
-        <canvas id="gameCanvas" width="960" height="600"></canvas>
-
         <div class="jmp-question">
           <div class="jmp-question__label">Nhiệm vụ</div>
           <div class="jmp-question__text" id="questionText">Đang tải...</div>
         </div>
+
+        <canvas id="gameCanvas" width="960" height="600"></canvas>
 
         <div class="jmp-overlay" id="overlay">
           <h2 id="overlayTitle">Sẵn sàng?</h2>
@@ -53,9 +53,10 @@
       </div>
 
       <div class="jmp-help">
-        <strong>Hướng dẫn:</strong> Di chuyển nhân vật đến vật phẩm chứa đáp án đúng.
-        Tránh chướng ngại vật màu đỏ và đừng rơi xuống vực.
-        Game có hơn 200 màn với kiến thức ngẫu nhiên: toán học, tiếng Anh, khoa học, địa lý, lịch sử và logic — càng về sau càng thử thách!
+        <strong>Hướng dẫn:</strong> Di chuyển nhân vật đến vật phẩm chứa đáp án đúng ở cuối mỗi đoạn đường.
+        Mỗi đáp án đúng trở thành checkpoint và mở rộng thế giới về bên phải.
+        Tránh chướng ngại vật màu đỏ, đừng rơi xuống vực, nhấn Enter để thử lại từ checkpoint gần nhất.
+        Kiến thức ngẫu nhiên: toán học, tiếng Anh, khoa học, địa lý, lịch sử và logic — càng về sau càng thử thách!
       </div>
     </div>
   </main>

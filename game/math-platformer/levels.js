@@ -501,6 +501,113 @@ function makeAnswers(correct, positions) {
   }));
 }
 
+/* ---------- Seeded random (deterministic runs) ---------- */
+function makeSeededRandom(seed) {
+  let s = seed >>> 0;
+  if (s === 0) s = 12345;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+function seededRand(rng, min, max) { return rng() * (max - min) + min; }
+function seededRandInt(rng, min, max) { return Math.floor(seededRand(rng, min, max + 1)); }
+function seededPick(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
+function seededShuffle(rng, arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ---------- Endless segment generator ---------- */
+function generateSegment(startX, startY, difficulty, seed, addStartPad = true) {
+  const rng = makeSeededRandom(seed);
+  const platforms = [];
+  const movingPlatforms = [];
+  const hazards = [];
+  const answerXs = [];
+
+  let x = startX;
+  let y = startY;
+  const yRange = { min: 110, max: 520 };
+  const steps = 6 + Math.min(10, Math.floor(difficulty / 2)) + seededRandInt(rng, 0, 3);
+
+  // First platform: landing pad from previous segment
+  if (addStartPad) {
+    const startW = 140;
+    platforms.push({ x: startX, y: startY, w: startW, h: 28 });
+    x += startW;
+  }
+
+  for (let i = 0; i < steps; i++) {
+    const gapMin = 55 + difficulty * 2;
+    const gapMax = Math.min(160, 80 + difficulty * 10);
+    const gap = seededRandInt(rng, gapMin, gapMax);
+    const w = seededRandInt(rng, 60, 170);
+    const dy = seededRandInt(rng, -90, 90);
+    x += gap;
+    y = Math.max(yRange.min, Math.min(yRange.max, y + dy));
+
+    platforms.push({ x, y, w, h: 24 });
+    answerXs.push({ x: x + w / 2 - 17, y: y - 85 });
+
+    x += w;
+
+    // Moving bridge platform across the gap
+    if (rng() < 0.30 + difficulty * 0.04) {
+      const mx = x - w - gap / 2 - 45;
+      const my = Math.max(130, Math.min(480, y + seededRandInt(rng, -90, 90)));
+      movingPlatforms.push({
+        x: mx, y: my, w: 90, h: 22,
+        dx: seededRand(rng, 0.9, 2.4) * (rng() > 0.5 ? 1 : -1),
+        range: seededRandInt(rng, 60, 150),
+        originX: mx
+      });
+    }
+
+    // Spike patch on this platform
+    if (difficulty > 0 && rng() < 0.22 + difficulty * 0.03) {
+      const sw = seededRandInt(rng, 24, 48);
+      const sx = seededRandInt(rng, x - w + 12, x - 12 - sw);
+      hazards.push({ x: sx, y: y - 20, w: sw, h: 20 });
+    }
+
+    // Floor spikes below a gap
+    if (rng() < 0.18) {
+      const fw = seededRandInt(rng, 40, 90);
+      const fx = x - gap / 2 - fw / 2;
+      hazards.push({ x: fx, y: 585, w: fw, h: 15 });
+    }
+  }
+
+  // End reward platform
+  const finalW = 170;
+  const finalX = x + seededRandInt(rng, 70, 130);
+  const finalY = Math.max(yRange.min, y - seededRandInt(rng, 40, 110));
+  platforms.push({ x: finalX, y: finalY, w: finalW, h: 28 });
+  answerXs.push({ x: finalX + finalW / 2 - 17, y: finalY - 85 });
+
+  return { platforms, movingPlatforms, hazards, answerXs, endX: finalX + finalW, endY: finalY };
+}
+
+function makeSegmentAnswers(rng, correct, answerXs) {
+  const [d1, d2] = distractorsFor(correct);
+  const positions = answerXs.slice(-3);
+  // Correct answer is always at the last (final) position;
+  // distractors are shuffled into the earlier two spots.
+  const distractors = seededShuffle(rng, [d1, d2]);
+  return positions.map((p, i) => ({
+    x: Math.round(p.x),
+    y: Math.round(p.y),
+    value: i === positions.length - 1 ? correct : distractors[i],
+    correct: i === positions.length - 1
+  }));
+}
+
 /* ---------- Procedural level factory ---------- */
 // Build a shuffled pool once for procedural levels
 const ALL_QUESTIONS = (() => {
@@ -1189,9 +1296,16 @@ function getTotalLevels() {
   return LEVELS.length;
 }
 
+function getSegmentQuestion(index) {
+  return ALL_QUESTIONS[index % ALL_QUESTIONS.length];
+}
+
 // Expose for the game engine
 if (typeof window !== 'undefined') {
   window.LEVELS = LEVELS;
   window.getLevel = getLevel;
   window.getTotalLevels = getTotalLevels;
+  window.generateSegment = generateSegment;
+  window.makeSegmentAnswers = makeSegmentAnswers;
+  window.getSegmentQuestion = getSegmentQuestion;
 }
