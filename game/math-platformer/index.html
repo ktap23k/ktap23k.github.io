@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Jump Adventure — Ktap Arcade</title>
+  <meta name="description" content="Platformer giáo dục 2D: nhảy qua chướng ngại, thu thập đáp án đúng của câu hỏi toán và tiếng Anh." />
+  <link rel="stylesheet" href="../../assets/css/style.css" />
+  <link rel="stylesheet" href="math-platformer.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <main class="jmp-page">
+    <div class="container jmp-shell">
+      <div class="jmp-header">
+        <h1 class="jmp-title">🦊 Math Jump Adventure</h1>
+        <div class="jmp-stats">
+          <div class="jmp-stat">Màn <span id="levelStat">1</span></div>
+          <div class="jmp-stat">Điểm <span id="scoreStat">0</span></div>
+          <div class="jmp-stat">Mạng <span id="livesStat">3</span></div>
+        </div>
+      </div>
+
+      <div class="jmp-question">
+        <div class="jmp-question__label">Nhiệm vụ</div>
+        <div class="jmp-question__text" id="questionText">Đang tải...</div>
+      </div>
+
+      <div class="jmp-canvas-wrap" id="canvasWrap">
+        <canvas id="gameCanvas" width="960" height="600"></canvas>
+        <div class="jmp-overlay" id="overlay">
+          <h2 id="overlayTitle">Sẵn sàng?</h2>
+          <p id="overlayDesc">Dùng phím mũi tên hoặc WASD để di chuyển, Space để nhảy. Thu thập đáp án đúng!</p>
+          <button class="btn btn--primary" id="overlayBtn">Bắt đầu</button>
+        </div>
+      </div>
+
+      <div class="jmp-controls">
+        <button class="btn btn--primary" id="restartBtn">🔄 Chơi lại màn</button>
+        <button class="btn btn--ghost" id="resetProgressBtn">Xóa tiến trình</button>
+        <button class="btn btn--ghost" id="backBtn">← Quay lại</button>
+      </div>
+
+      <div class="jmp-touch">
+        <div class="jmp-touch__group">
+          <button class="jmp-touch__btn" data-key="left">←</button>
+          <button class="jmp-touch__btn" data-key="right">→</button>
+        </div>
+        <button class="jmp-touch__btn" data-key="jump">↑</button>
+      </div>
+
+      <div class="jmp-help">
+        <strong>Hướng dẫn:</strong> Di chuyển nhân vật đến vật phẩm chứa đáp án đúng.
+        Tránh chướng ngại vật màu đỏ và đừng rơi xuống vực.
+        Mỗi màn là một chủ đề toán hoặc tiếng Anh khác nhau — càng về sau càng thử thách!
+      </div>
+    </div>
+  </main>
+
+  <script src="../../assets/js/shared.js"></script>
+  <script src="levels.js"></script>
+  <script src="math-platformer.js"></script>
+</body>
+</html>

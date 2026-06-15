@@ -10,60 +10,161 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    .games-page { padding: 48px 0 80px; }
+    .games-page {
+      position: relative;
+      min-height: 100vh;
+      padding: 48px 0 80px;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(232, 93, 4, 0.14) 0%, transparent 30%),
+        radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.12) 0%, transparent 35%),
+        var(--bg);
+      overflow: hidden;
+    }
+
+    /* Animated floating orbs */
+    .games-page::before,
+    .games-page::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    .games-page::before {
+      width: 360px;
+      height: 360px;
+      background: linear-gradient(135deg, #e85d04, #ffb347);
+      top: -100px;
+      right: -80px;
+      animation: orbFloat1 22s ease-in-out infinite;
+    }
+    .games-page::after {
+      width: 300px;
+      height: 300px;
+      background: linear-gradient(135deg, #3b82f6, #22d3ee);
+      bottom: -80px;
+      left: -80px;
+      animation: orbFloat2 18s ease-in-out infinite;
+    }
+    .games-orb {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.45;
+      pointer-events: none;
+      background: linear-gradient(135deg, #22c55e, #86efac);
+      top: 40%;
+      left: 60%;
+      animation: orbFloat3 25s ease-in-out infinite;
+    }
+
+    @keyframes orbFloat1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(-40px, 50px) scale(1.08); }
+      50% { transform: translate(30px, -30px) scale(0.95); }
+      75% { transform: translate(-20px, -40px) scale(1.03); }
+    }
+    @keyframes orbFloat2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(50px, -30px) scale(1.05); }
+      66% { transform: translate(-30px, 40px) scale(0.98); }
+    }
+    @keyframes orbFloat3 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-60px, -60px) scale(1.12); }
+    }
+
     .games-hero {
+      position: relative;
+      z-index: 1;
       text-align: center;
-      padding: 32px 0 40px;
+      padding: 32px 0 48px;
     }
     .games-hero__title {
-      font-size: clamp(2rem, 5vw, 3rem);
+      font-size: clamp(2.2rem, 6vw, 3.5rem);
       font-weight: 800;
       letter-spacing: -0.03em;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+      background: linear-gradient(90deg, var(--accent), #2563eb, #22c55e);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientText 4s linear infinite;
+    }
+    @keyframes gradientText {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
     }
     .games-hero__desc {
       color: var(--text-muted);
-      font-size: 1.05rem;
-      max-width: 560px;
+      font-size: 1.08rem;
+      max-width: 580px;
       margin: 0 auto;
-      line-height: 1.7;
+      line-height: 1.75;
     }
 
     .games-grid {
+      position: relative;
+      z-index: 1;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 28px;
     }
     .game-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px;
+      border-radius: 20px;
+      padding: 32px;
       box-shadow: var(--shadow);
-      transition: transform var(--transition), box-shadow var(--transition);
+      transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 18px;
       text-decoration: none;
       color: inherit;
+      position: relative;
+      overflow: hidden;
+    }
+    .game-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--accent), #2563eb);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
     }
     .game-card:hover {
-      transform: translateY(-4px);
+      transform: translateY(-6px);
       box-shadow: var(--shadow-hover);
       border-color: var(--accent);
     }
+    .game-card:hover::before {
+      transform: scaleX(1);
+    }
     .game-card__icon {
-      width: 64px;
-      height: 64px;
-      border-radius: 16px;
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2rem;
+      font-size: 2.2rem;
       background: var(--accent-light);
+      transition: transform 0.25s;
+    }
+    .game-card:hover .game-card__icon {
+      transform: scale(1.1) rotate(-4deg);
     }
     .game-card__title {
-      font-size: 1.25rem;
+      font-size: 1.35rem;
       font-weight: 700;
       margin-bottom: 4px;
     }
@@ -74,29 +175,33 @@
     }
     .game-card__desc {
       color: var(--text-muted);
-      font-size: 0.92rem;
-      line-height: 1.65;
+      font-size: 0.95rem;
+      line-height: 1.7;
       flex: 1;
+    }
+    .game-card__meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
     }
     .game-card__cta {
       margin-top: auto;
       align-self: flex-start;
     }
-    .game-card__meta {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      font-weight: 600;
-    }
 
     .coming-soon {
-      opacity: 0.7;
+      opacity: 0.65;
       pointer-events: none;
     }
-    .coming-soon .game-card__icon { filter: grayscale(0.6); }
+    .coming-soon .game-card__icon {
+      filter: grayscale(0.7);
+      background: var(--bg-alt);
+    }
   </style>
 </head>
 <body>
   <main class="games-page">
+    <div class="games-orb"></div>
     <div class="container">
       <div class="games-hero">
         <h1 class="games-hero__title">🎮 Ktap Arcade</h1>
@@ -107,7 +212,7 @@
       </div>
 
       <div class="games-grid">
-        <a href="pikachu.html" class="game-card">
+        <a href="pikachu/index.html" class="game-card">
           <div class="game-card__icon">⚡</div>
           <div>
             <h2 class="game-card__title">Pikachu Classic</h2>
@@ -124,7 +229,7 @@
           <span class="btn btn--primary game-card__cta">Chơi ngay →</span>
         </a>
 
-        <a href="math-platformer.html" class="game-card">
+        <a href="math-platformer/index.html" class="game-card">
           <div class="game-card__icon">🦊</div>
           <div>
             <h2 class="game-card__title">Math Jump Adventure</h2>

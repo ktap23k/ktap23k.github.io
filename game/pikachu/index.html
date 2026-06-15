@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pikachu Classic — Ktap Arcade</title>
+  <meta name="description" content="Game Pikachu Onet classic: nối thú cưng, tự động tạo màn, lưu điểm local." />
+  <link rel="stylesheet" href="../../assets/css/style.css" />
+  <link rel="stylesheet" href="pikachu.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <main class="pika-page">
+    <div class="container pika-shell">
+      <div class="pika-header">
+        <h1 class="pika-title">⚡ Pikachu Classic</h1>
+        <div class="pika-stats">
+          <div class="pika-stat">Level <span id="levelStat">1</span></div>
+          <div class="pika-stat">Điểm <span id="scoreStat">0</span></div>
+          <div class="pika-stat">Cao nhất <span id="highStat">0</span></div>
+        </div>
+      </div>
+
+      <div class="pika-progress">
+        <div class="pika-progress__bar" id="timeBar"></div>
+      </div>
+
+      <div class="pika-controls">
+        <button class="btn btn--primary" id="restartBtn">🔄 Chơi lại</button>
+        <button class="btn btn--ghost" id="shuffleBtn">🔀 Xáo trộn</button>
+        <button class="btn btn--ghost" id="hintBtn">💡 Gợi ý</button>
+        <button class="btn btn--ghost" id="backBtn">← Quay lại</button>
+      </div>
+
+      <div class="pika-board-wrap" id="boardWrap">
+        <canvas class="pika-line-layer" id="lineLayer"></canvas>
+        <canvas class="pika-particles" id="particleLayer"></canvas>
+        <div class="pika-board" id="board"></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="pika-toast" id="toast"></div>
+
+  <script src="../../assets/js/shared.js"></script>
+  <script src="pikachu.js"></script>
+</body>
+</html>
