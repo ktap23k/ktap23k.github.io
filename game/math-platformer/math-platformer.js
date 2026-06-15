@@ -63,29 +63,29 @@ function initBackground() {
   stars = [];
   clouds = [];
   mountains = [];
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 45; i++) {
     stars.push({
       x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height * 0.6,
-      size: Math.random() * 2 + 0.5,
+      y: Math.random() * canvas.height * 0.55,
+      size: Math.random() * 1.8 + 0.4,
       twinkle: Math.random() * Math.PI * 2
     });
   }
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 7; i++) {
     clouds.push({
       x: Math.random() * canvas.width * 1.5,
-      y: Math.random() * canvas.height * 0.45,
-      w: 60 + Math.random() * 80,
-      speed: 0.1 + Math.random() * 0.2
+      y: 40 + Math.random() * canvas.height * 0.35,
+      w: 70 + Math.random() * 90,
+      speed: 0.08 + Math.random() * 0.15
     });
   }
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 6; i++) {
     mountains.push({
-      x: i * 180 - 50,
-      y: canvas.height - 80 - Math.random() * 60,
-      w: 120 + Math.random() * 80,
-      h: 80 + Math.random() * 100,
-      color: Math.random() > 0.5 ? '#64748b' : '#475569'
+      x: i * 220 - 80,
+      y: canvas.height - 70 - Math.random() * 50,
+      w: 160 + Math.random() * 100,
+      h: 70 + Math.random() * 90,
+      color: Math.random() > 0.5 ? '#86efac' : '#4ade80'
     });
   }
 }
@@ -291,52 +291,71 @@ function updateParticles() {
 function draw() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
-  // Sky gradient
+  // Friendly sky gradient
   const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
   if (isDark) {
-    grad.addColorStop(0, '#0f172a');
-    grad.addColorStop(0.5, '#1e293b');
-    grad.addColorStop(1, '#064e3b');
+    grad.addColorStop(0, '#141824');
+    grad.addColorStop(0.45, '#1a2436');
+    grad.addColorStop(1, '#0f2e1e');
   } else {
-    grad.addColorStop(0, '#dbeafe');
-    grad.addColorStop(0.5, '#e0f2fe');
-    grad.addColorStop(1, '#dcfce7');
+    grad.addColorStop(0, '#fff8e7');
+    grad.addColorStop(0.4, '#ffefc2');
+    grad.addColorStop(1, '#d4f5e0');
   }
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Stars (only visible in dark mode, subtle in light)
-  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.4)';
+  // Sun / moon
+  ctx.save();
+  ctx.translate(canvas.width - 90, 75);
+  const orbGlow = isDark ? 'rgba(253, 224, 71, 0.18)' : 'rgba(255, 200, 80, 0.22)';
+  const orbCore = isDark ? '#fde047' : '#ffd166';
+  ctx.fillStyle = orbGlow;
+  ctx.beginPath();
+  ctx.arc(0, 0, 45, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = orbCore;
+  ctx.beginPath();
+  ctx.arc(0, 0, 22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Stars (subtle twinkle)
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.45)';
   stars.forEach(s => {
-    const alpha = 0.4 + 0.6 * Math.abs(Math.sin(Date.now() * 0.002 + s.twinkle));
+    const alpha = 0.35 + 0.45 * Math.abs(Math.sin(Date.now() * 0.0015 + s.twinkle));
     ctx.globalAlpha = alpha;
     ctx.beginPath();
-    ctx.arc(s.x - cameraX * 0.05, s.y, s.size, 0, Math.PI * 2);
+    ctx.arc(s.x - cameraX * 0.04, s.y, s.size, 0, Math.PI * 2);
     ctx.fill();
   });
   ctx.globalAlpha = 1;
 
-  // Mountains parallax
+  // Rolling hills parallax
   mountains.forEach(m => {
-    const parallaxX = (m.x - cameraX * 0.2) % (canvas.width + 300);
-    const drawX = parallaxX < -m.w ? parallaxX + canvas.width + 300 : parallaxX;
-    ctx.fillStyle = isDark ? '#1e293b' : '#94a3b8';
+    const parallaxX = (m.x - cameraX * 0.15) % (canvas.width + 350);
+    const drawX = parallaxX < -m.w ? parallaxX + canvas.width + 350 : parallaxX;
+    const hillColor = isDark ? '#1f3a2e' : m.color;
+    const shadowColor = isDark ? '#14261e' : shadeColor(m.color, -12);
+
+    ctx.fillStyle = shadowColor;
     ctx.beginPath();
-    ctx.moveTo(drawX, canvas.height);
-    ctx.lineTo(drawX + m.w / 2, m.y);
-    ctx.lineTo(drawX + m.w, canvas.height);
-    ctx.closePath();
+    ctx.ellipse(drawX + m.w / 2, canvas.height, m.w / 2 + 8, m.h / 2 + 8, 0, Math.PI, 0);
+    ctx.fill();
+
+    ctx.fillStyle = hillColor;
+    ctx.beginPath();
+    ctx.ellipse(drawX + m.w / 2, canvas.height, m.w / 2, m.h / 2, 0, Math.PI, 0);
     ctx.fill();
   });
 
-  // Clouds parallax
-  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.65)';
+  // Fluffy clouds parallax
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.72)';
   clouds.forEach(c => {
     c.x += c.speed;
-    if (c.x > canvas.width + 100) c.x = -c.w;
-    const drawX = c.x - cameraX * 0.1;
-    roundRect(ctx, drawX, c.y, c.w, c.w * 0.35, c.w * 0.15);
-    ctx.fill();
+    if (c.x > canvas.width + 120) c.x = -c.w - 40;
+    const drawX = c.x - cameraX * 0.08;
+    drawCloud(ctx, drawX, c.y, c.w);
   });
 
   if (!currentLevel) return;
@@ -355,50 +374,37 @@ function draw() {
     });
   }
 
-  // Hazards
+  // Hazards (softer red-orange spikes)
   currentLevel.hazards.forEach(h => {
-    ctx.fillStyle = '#ef4444';
-    ctx.beginPath();
-    ctx.moveTo(h.x, h.y + h.h);
-    for (let i = 0; i <= h.w; i += 10) {
-      ctx.lineTo(h.x + i, h.y + (i % 20 === 0 ? 0 : h.h));
-    }
-    ctx.lineTo(h.x + h.w, h.y + h.h);
-    ctx.fill();
+    drawSpikes(ctx, h);
   });
 
   // Answers
-  currentLevel.answers.forEach(a => {
-    const glow = a.correct ? 'rgba(34,197,94,0.4)' : 'rgba(245,158,11,0.4)';
+  const t = Date.now() * 0.003;
+  currentLevel.answers.forEach((a, i) => {
+    const bounce = 2 * Math.sin(t + i * 0.8);
+    const glow = a.correct ? 'rgba(34,197,94,0.35)' : 'rgba(245,158,11,0.35)';
     ctx.shadowColor = glow;
-    ctx.shadowBlur = 15;
+    ctx.shadowBlur = 12;
     ctx.fillStyle = a.correct ? '#22c55e' : '#f59e0b';
-    roundRect(ctx, a.x, a.y, 34, 34, 10);
+    roundRect(ctx, a.x, a.y + bounce, 34, 34, 10);
     ctx.fill();
     ctx.shadowBlur = 0;
+
+    // Inner highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    roundRect(ctx, a.x + 3, a.y + bounce + 3, 28, 12, 6);
+    ctx.fill();
 
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 15px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(a.value, a.x + 17, a.y + 17);
+    ctx.fillText(a.value, a.x + 17, a.y + bounce + 17);
   });
 
-  // Player
-  ctx.fillStyle = '#e85d04';
-  ctx.shadowColor = 'rgba(232, 93, 4, 0.4)';
-  ctx.shadowBlur = 12;
-  roundRect(ctx, player.x, player.y, player.w, player.h, 10);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-
-  // Player eyes
-  ctx.fillStyle = '#fff';
-  const eyeOffset = player.facing > 0 ? 18 : 6;
-  ctx.beginPath();
-  ctx.arc(player.x + eyeOffset, player.y + 10, 4, 0, Math.PI * 2);
-  ctx.arc(player.x + eyeOffset + (player.facing > 0 ? -7 : 7), player.y + 10, 4, 0, Math.PI * 2);
-  ctx.fill();
+  // Player — cute fox
+  drawFox(ctx, player.x, player.y, player.w, player.h, player.facing);
 
   // Particles
   particles.forEach(p => {
@@ -414,24 +420,143 @@ function draw() {
 }
 
 function drawPlatform(ctx, p, isDark, moving = false) {
-  const base = isDark ? (moving ? '#475569' : '#334155') : (moving ? '#64748b' : '#94a3b8');
-  const top = isDark ? '#22d3ee' : '#22c55e';
+  const base = isDark ? (moving ? '#574c3f' : '#3e352c') : (moving ? '#8d6e63' : '#a1887f');
+  const top = isDark ? '#34d399' : '#4ade80';
+  const rim = isDark ? '#6ee7b7' : '#86efac';
 
+  // Soft shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  roundRect(ctx, p.x + 2, p.y + 4, p.w, p.h, 6);
+  ctx.fill();
+
+  // Earth body
   ctx.fillStyle = base;
   roundRect(ctx, p.x, p.y, p.w, p.h, 6);
   ctx.fill();
 
-  // Top grass/snow strip
+  // Grass top
   ctx.fillStyle = top;
-  ctx.fillRect(p.x, p.y, p.w, 5);
+  roundRect(ctx, p.x, p.y, p.w, 8, 6);
+  ctx.fill();
 
-  // Decorative dots
-  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-  for (let i = 10; i < p.w - 5; i += 25) {
+  // Lighter rim
+  ctx.fillStyle = rim;
+  ctx.fillRect(p.x, p.y + 6, p.w, 3);
+
+  // Tiny flowers / dots
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.55)';
+  for (let i = 16; i < p.w - 8; i += 32) {
     ctx.beginPath();
-    ctx.arc(p.x + i, p.y + p.h / 2 + 3, 2, 0, Math.PI * 2);
+    ctx.arc(p.x + i, p.y + 4, 2, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+function drawSpikes(ctx, h) {
+  ctx.save();
+  ctx.fillStyle = '#f97316';
+  ctx.beginPath();
+  ctx.moveTo(h.x, h.y + h.h);
+  for (let i = 0; i <= h.w; i += 12) {
+    const peak = (i % 24 === 0) ? 0 : h.h;
+    ctx.lineTo(h.x + i, h.y + peak);
+  }
+  ctx.lineTo(h.x + h.w, h.y + h.h);
+  ctx.fill();
+
+  // Highlight
+  ctx.clip();
+  ctx.fillStyle = '#fb923c';
+  ctx.fillRect(h.x, h.y, h.w, h.h * 0.45);
+  ctx.restore();
+}
+
+function drawCloud(ctx, x, y, w) {
+  const h = w * 0.38;
+  ctx.beginPath();
+  ctx.arc(x + w * 0.25, y + h * 0.55, h * 0.55, 0, Math.PI * 2);
+  ctx.arc(x + w * 0.55, y + h * 0.35, h * 0.7, 0, Math.PI * 2);
+  ctx.arc(x + w * 0.8, y + h * 0.55, h * 0.5, 0, Math.PI * 2);
+  ctx.arc(x + w * 0.5, y + h * 0.75, h * 0.55, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawFox(ctx, x, y, w, h, facing) {
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.beginPath();
+  ctx.ellipse(cx, y + h - 2, w * 0.55, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Tail
+  ctx.fillStyle = '#ea580c';
+  ctx.beginPath();
+  const tx = facing > 0 ? x - 4 : x + w + 4;
+  ctx.ellipse(tx, y + h * 0.65, 10, 14, facing * 0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#fff7ed';
+  ctx.beginPath();
+  ctx.ellipse(tx + facing * 3, y + h * 0.7, 5, 8, facing * 0.35, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Ears
+  ctx.fillStyle = '#c2410c';
+  ctx.beginPath();
+  const earLeftX = facing > 0 ? x + 5 : x + w - 5;
+  const earRightX = facing > 0 ? x + w - 5 : x + 5;
+  ctx.moveTo(earLeftX, y + 4);
+  ctx.lineTo(earLeftX + (facing > 0 ? -5 : 5), y - 7);
+  ctx.lineTo(earLeftX + (facing > 0 ? 5 : -5), y + 4);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(earRightX, y + 4);
+  ctx.lineTo(earRightX + (facing > 0 ? -5 : 5), y - 7);
+  ctx.lineTo(earRightX + (facing > 0 ? 5 : -5), y + 4);
+  ctx.fill();
+
+  // Body
+  ctx.fillStyle = '#f97316';
+  roundRect(ctx, x, y, w, h, 10);
+  ctx.fill();
+
+  // White belly / muzzle
+  ctx.fillStyle = '#fff7ed';
+  ctx.beginPath();
+  ctx.ellipse(cx, y + h * 0.62, w * 0.35, h * 0.32, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = '#1f2937';
+  const eyeBaseX = facing > 0 ? x + 18 : x + w - 18;
+  ctx.beginPath();
+  ctx.arc(eyeBaseX, y + 11, 3, 0, Math.PI * 2);
+  ctx.arc(eyeBaseX - (facing > 0 ? 7 : -7), y + 11, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eye shine
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(eyeBaseX + 1, y + 10, 1.2, 0, Math.PI * 2);
+  ctx.arc(eyeBaseX - (facing > 0 ? 6 : -6), y + 10, 1.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Nose
+  ctx.fillStyle = '#1f2937';
+  ctx.beginPath();
+  ctx.arc(cx + facing * 7, y + 17, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function shadeColor(color, percent) {
+  const num = parseInt(color.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.max(0, Math.min(255, (num >> 16) + amt));
+  const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt));
+  const B = Math.max(0, Math.min(255, (num & 0x0000ff) + amt));
+  return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
 }
 
 function roundRect(ctx, x, y, w, h, r) {

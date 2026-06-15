@@ -6,6 +6,11 @@
 const path = location.pathname;
 const ROOT = /\/(posts|game)\//.test(path) ? '../' : './';
 
+// Game nav link needs special handling to avoid /game/game/index.html
+const GAME_LINK = /\/game\/(index\.html)?$/.test(path) ? './index.html'
+                : /\/game\//.test(path) ? '../index.html'
+                : ROOT + 'game/index.html';
+
 /* ── RENDER HEADER ─────────────────────────────────────────── */
 function renderHeader() {
   const header = document.createElement('header');
@@ -21,7 +26,7 @@ function renderHeader() {
         <a href="${ROOT}index.html#posts"   class="nav__link">Bài viết</a>
         <a href="${ROOT}index.html#about"   class="nav__link">Về tôi</a>
         <a href="${ROOT}index.html#contact" class="nav__link">Liên hệ</a>
-        <a href="${ROOT}game/index.html"    class="nav__link">Game</a>
+        <a href="${GAME_LINK}"              class="nav__link">Game</a>
         <a href="${ROOT}cv.html"            class="nav__link nav__link--cv">CV</a>
       </nav>
       <div class="header__actions">
