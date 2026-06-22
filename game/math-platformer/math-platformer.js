@@ -47,10 +47,15 @@ let runState = {
 };
 
 let cameraX = 0;
+let cameraY = 0;
 let particles = [];
+let wasOnGround = false;
+let landTimer = 0;
 let stars = [];
 let clouds = [];
 let mountains = [];
+let birds = [];
+let trees = [];
 let confetti = [];
 
 /* ========== INPUT ========== */
@@ -125,6 +130,24 @@ function initBackground() {
       w: 160 + Math.random() * 100,
       h: 70 + Math.random() * 90,
       color: Math.random() > 0.5 ? '#86efac' : '#4ade80'
+    });
+  }
+  for (let i = 0; i < 12; i++) {
+    trees.push({
+      x: Math.random() * canvas.width * 2,
+      y: canvas.height - 30 - Math.random() * 40,
+      w: 8 + Math.random() * 10,
+      h: 20 + Math.random() * 35,
+      color: Math.random() > 0.5 ? '#166534' : '#15803d'
+    });
+  }
+  for (let i = 0; i < 5; i++) {
+    birds.push({
+      x: Math.random() * canvas.width * 2,
+      y: 30 + Math.random() * canvas.height * 0.35,
+      speed: 0.4 + Math.random() * 0.6,
+      wingSpeed: 0.1 + Math.random() * 0.1,
+      size: 3 + Math.random() * 3
     });
   }
 }
@@ -213,6 +236,10 @@ function startRun(fresh = false) {
   let startX = 0;
   let startY = 480;
 
+  // Pick the active segment's question first so collectables can be
+  // generated with the correct answer value.
+  pickQuestionForSegment();
+
   for (let i = 0; i <= runState.segmentIndex; i++) {
     const isActive = i === runState.segmentIndex;
     const segEnd = appendSegment(startX, startY, i, i === 0, isActive);
@@ -220,9 +247,6 @@ function startRun(fresh = false) {
     startX = segEnd.endX;
     startY = segEnd.endY;
   }
-
-  // Pick question for the active segment
-  pickQuestionForSegment();
 
   // Spawn player at last checkpoint or beginning
   const cp = runState.checkpoints.length > 0
@@ -234,6 +258,7 @@ function startRun(fresh = false) {
   player.vy = 0;
   player.facing = 1;
   cameraX = Math.max(0, player.x - canvas.width / 3);
+  cameraY = Math.max(0, player.y + player.h / 2 - canvas.height * 0.45);
 
   updateStats();
   updateEffectsUI();
@@ -424,6 +449,17 @@ function update(dt) {
   player.onGround = false;
   handleCollisions('y');
 
+  // Dust effects when landing or running
+  if (player.onGround) {
+    if (!wasOnGround) {
+      spawnDust(player.x + player.w / 2, player.y + player.h, player.vx);
+      landTimer = 160;
+    } else if (Math.abs(player.vx) > 1.2 && Math.random() < 0.18) {
+      spawnDust(player.x + player.w / 2, player.y + player.h, player.vx);
+    }
+  }
+  if (landTimer > 0) landTimer = Math.max(0, landTimer - dt);
+
   // Wind zones
   if (runState.world.windZones) {
     runState.world.windZones.forEach(w => {
@@ -567,9 +603,24 @@ function update(dt) {
   // Particles limit
   if (particles.length > 100) particles.splice(0, particles.length - 100);
 
-  const targetCam = player.x - canvas.width / 3;
-  cameraX += (targetCam - cameraX) * 0.1;
-  cameraX = Math.max(0, Math.min(cameraX, getWorldWidth() - canvas.width));
+  // Predictive camera follow: look slightly ahead based on player velocity
+  // so the movement feels fluid, especially near segment edges.
+  const lookahead = Math.max(-60, Math.min(120, player.vx * 18));
+  const targetCam = player.x - canvas.width / 3 + lookahead;
+  const worldEnd = getWorldWidth();
+  // Soft right boundary: allow the camera to overshoot a little so the
+  // player doesn't feel abruptly stopped at the end of a segment.
+  const maxCam = Math.max(0, worldEnd - canvas.width * 0.55);
+  const lerp = (worldEnd - (player.x + canvas.width) < 350) ? 0.16 : 0.1;
+  cameraX += (targetCam - cameraX) * lerp;
+  cameraX = Math.max(0, Math.min(cameraX, maxCam));
+
+  // Vertical camera follow with soft clamping so up/down exploration feels natural.
+  const targetCamY = player.y + player.h / 2 - canvas.height * 0.45;
+  cameraY += (targetCamY - cameraY) * 0.08;
+  const groundY = Math.max(0, runState.world.platforms.reduce((m, p) => Math.max(m, p.y + p.h), 0));
+  const topY = Math.min(0, runState.world.platforms.reduce((m, p) => Math.min(m, p.y), canvas.height));
+  cameraY = Math.max(topY - 40, Math.min(cameraY, groundY - canvas.height + 80));
 
   updateParticles(scaledDt);
   updateConfetti(scaledDt);
@@ -577,6 +628,7 @@ function update(dt) {
   updateStats();
   updateEffectsUI();
 
+  wasOnGround = player.onGround;
   prevLives = lives;
 }
 
@@ -642,6 +694,12 @@ function applyPowerup(pup) {
 function extendRun() {
   runState.segmentIndex++;
 
+  // Pick the next question before generating the segment so answers
+  // receive the real correct value.
+  if (!bonusStageActive) {
+    pickQuestionForSegment();
+  }
+
   let startX = 0;
   let startY = 480;
   for (let i = 0; i < runState.segmentIndex; i++) {
@@ -651,10 +709,6 @@ function extendRun() {
   }
 
   appendSegment(startX, startY, runState.segmentIndex, false, true);
-
-  if (!bonusStageActive) {
-    pickQuestionForSegment();
-  }
 }
 
 function handleCollisions(axis) {
@@ -737,6 +791,7 @@ function respawnAtCheckpoint() {
   player.vy = 0;
   player.invincibleTimer = 1000; // brief mercy invincibility
   cameraX = Math.max(0, player.x - canvas.width / 3);
+  cameraY = Math.max(0, player.y + player.h / 2 - canvas.height * 0.45);
 }
 
 function retryFromCheckpoint() {
@@ -765,12 +820,28 @@ function spawnParticles(x, y, color) {
   }
 }
 
+function spawnDust(x, y, vx) {
+  for (let i = 0; i < 4; i++) {
+    particles.push({
+      x: x + (Math.random() - 0.5) * 16,
+      y: y + Math.random() * 4,
+      vx: -vx * 0.3 + (Math.random() - 0.5) * 2,
+      vy: -0.5 - Math.random() * 1.2,
+      life: 1,
+      decay: 0.025 + Math.random() * 0.02,
+      color: 'rgba(166,124,82,0.55)',
+      size: 2 + Math.random() * 3,
+      type: 'dust'
+    });
+  }
+}
+
 function updateParticles(dtScale = 1) {
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.x += p.vx * dtScale;
     p.y += p.vy * dtScale;
-    p.vy += 0.2 * dtScale;
+    p.vy += (p.type === 'dust' ? 0.04 : 0.2) * dtScale;
     p.life -= p.decay * dtScale;
     if (p.life <= 0) particles.splice(i, 1);
   }
@@ -885,6 +956,19 @@ function draw() {
     ctx.fill();
   });
 
+  // Simple trees/bushes parallax
+  trees.forEach(tree => {
+    const parallaxX = (tree.x - cameraX * 0.25) % (canvas.width + 200);
+    const drawX = parallaxX < -tree.w ? parallaxX + canvas.width + 200 : parallaxX;
+    const treeColor = isDark ? '#0f291e' : tree.color;
+    ctx.fillStyle = treeColor;
+    ctx.beginPath();
+    ctx.moveTo(drawX, canvas.height);
+    ctx.lineTo(drawX + tree.w / 2, canvas.height - tree.h);
+    ctx.lineTo(drawX + tree.w, canvas.height);
+    ctx.fill();
+  });
+
   // Clouds
   ctx.fillStyle = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.72)';
   clouds.forEach(c => {
@@ -894,8 +978,22 @@ function draw() {
     drawCloud(ctx, drawX, c.y, c.w);
   });
 
+  // Birds (parallax layer)
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(30,41,59,0.45)';
+  ctx.lineWidth = 2;
+  birds.forEach(b => {
+    b.x += b.speed;
+    if (b.x > canvas.width + 60) b.x = -40;
+    const drawX = b.x - cameraX * 0.12;
+    const wingY = 3 * Math.sin(Date.now() * b.wingSpeed);
+    ctx.beginPath();
+    ctx.moveTo(drawX - b.size, b.y + wingY);
+    ctx.quadraticCurveTo(drawX, b.y - b.size * 0.5, drawX + b.size, b.y + wingY);
+    ctx.stroke();
+  });
+
   ctx.save();
-  ctx.translate(-cameraX, 0);
+  ctx.translate(-cameraX, -cameraY);
 
   // Active range for performance
   const activeMin = cameraX - 100;
@@ -978,19 +1076,31 @@ function draw() {
     ctx.fillText(pup.label, pup.x + 16, pup.y + bounce + 16);
   });
 
-  // Answers
+  // Answers with pulsing glow + shine animation
   runState.world.answers.forEach((a, i) => {
-    const bounce = 2 * Math.sin(t + i * 0.8);
-    const glow = a.correct ? 'rgba(34,197,94,0.35)' : 'rgba(245,158,11,0.35)';
+    const bounce = 3 * Math.sin(t + i * 0.9);
+    const pulse = 1 + 0.08 * Math.sin(t * 1.5 + i);
+    const cx = a.x + 17;
+    const cy = a.y + bounce + 17;
+    const size = 34 * pulse;
+    const glow = a.correct ? 'rgba(34,197,94,0.55)' : 'rgba(245,158,11,0.55)';
+
+    ctx.save();
     ctx.shadowColor = glow;
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = 16 + 6 * Math.sin(t * 2 + i);
     ctx.fillStyle = a.correct ? '#22c55e' : '#f59e0b';
-    roundRect(ctx, a.x, a.y + bounce, 34, 34, 10);
+    roundRect(ctx, cx - size / 2, cy - size / 2, size, size, 10);
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    roundRect(ctx, a.x + 3, a.y + bounce + 3, 28, 12, 6);
+    // Shine stripe
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    ctx.beginPath();
+    ctx.moveTo(cx - size / 2 + 4, cy - size / 2);
+    ctx.lineTo(cx - size / 2 + 18, cy - size / 2);
+    ctx.lineTo(cx - size / 2 + 8, cy + size / 2);
+    ctx.lineTo(cx - size / 2 - 6, cy + size / 2);
+    ctx.closePath();
     ctx.fill();
 
     ctx.fillStyle = '#fff';
@@ -999,12 +1109,13 @@ function draw() {
     let fontSize = 15;
     ctx.font = `bold ${fontSize}px Inter, sans-serif`;
     let tw = ctx.measureText(a.value).width;
-    while (tw > 30 && fontSize > 8) {
+    while (tw > 28 && fontSize > 8) {
       fontSize--;
       ctx.font = `bold ${fontSize}px Inter, sans-serif`;
       tw = ctx.measureText(a.value).width;
     }
-    ctx.fillText(a.value, a.x + 17, a.y + bounce + 17);
+    ctx.fillText(a.value, cx, cy + 1);
+    ctx.restore();
   });
 
   // Player
@@ -1215,6 +1326,19 @@ function drawFox(ctx, x, y, w, h, facing) {
   const state = player.animState;
   const timer = player.animTimer;
   const runCycle = Math.sin(timer * 0.02);
+  // Squash & stretch based on movement state
+  let scaleY = 1, scaleX = 1;
+  if (state === 'jump') { scaleY = 1.08; scaleX = 0.94; }
+  else if (state === 'fall') { scaleY = 1.05; scaleX = 0.96; }
+  else if (landTimer > 0) {
+    const s = landTimer / 160;
+    scaleY = 1 - 0.12 * s;
+    scaleX = 1 + 0.08 * s;
+  } else if (state === 'run') {
+    scaleY = 1 + 0.04 * runCycle;
+    scaleX = 1 - 0.02 * runCycle;
+  }
+
   const tailAngle = state === 'run' ? facing * 0.6 + runCycle * 0.25 :
                     state === 'jump' || state === 'fall' ? facing * 0.1 :
                     facing * 0.35 + Math.sin(timer * 0.004) * 0.15;
@@ -1226,6 +1350,7 @@ function drawFox(ctx, x, y, w, h, facing) {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(bodyTilt);
+  ctx.scale(scaleX, scaleY);
   ctx.translate(-cx, -cy);
 
   // Tail

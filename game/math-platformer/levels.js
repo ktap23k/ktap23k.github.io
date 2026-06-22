@@ -346,15 +346,26 @@ const QUESTION_BANK = {
 };
 
 /* ---------- Distractor generators ---------- */
+const FRACTION_CHARS = {
+  '½': { value: 0.5, text: '½' },
+  '⅓': { value: 1 / 3, text: '⅓' },
+  '⅔': { value: 2 / 3, text: '⅔' },
+  '¼': { value: 0.25, text: '¼' },
+  '¾': { value: 0.75, text: '¾' }
+};
+const FRACTION_POOL = ['½', '⅓', '⅔', '¼', '¾'];
+
+function isPlainNumber(v) {
+  return /^-?\d+(\.\d+)?$/.test(String(v));
+}
+
+function isUnicodeFraction(v) {
+  return FRACTION_CHARS.hasOwnProperty(v);
+}
+
 function numericDistractors(correct, count = 2) {
   const n = parseFloat(correct);
   const out = [];
-
-  // Non-numeric answers (e.g. fractions written as ½) fall back to generic text distractors.
-  if (Number.isNaN(n)) {
-    const pool = shuffle(['A', 'B', 'C', 'D', 'X', 'Y', 'Z', '?', '!']);
-    return pool.slice(0, count);
-  }
 
   while (out.length < count) {
     const offset = randInt(1, Math.max(2, Math.floor(Math.abs(n) || 1) + 3));
@@ -367,6 +378,22 @@ function numericDistractors(correct, count = 2) {
     }
     const s = String(v);
     if (s !== correct && !out.includes(s)) out.push(s);
+  }
+  return out;
+}
+
+function fractionDistractors(correct, count = 2) {
+  // Pick other fractions or nearby simple integers
+  const out = [];
+  const info = FRACTION_CHARS[correct];
+  while (out.length < count) {
+    if (Math.random() < 0.6) {
+      const cand = pick(FRACTION_POOL.filter(f => f !== correct));
+      if (!out.includes(cand)) out.push(cand);
+    } else {
+      const near = String(Math.round((info.value + (Math.random() > 0.5 ? 1 : -1) * randInt(1, 2))));
+      if (near !== correct && !out.includes(near)) out.push(near);
+    }
   }
   return out;
 }
@@ -432,17 +459,104 @@ function stringDistractors(correct, count = 2) {
     difficult: ['easy', 'hard', 'simple'],
     young: ['old', 'new', 'ancient'],
     old: ['young', 'new', 'ancient'],
+    O: ['H', 'C', 'Fe'],
+    H: ['O', 'C', 'N'],
+    C: ['O', 'Ca', 'Fe'],
+    Fe: ['Au', 'Ag', 'Cu'],
+    Au: ['Ag', 'Fe', 'Al'],
+    Ag: ['Au', 'Fe', 'Cu'],
+    Al: ['Fe', 'Ca', 'Si'],
+    Ca: ['Na', 'Mg', 'Al'],
+    'H2O': ['CO2', 'O2', 'NaCl'],
+    Nito: ['Oxy', 'Hydro', 'Cacbon'],
+    Oxy: ['Nito', 'Hydro', 'Clo'],
+    NaCl: ['HCl', 'H2O', 'CO2'],
+    HCl: ['H2SO4', 'NaCl', 'H2O'],
+    Newton: ['Joule', 'Watt', 'Pascal'],
+    Joule: ['Newton', 'Watt', 'Calo'],
+    '300000km/s': ['150000km/s', '600000km/s', '100000km/s'],
+    'Trái Đất': ['Sao Hỏa', 'Sao Kim', 'Sao Mộc'],
+    'Mặt Trăng': ['Sao Hỏa', 'Sao Kim', 'Phobos'],
+    phổi: ['tim', 'gan', 'thận'],
+    tim: ['phổi', 'gan', 'thận'],
+    dạdày: ['ruột', 'gan', 'thận'],
+    tithể: ['nhân', 'ribosome', 'lysosome'],
+    ADN: ['ARN', 'protein', 'lipid'],
+    tếbào: ['mô', 'cơquan', 'hệcơquan'],
+    'HàNội': ['Huế', 'ĐàNẵng', 'TP.HCM'],
+    'TP.HCM': ['HàNội', 'ĐàNẵng', 'CầnThơ'],
+    TrườngSơn: ['HoàngLiênSơn', 'BaVì', 'TamĐảo'],
+    Hồng: ['CửuLong', 'Đà', 'SôngMã'],
+    Fansipan: ['BaVì', 'TâyCônLĩnh', 'PhanXiPang'],
+    'HạLong': ['NhaTrang', 'ĐàNẵng', 'PhúQuốc'],
+    Tokyo: ['Osaka', 'Kyoto', 'Seoul'],
+    Paris: ['London', 'Berlin', 'Rome'],
+    Washington: ['NewYork', 'LosAngeles', 'Chicago'],
+    London: ['Paris', 'Berlin', 'Madrid'],
+    'TháiBìnhDương': ['ĐạiTâyDương', 'ẤnĐộDương', 'BắcBăngDương'],
+    'Á-Âu': ['ChâuPhi', 'ChâuMỹ', 'NamCực'],
+    'Ý': ['Pháp', 'TâyBanNha', 'HyLạp'],
+    'AiCập': ['Libya', 'Sudan', 'Israel'],
+    'ngườiViệt': ['ngườiHoa', 'ngườiChăm', 'ngườiThái'],
+    '1285': ['1258', '1427', '1789'],
+    '1954': ['1945', '1954', '1975'],
+    '30/4/1975': ['2/9/1945', '1/5/1975', '19/8/1945'],
+    '1945': ['1954', '1975', '1930'],
+    '3500TCN': ['3000TCN', '4000TCN', '2500TCN'],
+    Leonardo: ['Michelangelo', 'Raphael', 'VanGogh'],
+    'TrungQuốc': ['AiCập', 'HyLạp', 'ẤnĐộ'],
+    số: ['chữ', 'hình', 'màu'],
+    chai: ['lọ', 'bình', 'hộp'],
+    'đồnghồ': ['cáibóng', 'cánhquạt', 'bánhxe'],
+    bàn: ['ghế', 'giường', 'tủ'],
+    nước: ['xàphòng', 'chất tẩy', 'khăn'],
+    kim: ['ghim', 'nútbấm', 'kẹp'],
+    '10': ['8', '12', '9'],
+    '8': ['7', '9', '10'],
+    '48': ['36', '60', '24'],
+    '25': ['16', '36', '20'],
+    '13': ['11', '17', '15'],
+    '225': ['125', '325', '256'],
+    '15': ['12', '18', '20'],
+    '55': ['45', '66', '50'],
+    '180': ['90', '270', '360'],
+    '2': ['1', '3', '5'],
+    '5/6': ['2/3', '3/4', '1/2'],
+    '24': ['20', '28', '30'],
+    '6': ['4', '8', '9'],
+    Canberra: ['Sydney', 'Melbourne', 'Brisbane'],
+    Sắt: ['Vàng', 'Bạc', 'Đồng'],
+    '1492': ['1500', '1488', '1510'],
+    'ẤnĐộ': ['TrungQuốc', 'Mỹ', 'Indonesia'],
+    Ampe: ['Volt', 'Ohm', 'Watt'],
+    'NguyễnDu': ['NguyễnTrãi', 'HồXuânHương', 'TốHữu'],
+    'SaoMộc': ['SaoThổ', 'SaoKim', 'SaoHỏa'],
+    'BắcBăngDương': ['ẤnĐộDương', 'ĐạiTâyDương', 'TháiBìnhDương']
   };
-  const lower = correct.toLowerCase();
-  if (pools[lower]) {
-    const cands = shuffle(pools[lower]);
+
+  const lower = correct.toLowerCase().replace(/\s+/g, '');
+  const poolKey = Object.keys(pools).find(k => k.toLowerCase().replace(/\s+/g, '') === lower);
+  if (poolKey) {
+    const cands = shuffle(pools[poolKey]);
     return cands.slice(0, count);
   }
-  return ['A', 'B'].slice(0, count);
+
+  // Fallback: build a generic pool of all non-numeric answers from the question bank
+  // and pick ones that look similar (same first letter or similar length).
+  const genericPool = ALL_STRING_ANSWERS.filter(v => v !== correct);
+  const similar = genericPool.filter(v => {
+    const vl = v.toLowerCase().replace(/\s+/g, '');
+    return vl[0] === lower[0] || Math.abs(vl.length - lower.length) <= 2;
+  });
+  const cands = shuffle(similar.length >= count ? similar : genericPool);
+  return cands.slice(0, count).map(v => String(v));
 }
 
 function distractorsFor(correct, type = 'number') {
-  if (type === 'number' || !isNaN(parseFloat(correct))) {
+  if (isUnicodeFraction(correct)) {
+    return fractionDistractors(correct, 2);
+  }
+  if (isPlainNumber(correct)) {
     return numericDistractors(correct, 2);
   }
   return stringDistractors(correct, 2);
@@ -557,7 +671,8 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true, s
 
   let x = startX;
   let y = startY;
-  const yRange = { min: 130, max: 500 };
+  // Wider vertical range so levels can climb high or drop low for more interesting routes.
+  const yRange = { min: 60, max: 520 };
   const minLength = 1500 + difficulty * 90;
 
   // Determine segment index if not passed explicitly
@@ -583,8 +698,8 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true, s
     const gap = seededRandInt(rng, gapMin, gapMax);
     const w = seededRandInt(rng, 90, 180);
 
-    // Keep vertical shifts playable: the larger the gap, the smaller the dy
-    const maxDy = Math.max(35, 105 - gap * 0.35);
+    // More generous vertical shifts: the larger the gap, the smaller the dy
+    const maxDy = Math.max(45, 140 - gap * 0.28);
     const dy = seededRandInt(rng, -maxDy, maxDy);
 
     x += gap;
@@ -608,6 +723,20 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true, s
     // Candidate collectable spot above this platform
     if (platforms.length > 1) {
       candidateSpots.push({ x: x + w / 2 - 17, y: y - 85 });
+    }
+
+    // Optional vertical route: a side platform above or below the main path,
+    // reachable with a double jump or by dropping down.
+    if (rng() < 0.35 + difficulty * 0.03) {
+      const sideY = Math.max(yRange.min, Math.min(yRange.max, y + (rng() < 0.5 ? -1 : 1) * seededRandInt(rng, 90, 160)));
+      const sideX = x + seededRandInt(rng, -w - 30, -40);
+      const sideW = seededRandInt(rng, 60, 110);
+      if (sideX > startX + 60) {
+        platforms.push({ x: sideX, y: sideY, w: sideW, h: 22, type });
+        if (rng() < 0.5) {
+          candidateSpots.push({ x: sideX + sideW / 2 - 17, y: sideY - 85 });
+        }
+      }
     }
 
     x += w;
@@ -697,14 +826,18 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true, s
 function makeSegmentAnswers(rng, correct, answerXs) {
   const [d1, d2] = distractorsFor(correct);
   const positions = answerXs.slice(-3);
-  // Correct answer is always at the last (final) position;
-  // distractors are shuffled into the earlier two spots.
-  const distractors = seededShuffle(rng, [d1, d2]);
+  // Randomly shuffle which position holds the correct answer so players
+  // actually read the question instead of always rushing to the last item.
+  const values = seededShuffle(rng, [
+    { v: correct, c: true },
+    { v: d1, c: false },
+    { v: d2, c: false }
+  ]);
   return positions.map((p, i) => ({
     x: Math.round(p.x),
     y: Math.round(p.y),
-    value: i === positions.length - 1 ? correct : distractors[i],
-    correct: i === positions.length - 1
+    value: values[i].v,
+    correct: values[i].c
   }));
 }
 
@@ -734,6 +867,15 @@ const ALL_QUESTIONS = (() => {
     Object.values(cat).forEach(pool => arr.push(...pool));
   });
   return shuffle(arr);
+})();
+
+const ALL_STRING_ANSWERS = (() => {
+  const set = new Set();
+  ALL_QUESTIONS.forEach(q => {
+    const a = String(q.a).trim();
+    if (!isPlainNumber(a) && !isUnicodeFraction(a)) set.add(a);
+  });
+  return Array.from(set);
 })();
 
 function generateLevel(index) {
