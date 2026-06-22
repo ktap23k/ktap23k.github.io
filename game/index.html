@@ -244,6 +244,23 @@
           <span class="btn btn--primary game-card__cta">Chơi ngay →</span>
         </a>
 
+        <a href="neon-defender/index.html" class="game-card">
+          <div class="game-card__icon">🚀</div>
+          <div>
+            <h2 class="game-card__title">Neon Space Defender</h2>
+            <div class="game-card__tags">
+              <span class="tag tag--cat">Arcade</span>
+              <span class="tag">Canvas</span>
+            </div>
+          </div>
+          <p class="game-card__desc">
+            Bắn ruồi không gian neon với hiệu ứng particle, rung màn hình và power-up.
+            Hỗ trợ bàn phím, chuột và cảm ứng. Lưu điểm cao local.
+          </p>
+          <div class="game-card__meta" id="neonHigh">Điểm cao: 0</div>
+          <span class="btn btn--primary game-card__cta">Chơi ngay →</span>
+        </a>
+
         <div class="game-card coming-soon">
           <div class="game-card__icon">🧩</div>
           <div>
@@ -268,6 +285,8 @@
     (function() {
       const pikaHigh = localStorage.getItem('pikachu_highscore') || '0';
       document.getElementById('pikaHigh').textContent = 'Điểm cao: ' + pikaHigh;
+      const neonHigh = localStorage.getItem('neon_defender_highscore') || '0';
+      document.getElementById('neonHigh').textContent = 'Điểm cao: ' + neonHigh;
     })();
   </script>
 </body>
