@@ -38,6 +38,8 @@ const QUESTION_BANK = {
       { q: '8 + 1 = ?', a: '9' },
       { q: '3 + 6 = ?', a: '9' },
       { q: '7 + 3 = ?', a: '10' },
+      { q: '1 + 9 = ?', a: '10' },
+      { q: '4 + 4 = ?', a: '8' },
     ],
     addMedium: [
       { q: '12 + 15 = ?', a: '27' },
@@ -48,6 +50,14 @@ const QUESTION_BANK = {
       { q: '67 + 89 = ?', a: '156' },
       { q: '123 + 79 = ?', a: '202' },
       { q: '245 + 188 = ?', a: '433' },
+      { q: '199 + 357 = ?', a: '556' },
+      { q: '408 + 295 = ?', a: '703' },
+    ],
+    addHard: [
+      { q: '789 + 456 = ?', a: '1245' },
+      { q: '1024 + 976 = ?', a: '2000' },
+      { q: '3456 + 2654 = ?', a: '6110' },
+      { q: '999 + 1111 = ?', a: '2110' },
     ],
     subEasy: [
       { q: '7 - 3 = ?', a: '4' },
@@ -58,6 +68,8 @@ const QUESTION_BANK = {
       { q: '5 - 3 = ?', a: '2' },
       { q: '9 - 7 = ?', a: '2' },
       { q: '4 - 0 = ?', a: '4' },
+      { q: '10 - 2 = ?', a: '8' },
+      { q: '8 - 5 = ?', a: '3' },
     ],
     subMedium: [
       { q: '42 - 17 = ?', a: '25' },
@@ -68,6 +80,14 @@ const QUESTION_BANK = {
       { q: '200 - 95 = ?', a: '105' },
       { q: '333 - 177 = ?', a: '156' },
       { q: '500 - 234 = ?', a: '266' },
+      { q: '1000 - 437 = ?', a: '563' },
+      { q: '824 - 658 = ?', a: '166' },
+    ],
+    subHard: [
+      { q: '2000 - 1234 = ?', a: '766' },
+      { q: '5000 - 2789 = ?', a: '2211' },
+      { q: '10000 - 4321 = ?', a: '5679' },
+      { q: '8765 - 4321 = ?', a: '4444' },
     ],
     mulEasy: [
       { q: '2 × 4 = ?', a: '8' },
@@ -78,6 +98,8 @@ const QUESTION_BANK = {
       { q: '3 × 4 = ?', a: '12' },
       { q: '6 × 2 = ?', a: '12' },
       { q: '7 × 3 = ?', a: '21' },
+      { q: '9 × 1 = ?', a: '9' },
+      { q: '8 × 2 = ?', a: '16' },
     ],
     mulMedium: [
       { q: '6 × 7 = ?', a: '42' },
@@ -88,6 +110,14 @@ const QUESTION_BANK = {
       { q: '15 × 6 = ?', a: '90' },
       { q: '14 × 5 = ?', a: '70' },
       { q: '9 × 12 = ?', a: '108' },
+      { q: '16 × 5 = ?', a: '80' },
+      { q: '24 × 4 = ?', a: '96' },
+    ],
+    mulHard: [
+      { q: '25 × 12 = ?', a: '300' },
+      { q: '36 × 15 = ?', a: '540' },
+      { q: '125 × 8 = ?', a: '1000' },
+      { q: '45 × 22 = ?', a: '990' },
     ],
     divEasy: [
       { q: '8 ÷ 2 = ?', a: '4' },
@@ -98,6 +128,8 @@ const QUESTION_BANK = {
       { q: '20 ÷ 4 = ?', a: '5' },
       { q: '24 ÷ 8 = ?', a: '3' },
       { q: '30 ÷ 6 = ?', a: '5' },
+      { q: '36 ÷ 9 = ?', a: '4' },
+      { q: '49 ÷ 7 = ?', a: '7' },
     ],
     divMedium: [
       { q: '56 ÷ 7 = ?', a: '8' },
@@ -108,6 +140,14 @@ const QUESTION_BANK = {
       { q: '144 ÷ 12 = ?', a: '12' },
       { q: '169 ÷ 13 = ?', a: '13' },
       { q: '225 ÷ 15 = ?', a: '15' },
+      { q: '256 ÷ 16 = ?', a: '16' },
+      { q: '315 ÷ 15 = ?', a: '21' },
+    ],
+    divHard: [
+      { q: '1000 ÷ 25 = ?', a: '40' },
+      { q: '1440 ÷ 12 = ?', a: '120' },
+      { q: '2025 ÷ 45 = ?', a: '45' },
+      { q: '1728 ÷ 24 = ?', a: '72' },
     ],
     mixed: [
       { q: '10 - 3 + 2 = ?', a: '9' },
@@ -118,6 +158,8 @@ const QUESTION_BANK = {
       { q: '3 + 6 × 2 - 4 = ?', a: '11' },
       { q: '24 ÷ (3 + 1) = ?', a: '6' },
       { q: '(5 + 3) × 2 = ?', a: '16' },
+      { q: '15 - 6 ÷ 2 = ?', a: '12' },
+      { q: '(12 - 4) × 3 = ?', a: '24' },
     ],
     fraction: [
       { q: '½ + ½ = ?', a: '1' },
@@ -126,6 +168,16 @@ const QUESTION_BANK = {
       { q: '1 ÷ ½ = ?', a: '2' },
       { q: '⅓ + ⅓ = ?', a: '⅔' },
       { q: '½ × ½ = ?', a: '¼' },
+      { q: '¼ + ¼ = ?', a: '½' },
+      { q: '⅔ - ⅓ = ?', a: '⅓' },
+    ],
+    decimal: [
+      { q: '0,5 + 0,5 = ?', a: '1' },
+      { q: '1,2 + 0,8 = ?', a: '2' },
+      { q: '2,5 - 1,5 = ?', a: '1' },
+      { q: '0,25 × 4 = ?', a: '1' },
+      { q: '3,6 ÷ 0,6 = ?', a: '6' },
+      { q: '1,5 × 2 = ?', a: '3' },
     ],
     square: [
       { q: '3² = ?', a: '9' },
@@ -136,6 +188,8 @@ const QUESTION_BANK = {
       { q: '8² = ?', a: '64' },
       { q: '9² = ?', a: '81' },
       { q: '10² = ?', a: '100' },
+      { q: '11² = ?', a: '121' },
+      { q: '12² = ?', a: '144' },
     ],
     sqrt: [
       { q: '√16 = ?', a: '4' },
@@ -146,6 +200,15 @@ const QUESTION_BANK = {
       { q: '√81 = ?', a: '9' },
       { q: '√100 = ?', a: '10' },
       { q: '√144 = ?', a: '12' },
+      { q: '√169 = ?', a: '13' },
+      { q: '√196 = ?', a: '14' },
+    ],
+    cube: [
+      { q: '2³ = ?', a: '8' },
+      { q: '3³ = ?', a: '27' },
+      { q: '4³ = ?', a: '64' },
+      { q: '5³ = ?', a: '125' },
+      { q: '10³ = ?', a: '1000' },
     ],
     percent: [
       { q: '50% của 20 = ?', a: '10' },
@@ -154,6 +217,8 @@ const QUESTION_BANK = {
       { q: '10% của 80 = ?', a: '8' },
       { q: '75% của 80 = ?', a: '60' },
       { q: '30% của 50 = ?', a: '15' },
+      { q: '15% của 200 = ?', a: '30' },
+      { q: '5% của 100 = ?', a: '5' },
     ],
     equation: [
       { q: 'x + 5 = 12, x = ?', a: '7' },
@@ -162,6 +227,20 @@ const QUESTION_BANK = {
       { q: 'x ÷ 4 = 5, x = ?', a: '20' },
       { q: '3x + 2 = 11, x = ?', a: '3' },
       { q: '2x - 5 = 9, x = ?', a: '7' },
+      { q: '5x + 4 = 19, x = ?', a: '3' },
+      { q: 'x ÷ 7 + 2 = 5, x = ?', a: '21' },
+    ],
+    ratio: [
+      { q: 'Tỉ số 4 : 8 rút gọn = ?', a: '1:2' },
+      { q: 'Tỉ số 15 : 25 rút gọn = ?', a: '3:5' },
+      { q: '25% viết dưới dạng tỉ số = ?', a: '1:4' },
+      { q: '50% viết dưới dạng tỉ số = ?', a: '1:2' },
+    ],
+    sequence: [
+      { q: 'Số chẵn liền sau 18?', a: '20' },
+      { q: 'Số lẻ liền trước 21?', a: '19' },
+      { q: 'Bội chung nhỏ nhất của 3 và 4?', a: '12' },
+      { q: 'Ước chung lớn nhất của 12 và 18?', a: '6' },
     ],
   },
   english: {
@@ -174,6 +253,10 @@ const QUESTION_BANK = {
       { q: '"Con ngựa" tiếng Anh là?', a: 'horse' },
       { q: '"Con voi" tiếng Anh là?', a: 'elephant' },
       { q: '"Con sư tử" tiếng Anh là?', a: 'lion' },
+      { q: '"Con cá voi" tiếng Anh là?', a: 'whale' },
+      { q: '"Con gấu" tiếng Anh là?', a: 'bear' },
+      { q: '"Con cáo" tiếng Anh là?', a: 'fox' },
+      { q: '"Con sóc" tiếng Anh là?', a: 'squirrel' },
     ],
     vocabColors: [
       { q: '"Màu đỏ" tiếng Anh là?', a: 'red' },
@@ -184,6 +267,9 @@ const QUESTION_BANK = {
       { q: '"Màu trắng" tiếng Anh là?', a: 'white' },
       { q: '"Màu hồng" tiếng Anh là?', a: 'pink' },
       { q: '"Màu tím" tiếng Anh là?', a: 'purple' },
+      { q: '"Màu cam" tiếng Anh là?', a: 'orange' },
+      { q: '"Màu nâu" tiếng Anh là?', a: 'brown' },
+      { q: '"Màu xám" tiếng Anh là?', a: 'grey' },
     ],
     vocabFood: [
       { q: '"Táo" tiếng Anh là?', a: 'apple' },
@@ -194,6 +280,81 @@ const QUESTION_BANK = {
       { q: '"Cơm" tiếng Anh là?', a: 'rice' },
       { q: '"Nước" tiếng Anh là?', a: 'water' },
       { q: '"Cà phê" tiếng Anh là?', a: 'coffee' },
+      { q: '"Cam" tiếng Anh là?', a: 'orange' },
+      { q: '"Thịt" tiếng Anh là?', a: 'meat' },
+      { q: '"Cá" tiếng Anh là?', a: 'fish' },
+      { q: '"Rau" tiếng Anh là?', a: 'vegetable' },
+    ],
+    vocabFamily: [
+      { q: '"Mẹ" tiếng Anh là?', a: 'mother' },
+      { q: '"Bố" tiếng Anh là?', a: 'father' },
+      { q: '"Anh/chị/em trai" tiếng Anh là?', a: 'brother' },
+      { q: '"Chị/em gái" tiếng Anh là?', a: 'sister' },
+      { q: '"Ông" tiếng Anh là?', a: 'grandfather' },
+      { q: '"Bà" tiếng Anh là?', a: 'grandmother' },
+      { q: '"Bạn bè" tiếng Anh là?', a: 'friend' },
+      { q: '"Gia đình" tiếng Anh là?', a: 'family' },
+    ],
+    vocabSchool: [
+      { q: '"Bút chì" tiếng Anh là?', a: 'pencil' },
+      { q: '"Sách" tiếng Anh là?', a: 'book' },
+      { q: '"Thước kẻ" tiếng Anh là?', a: 'ruler' },
+      { q: '"Bảng đen" tiếng Anh là?', a: 'board' },
+      { q: '"Bàn" tiếng Anh là?', a: 'desk' },
+      { q: '"Ghế" tiếng Anh là?', a: 'chair' },
+      { q: '"Trường học" tiếng Anh là?', a: 'school' },
+      { q: '"Giáo viên" tiếng Anh là?', a: 'teacher' },
+      { q: '"Học sinh" tiếng Anh là?', a: 'student' },
+    ],
+    vocabWeather: [
+      { q: '"Mưa" tiếng Anh là?', a: 'rain' },
+      { q: '"Nắng" tiếng Anh là?', a: 'sun' },
+      { q: '"Gió" tiếng Anh là?', a: 'wind' },
+      { q: '"Tuyết" tiếng Anh là?', a: 'snow' },
+      { q: '"Mây" tiếng Anh là?', a: 'cloud' },
+      { q: '"Bão" tiếng Anh là?', a: 'storm' },
+      { q: '"Nóng" tiếng Anh là?', a: 'hot' },
+      { q: '"Lạnh" tiếng Anh là?', a: 'cold' },
+    ],
+    vocabBody: [
+      { q: '"Đầu" tiếng Anh là?', a: 'head' },
+      { q: '"Tay" tiếng Anh là?', a: 'hand' },
+      { q: '"Chân" tiếng Anh là?', a: 'foot' },
+      { q: '"Mắt" tiếng Anh là?', a: 'eye' },
+      { q: '"Tai" tiếng Anh là?', a: 'ear' },
+      { q: '"Mũi" tiếng Anh là?', a: 'nose' },
+      { q: '"Miệng" tiếng Anh là?', a: 'mouth' },
+      { q: '"Răng" tiếng Anh là?', a: 'tooth' },
+    ],
+    vocabJobs: [
+      { q: '"Bác sĩ" tiếng Anh là?', a: 'doctor' },
+      { q: '"Giáo viên" tiếng Anh là?', a: 'teacher' },
+      { q: '"Cảnh sát" tiếng Anh là?', a: 'police' },
+      { q: '"Lính cứu hỏa" tiếng Anh là?', a: 'firefighter' },
+      { q: '"Đầu bếp" tiếng Anh là?', a: 'chef' },
+      { q: '"Phi công" tiếng Anh là?', a: 'pilot' },
+      { q: '"Kỹ sư" tiếng Anh là?', a: 'engineer' },
+      { q: '"Nông dân" tiếng Anh là?', a: 'farmer' },
+    ],
+    vocabTransport: [
+      { q: '"Xe đạp" tiếng Anh là?', a: 'bicycle' },
+      { q: '"Ô tô" tiếng Anh là?', a: 'car' },
+      { q: '"Xe buýt" tiếng Anh là?', a: 'bus' },
+      { q: '"Máy bay" tiếng Anh là?', a: 'plane' },
+      { q: '"Tàu hỏa" tiếng Anh là?', a: 'train' },
+      { q: '"Tàu thủy" tiếng Anh là?', a: 'ship' },
+      { q: '"Taxi" tiếng Anh là?', a: 'taxi' },
+      { q: '"Xe máy" tiếng Anh là?', a: 'motorbike' },
+    ],
+    vocabHouse: [
+      { q: '"Nhà" tiếng Anh là?', a: 'house' },
+      { q: '"Cửa" tiếng Anh là?', a: 'door' },
+      { q: '"Cửa sổ" tiếng Anh là?', a: 'window' },
+      { q: '"Mái nhà" tiếng Anh là?', a: 'roof' },
+      { q: '"Bếp" tiếng Anh là?', a: 'kitchen' },
+      { q: '"Phòng ngủ" tiếng Anh là?', a: 'bedroom' },
+      { q: '"Phòng tắm" tiếng Anh là?', a: 'bathroom' },
+      { q: '"Vườn" tiếng Anh là?', a: 'garden' },
     ],
     numbers: [
       { q: '"Số 7" tiếng Anh là?', a: 'seven' },
@@ -202,12 +363,28 @@ const QUESTION_BANK = {
       { q: '"Số 20" tiếng Anh là?', a: 'twenty' },
       { q: '"Số 100" tiếng Anh là?', a: 'hundred' },
       { q: '"Số 1000" tiếng Anh là?', a: 'thousand' },
+      { q: '"Số 0" tiếng Anh là?', a: 'zero' },
+      { q: '"Số 30" tiếng Anh là?', a: 'thirty' },
+      { q: '"Số 50" tiếng Anh là?', a: 'fifty' },
+      { q: '"Số 80" tiếng Anh là?', a: 'eighty' },
     ],
     days: [
       { q: '"Thứ Hai" tiếng Anh là?', a: 'Monday' },
+      { q: '"Thứ Ba" tiếng Anh là?', a: 'Tuesday' },
+      { q: '"Thứ Tư" tiếng Anh là?', a: 'Wednesday' },
+      { q: '"Thứ Năm" tiếng Anh là?', a: 'Thursday' },
       { q: '"Thứ Sáu" tiếng Anh là?', a: 'Friday' },
+      { q: '"Thứ Bảy" tiếng Anh là?', a: 'Saturday' },
       { q: '"Chủ Nhật" tiếng Anh là?', a: 'Sunday' },
+    ],
+    months: [
       { q: '"Tháng 1" tiếng Anh là?', a: 'January' },
+      { q: '"Tháng 2" tiếng Anh là?', a: 'February' },
+      { q: '"Tháng 3" tiếng Anh là?', a: 'March' },
+      { q: '"Tháng 4" tiếng Anh là?', a: 'April' },
+      { q: '"Tháng 5" tiếng Anh là?', a: 'May' },
+      { q: '"Tháng 6" tiếng Anh là?', a: 'June' },
+      { q: '"Tháng 7" tiếng Anh là?', a: 'July' },
       { q: '"Tháng 12" tiếng Anh là?', a: 'December' },
     ],
     prepositions: [
@@ -217,6 +394,18 @@ const QUESTION_BANK = {
       { q: 'Giới từ chỉ vị trí "bên cạnh"?', a: 'next to' },
       { q: 'Giới từ chỉ vị trí "phía trước"?', a: 'in front of' },
       { q: 'Giới từ chỉ vị trí "phía sau"?', a: 'behind' },
+      { q: 'Giới từ chỉ vị trí "giữa"?', a: 'between' },
+      { q: 'Giới từ chỉ vị trí "bên trên"?', a: 'above' },
+    ],
+    pronouns: [
+      { q: '"Tôi" tiếng Anh là?', a: 'I' },
+      { q: '"Bạn" tiếng Anh là?', a: 'you' },
+      { q: '"Anh ấy" tiếng Anh là?', a: 'he' },
+      { q: '"Cô ấy" tiếng Anh là?', a: 'she' },
+      { q: '"Chúng tôi" tiếng Anh là?', a: 'we' },
+      { q: '"Họ" tiếng Anh là?', a: 'they' },
+      { q: '"Củả tôi" tiếng Anh là?', a: 'my' },
+      { q: '"Củả anh ấy" tiếng Anh là?', a: 'his' },
     ],
     tenses: [
       { q: '"Eat" quá khứ đơn là?', a: 'ate' },
@@ -225,6 +414,10 @@ const QUESTION_BANK = {
       { q: '"Do" quá khứ đơn là?', a: 'did' },
       { q: '"See" quá khứ đơn là?', a: 'saw' },
       { q: '"Take" quá khứ đơn là?', a: 'took' },
+      { q: '"Run" quá khứ đơn là?', a: 'ran' },
+      { q: '"Write" quá khứ đơn là?', a: 'wrote' },
+      { q: '"Drink" quá khứ đơn là?', a: 'drank' },
+      { q: '"Begin" quá khứ đơn là?', a: 'began' },
     ],
     antonyms: [
       { q: 'Trái nghĩa của "big"?', a: 'small' },
@@ -233,6 +426,37 @@ const QUESTION_BANK = {
       { q: 'Trái nghĩa của "fast"?', a: 'slow' },
       { q: 'Trái nghĩa của "easy"?', a: 'difficult' },
       { q: 'Trái nghĩa của "young"?', a: 'old' },
+      { q: 'Trái nghĩa của "tall"?', a: 'short' },
+      { q: 'Trái nghĩa của "strong"?', a: 'weak' },
+      { q: 'Trái nghĩa của "clean"?', a: 'dirty' },
+      { q: 'Trái nghĩa của "day"?', a: 'night' },
+    ],
+    synonyms: [
+      { q: 'Từ đồng nghĩa với "happy"?', a: 'glad' },
+      { q: 'Từ đồng nghĩa với "sad"?', a: 'unhappy' },
+      { q: 'Từ đồng nghĩa với "big"?', a: 'large' },
+      { q: 'Từ đồng nghĩa với "small"?', a: 'little' },
+      { q: 'Từ đồng nghĩa với "fast"?', a: 'quick' },
+      { q: 'Từ đồng nghĩa với "begin"?', a: 'start' },
+      { q: 'Từ đồng nghĩa với "end"?', a: 'finish' },
+      { q: 'Từ đồng nghĩa với "beautiful"?', a: 'pretty' },
+      { q: 'Từ đồng nghĩa với "angry"?', a: 'mad' },
+      { q: 'Từ đồng nghĩa với "tired"?', a: 'sleepy' },
+      { q: 'Từ đồng nghĩa với "smart"?', a: 'clever' },
+      { q: 'Từ đồng nghĩa với "afraid"?', a: 'scared' },
+    ],
+    articles: [
+      { q: 'Mạo từ xác định trong tiếng Anh?', a: 'the' },
+      { q: 'Mạo từ "a" dùng trước danh từ bắt đầu bằng âm gì?', a: 'phụ âm' },
+      { q: 'Mạo từ "an" dùng trước danh từ bắt đầu bằng âm gì?', a: 'nguyên âm' },
+    ],
+    plural: [
+      { q: 'Số nhiều của "child"?', a: 'children' },
+      { q: 'Số nhiều của "tooth"?', a: 'teeth' },
+      { q: 'Số nhiều của "foot"?', a: 'feet' },
+      { q: 'Số nhiều của "mouse"?', a: 'mice' },
+      { q: 'Số nhiều của "sheep"?', a: 'sheep' },
+      { q: 'Số nhiều của "fish"?', a: 'fish' },
     ],
   },
   science: {
@@ -245,21 +469,34 @@ const QUESTION_BANK = {
       { q: 'Ký hiệu hóa học của Bạc?', a: 'Ag' },
       { q: 'Ký hiệu hóa học của Nhôm?', a: 'Al' },
       { q: 'Ký hiệu hóa học của Canxi?', a: 'Ca' },
+      { q: 'Ký hiệu hóa học của Natri?', a: 'Na' },
+      { q: 'Ký hiệu hóa học của Kali?', a: 'K' },
+      { q: 'Ký hiệu hóa học của Lưu huỳnh?', a: 'S' },
+      { q: 'Ký hiệu hóa học của Đồng?', a: 'Cu' },
     ],
     biology: [
-      { q: 'Bộ phận nào hô hấp ở người?', a: 'phổi' },
+      { q: 'Bộ phận nào hô hấp ở ngườ?', a: 'phổi' },
       { q: 'Bộ phận nào bơm máu?', a: 'tim' },
       { q: 'Cơ quan tiêu hóa chính?', a: 'dạ dày' },
       { q: 'Nơi trao đổi chất của tế bào?', a: 'ti thể' },
       { q: 'Vật chất di truyền chủ yếu?', a: 'ADN' },
       { q: 'Đơn vị cơ bản của sự sống?', a: 'tế bào' },
+      { q: 'Bộ phận lọc máu trong cơ thể?', a: 'thận' },
+      { q: 'Cơ quan xử lý thông tin trong cơ thể?', a: 'não' },
+      { q: 'Loài động vật có vú lớn nhất?', a: 'cá voi xanh' },
+      { q: 'Cây xanh quang hợp nhờ sắc tố nào?', a: 'diệp lục' },
     ],
     physics: [
       { q: 'Đơn vị đo lực?', a: 'Newton' },
       { q: 'Đơn vị đo năng lượng?', a: 'Joule' },
       { q: 'Tốc độ ánh sáng xấp xỉ?', a: '300000km/s' },
-      { q: 'Hành tinh thứ 3 từ Mặt Trời?', a: 'Trái Đất' },
+      { q: 'Hành tinh thứ 3 từ Mặt Trờ?', a: 'Trái Đất' },
       { q: 'Vệ tinh tự nhiên của Trái Đất?', a: 'Mặt Trăng' },
+      { q: 'Đơn vị đo cường độ dòng điện?', a: 'Ampe' },
+      { q: 'Đơn vị đo hiệu điện thế?', a: 'Volt' },
+      { q: 'Đơn vị đo điện trở?', a: 'Ohm' },
+      { q: 'Lực hút Trái Đất tác dụng lên vật gọi là?', a: 'trọng lực' },
+      { q: 'Vật chất truyền âm tốt nhất?', a: 'chất rắn' },
     ],
     chemistry: [
       { q: 'Công thức của nước?', a: 'H2O' },
@@ -267,6 +504,26 @@ const QUESTION_BANK = {
       { q: 'Khí cần cho sự cháy?', a: 'Oxy' },
       { q: 'Muối ăn là gì?', a: 'NaCl' },
       { q: 'Axit trong dạ dày?', a: 'HCl' },
+      { q: 'Khí làm cháy nến trong không khí?', a: 'Oxy' },
+      { q: 'Kim loại nhẹ nhất?', a: 'Liti' },
+      { q: 'Kim loại dẫn điện tốt nhất?', a: 'Bạc' },
+    ],
+    astronomy: [
+      { q: 'Hành tinh lớn nhất Hệ Mặt Trờ?', a: 'Sao Mộc' },
+      { q: 'Hành tinh nhỏ nhất Hệ Mặt Trờ?', a: 'Sao Thủy' },
+      { q: 'Hành tinh có vành đai đẹp nhất?', a: 'Sao Thổ' },
+      { q: 'Ngôi sao gần Trái Đất nhất?', a: 'Mặt Trờ' },
+      { q: 'Dải Ngân Hà là gì?', a: 'thiên hà' },
+      { q: 'Chòm sao hình con gấu lớn?', a: 'Ursa Major' },
+      { q: 'Sao chổi nổi tiếng đến gần Trái Đất 76 năm một lần?', a: 'Halley' },
+    ],
+    earth: [
+      { q: 'Lớp bảo vệ Trái Đất khỏi bức xạ mặt trờ?', a: 'tầng ôzôn' },
+      { q: 'Vỏ Trái Đất chia thành mấn lớp kiến tạo chính?', a: '7' },
+      { q: 'Hiện tượng đất rung chuyển gọi là?', a: 'động đất' },
+      { q: 'Núi lửa phun ra chất gì nóng nhất?', a: 'magma' },
+      { q: 'Đại dương lớn nhất?', a: 'Thái Bình Dương' },
+      { q: 'Đại dương nhỏ nhất?', a: 'Bắc Băng Dương' },
     ],
   },
   geography: {
@@ -277,6 +534,10 @@ const QUESTION_BANK = {
       { q: 'Sông dài nhất Việt Nam?', a: 'Hồng' },
       { q: 'Đỉnh núi cao nhất Việt Nam?', a: 'Fansipan' },
       { q: 'Vịnh nổi tiếng ở Quảng Ninh?', a: 'Hạ Long' },
+      { q: 'Cố đô của Việt Nam?', a: 'Huế' },
+      { q: 'Thành phố biển nổi tiếng ở Khánh Hòa?', a: 'Nha Trang' },
+      { q: 'Đảo lớn nhất Việt Nam?', a: 'Phú Quốc' },
+      { q: 'Cửa khẩu quốc tế cao nhất Việt Nam?', a: 'Lào Cai' },
     ],
     world: [
       { q: 'Thủ đô của Nhật Bản?', a: 'Tokyo' },
@@ -287,21 +548,66 @@ const QUESTION_BANK = {
       { q: 'Lục địa lớn nhất?', a: 'Á - Âu' },
       { q: 'Đất nước hình chiếc ủng?', a: 'Ý' },
       { q: 'Kim tự tháp ở đâu?', a: 'Ai Cập' },
+      { q: 'Thủ đô của Hàn Quốc?', a: 'Seoul' },
+      { q: 'Thủ đô của Ấn Độ?', a: 'New Delhi' },
+      { q: 'Thủ đô của Brazil?', a: 'Brasília' },
+      { q: 'Thủ đô của Nga?', a: 'Moscow' },
+    ],
+    capitals: [
+      { q: 'Thủ đô của Úc?', a: 'Canberra' },
+      { q: 'Thủ đô của Canada?', a: 'Ottawa' },
+      { q: 'Thủ đô của Đức?', a: 'Berlin' },
+      { q: 'Thủ đô của Ý?', a: 'Rome' },
+      { q: 'Thủ đô của Tây Ban Nha?', a: 'Madrid' },
+      { q: 'Thủ đô của Trung Quốc?', a: 'Bắc Kinh' },
+      { q: 'Thủ đô của Thái Lan?', a: 'Bangkok' },
+      { q: 'Thủ đô của Singapore?', a: 'Singapore' },
+    ],
+    rivers: [
+      { q: 'Sông dài nhất thế giới?', a: 'Nile' },
+      { q: 'Sông dài nhất Nam Mỹ?', a: 'Amazon' },
+      { q: 'Sông dài nhất châu Á?', a: 'Dương Tử' },
+      { q: 'Sông dài nhất châu Âu?', a: 'Volga' },
+    ],
+    mountains: [
+      { q: 'Đỉnh núi cao nhất thế giới?', a: 'Everest' },
+      { q: 'Dãy núi dài nhất thế giới?', a: 'Andes' },
+      { q: 'Núi cao nhất châu Phi?', a: 'Kilimanjaro' },
+      { q: 'Núi cao nhất Nhật Bản?', a: 'Phú Sĩ' },
     ],
   },
   history: {
     vietnam: [
-      { q: 'Vua Hùng là tổ tiên của?', a: 'người Việt' },
+      { q: 'Vua Hùng là tổ tiên của?', a: 'ngườ Việt' },
       { q: 'Năm Bình Nguyên lỗi?', a: '1285' },
       { q: 'Chiến thắng Điện Biên Phủ năm?', a: '1954' },
       { q: 'Ngày giải phóng miền Nam?', a: '30/4/1975' },
       { q: 'Bác Hồ đọc Tuyên ngôn năm?', a: '1945' },
+      { q: 'Chiến thắng Bạch Đằng lịch sử do vua nào lãnh đạo?', a: 'Ngô Quyền' },
+      { q: 'Vị tướng đánh tan quân Nam Hán?', a: 'Ngô Quyền' },
+      { q: 'Nữ tướng đánh tan quân Nam Hán trên sông Bạch Đằng?', a: 'Bà Triệu' },
+      { q: 'Vị vua khai quốc nhà Lý?', a: 'Lý Thái Tổ' },
+      { q: 'Kinh thành Thăng Long được xây dựng năm?', a: '1010' },
     ],
     world: [
       { q: 'Năm phát minh ra bánh xe?', a: '3500 TCN' },
-      { q: 'Ai vẽ Mona Lisa?', a: 'Leonardo' },
       { q: 'Chiến tranh thế giới thứ 2 kết thúc năm?', a: '1945' },
       { q: 'Nước nào phát minh ra giấy?', a: 'Trung Quốc' },
+      { q: 'Nước nào phát minh ra la bàn?', a: 'Trung Quốc' },
+      { q: 'Năm Columbus đến châu Mỹ?', a: '1492' },
+      { q: 'Bức tường Berlin sụp đổ năm?', a: '1989' },
+      { q: 'Liên Xô tan rã năm?', a: '1991' },
+      { q: 'Hiến chương Liên Hợp Quốc được ký năm?', a: '1945' },
+      { q: 'Cách mạng Pháp bắt đầu năm?', a: '1789' },
+      { q: 'Năm Mỹ tuyên bố độc lập?', a: '1776' },
+    ],
+    inventors: [
+      { q: 'Ai phát minh ra bóng đèn điện?', a: 'Edison' },
+      { q: 'Ai phát minh ra điện thoại?', a: 'Bell' },
+      { q: 'Ai phát minh ra máy in?', a: 'Gutenberg' },
+      { q: 'Ai phát minh ra máy bay?', a: 'Wright' },
+      { q: 'Ai phát minh ra penicillin?', a: 'Fleming' },
+      { q: 'Ai phát minh ra lý thuyết tương đối?', a: 'Einstein' },
     ],
   },
   logic: {
@@ -312,6 +618,10 @@ const QUESTION_BANK = {
       { q: 'Cái gì có 4 chân nhưng không đi?', a: 'bàn' },
       { q: 'Cái gì càng lau càng bẩn?', a: 'nước' },
       { q: 'Cái gì có mũi nhưng không thở?', a: 'kim' },
+      { q: 'Con gì biết bay nhưng không phải chim?', a: 'muỗi' },
+      { q: 'Cái gì có nhiều răng nhưng không nhai?', a: 'lược' },
+      { q: 'Cái gì càng nóng càng lạnh?', a: 'cốc kem' },
+      { q: 'Cái gì đi khắp nơi nhưng không rờ khỏi chỗ?', a: 'con đường' },
     ],
     sequences: [
       { q: '2, 4, 6, 8, ... số tiếp theo?', a: '10' },
@@ -319,6 +629,87 @@ const QUESTION_BANK = {
       { q: '3, 6, 12, 24, ... số tiếp theo?', a: '48' },
       { q: '1, 4, 9, 16, ... số tiếp theo?', a: '25' },
       { q: '2, 3, 5, 7, 11, ... số tiếp theo?', a: '13' },
+      { q: '1, 3, 6, 10, ... số tiếp theo?', a: '15' },
+      { q: '1, 2, 4, 8, ... số tiếp theo?', a: '16' },
+      { q: '5, 10, 20, 40, ... số tiếp theo?', a: '80' },
+    ],
+    patterns: [
+      { q: 'Tam giác có mấy cạnh?', a: '3' },
+      { q: 'Tứ giác có mấy góc?', a: '4' },
+      { q: 'Hình lập phương có mấy mặt?', a: '6' },
+      { q: 'Hình tròn không có gì?', a: 'góc' },
+      { q: 'Một tuần có mấy ngày?', a: '7' },
+      { q: 'Một giờ có mấy phút?', a: '60' },
+    ],
+  },
+  tech: {
+    computers: [
+      { q: 'Bộ não của máy tính?', a: 'CPU' },
+      { q: 'Bộ nhớ tạm thờ của máy tính?', a: 'RAM' },
+      { q: 'Thiết bị lưu trữ dữ liệu lâu dài?', a: 'ổ cứng' },
+      { q: 'Hệ điều hành của Apple?', a: 'macOS' },
+      { q: 'Trình duyệt web của Google?', a: 'Chrome' },
+      { q: 'Ngôn ngữ lập trình phổ biến do James Gosling tạo ra?', a: 'Java' },
+      { q: 'Ngôn ngữ lập trình của web frontend?', a: 'JavaScript' },
+      { q: 'Giao thức truyền web an toàn?', a: 'HTTPS' },
+    ],
+    internet: [
+      { q: 'Địa chỉ của một trang web gọi là?', a: 'URL' },
+      { q: 'Giao thức gửi email?', a: 'SMTP' },
+      { q: 'Mạng xã hội lớn nhất thế giới?', a: 'Facebook' },
+      { q: 'Công cụ tìm kiếm phổ biến nhất?', a: 'Google' },
+      { q: 'Dịch vụ video của Google?', a: 'YouTube' },
+      { q: 'Dịch vụ nhắn tin thuộc Meta?', a: 'WhatsApp' },
+    ],
+  },
+  arts: {
+    instruments: [
+      { q: 'Nhạc cụ có phím đàn?', a: 'piano' },
+      { q: 'Nhạc cụ dây nhỏ?', a: 'violin' },
+      { q: 'Nhạc cụ thổi bằng đồng?', a: 'trumpet' },
+      { q: 'Nhạc cụ gõ hình trống?', a: 'drum' },
+      { q: 'Nhạc cụ 6 dây phổ biến?', a: 'guitar' },
+      { q: 'Nhạc cụ gõ phím?', a: 'keyboard' },
+    ],
+    musicians: [
+      { q: 'Nhạc sĩ nổi tiếng ngườ Áo?', a: 'Mozart' },
+      { q: 'Nhà soạn nhạc Điếu Còn?', a: 'Beethoven' },
+      { q: 'Nhạc sĩ thiên tài ngườ Đức?', a: 'Bach' },
+      { q: 'Nhà soạn nhạc ngườ Nga viết "Hồ thiên nga"?', a: 'Tchaikovsky' },
+    ],
+    artists: [
+      { q: 'Bức tranh Mona Lisa của ai?', a: 'Leonardo' },
+      { q: 'Họa sĩ nổi tiếng cắt tai?', a: 'Van Gogh' },
+      { q: 'Trường phái hội họa của Picasso?', a: 'Lập thể' },
+      { q: 'Họa sĩ vẽ "Vầng trăng máu"?', a: 'Munch' },
+      { q: 'Họa sĩ ấn tượng Pháp vẽ "Bữa tiệc trôi nổi"?', a: 'Renoir' },
+    ],
+    colorMixing: [
+      { q: 'Màu xanh da trờ + vàng = ?', a: 'xanh lá' },
+      { q: 'Màu đỏ + xanh dương = ?', a: 'tím' },
+      { q: 'Màu đỏ + vàng = ?', a: 'cam' },
+      { q: 'Trắng + đen = ?', a: 'xám' },
+    ],
+    literature: [
+      { q: 'Tác giả Truyện Kiều?', a: 'Nguyễn Du' },
+      { q: 'Nhà văn nổi tiếng Việt Nam viết "Số đỏ"?', a: 'Vũ Trọng Phụng' },
+      { q: 'Nhà thơ nổi tiếng với "Tố Hữu"?', a: 'Tố Hữu' },
+      { q: 'Tác giả "Harry Potter"?', a: 'J.K. Rowling' },
+      { q: 'Tác giả "Những ngườ khốn khổ"?', a: 'Victor Hugo' },
+    ],
+  },
+  sports: {
+    olympics: [
+      { q: 'Thế vận hội Olympic được tổ chức mấy năm một lần?', a: '4' },
+      { q: 'Màu của 5 vòng tròn Olympic?', a: 'xanh, vàng, đen, xanh lá, đỏ' },
+      { q: 'Quốc gia đăng cai Olympic 2024?', a: 'Pháp' },
+      { q: 'Môn thể thao vua?', a: 'bóng đá' },
+    ],
+    football: [
+      { q: 'Một đội bóng đá có bao nhiêu cầu thủ trên sân?', a: '11' },
+      { q: 'Giải bóng đá vô địch thế giới gọi là?', a: 'World Cup' },
+      { q: 'Cầu thủ nổi tiếng ngườ Argentina?', a: 'Messi' },
+      { q: 'Cầu thủ nổi tiếng ngườ Bồ Đào Nha?', a: 'Ronaldo' },
     ],
   },
   hard: {
@@ -330,7 +721,9 @@ const QUESTION_BANK = {
       { q: 'Số nguyên tố nhỏ nhất?', a: '2' },
       { q: '1/2 + 1/3 = ?', a: '5/6' },
       { q: '20% của 120 = ?', a: '24' },
-      { q: '3! = ?', a: '6' }
+      { q: '3! = ?', a: '6' },
+      { q: '2^10 = ?', a: '1024' },
+      { q: 'Số Pi xấp xỉ?', a: '3,14' },
     ],
     mixed: [
       { q: 'Thủ đô của Úc?', a: 'Canberra' },
@@ -340,9 +733,39 @@ const QUESTION_BANK = {
       { q: 'Đơn vị đo cường độ dòng điện?', a: 'Ampe' },
       { q: 'Tác giả Truyện Kiều?', a: 'Nguyễn Du' },
       { q: 'Hành tinh lớn nhất Hệ Mặt Trờ?', a: 'Sao Mộc' },
-      { q: 'Đại dương nhỏ nhất?', a: 'Bắc Băng Dương' }
+      { q: 'Đại dương nhỏ nhất?', a: 'Bắc Băng Dương' },
+      { q: 'Ai phát minh ra điện thoại?', a: 'Bell' },
+      { q: 'Nước nào đăng cai World Cup 2022?', a: 'Qatar' },
     ]
   }
+};
+
+/* ---------- Topic mapping for distractor pools ---------- */
+const POOL_TOPIC_MAP = {
+  addEasy: 'math', addMedium: 'math', addHard: 'math',
+  subEasy: 'math', subMedium: 'math', subHard: 'math',
+  mulEasy: 'math', mulMedium: 'math', mulHard: 'math',
+  divEasy: 'math', divMedium: 'math', divHard: 'math',
+  mixed: 'math', fraction: 'math', decimal: 'math',
+  square: 'math', sqrt: 'math', cube: 'math',
+  percent: 'math', equation: 'math', ratio: 'math', sequence: 'math',
+  vocabAnimals: 'animals', vocabColors: 'colors', vocabFood: 'food',
+  vocabFamily: 'family', vocabSchool: 'school', vocabWeather: 'weather',
+  vocabBody: 'body', vocabJobs: 'jobs', vocabTransport: 'transport',
+  vocabHouse: 'house', numbers: 'numbers', days: 'days', months: 'months',
+  prepositions: 'prepositions', pronouns: 'pronouns', tenses: 'tenses',
+  antonyms: 'antonyms', synonyms: 'synonyms', articles: 'articles', plural: 'plural',
+  elements: 'elements', biology: 'biology', physics: 'physics',
+  chemistry: 'chemistry', astronomy: 'astronomy', earth: 'earth',
+  vietnam: 'vietnam', world: 'world', capitals: 'capitals',
+  rivers: 'rivers', mountains: 'mountains',
+  riddles: 'riddles', sequences: 'sequences', patterns: 'patterns',
+  computers: 'computers', internet: 'internet',
+  instruments: 'instruments', musicians: 'musicians',
+  artists: 'artists', colorMixing: 'colorMixing', literature: 'literature',
+  olympics: 'olympics', football: 'football',
+  inventors: 'inventors',
+  math: 'hard', mixed: 'hard'
 };
 
 /* ---------- Distractor generators ---------- */
@@ -356,12 +779,31 @@ const FRACTION_CHARS = {
 const FRACTION_POOL = ['½', '⅓', '⅔', '¼', '¾'];
 
 function isPlainNumber(v) {
-  return /^-?\d+(\.\d+)?$/.test(String(v));
+  // Accept both dot and comma as decimal separator (Vietnamese convention)
+  return /^-?\d+([.,]\d+)?$/.test(String(v));
 }
 
 function isUnicodeFraction(v) {
   return FRACTION_CHARS.hasOwnProperty(v);
 }
+
+/* ---------- Auto-build answer pools by topic ---------- */
+const ANSWER_POOLS = {};
+const ANSWER_TO_POOL = {};
+Object.entries(QUESTION_BANK).forEach(([cat, pools]) => {
+  Object.entries(pools).forEach(([poolName, questions]) => {
+    const topic = POOL_TOPIC_MAP[poolName] || poolName;
+    if (!ANSWER_POOLS[topic]) ANSWER_POOLS[topic] = new Set();
+    questions.forEach(q => {
+      const a = String(q.a).trim();
+      if (!isPlainNumber(a) && !isUnicodeFraction(a)) {
+        ANSWER_POOLS[topic].add(a);
+        ANSWER_TO_POOL[a] = topic;
+      }
+    });
+  });
+});
+Object.keys(ANSWER_POOLS).forEach(k => { ANSWER_POOLS[k] = Array.from(ANSWER_POOLS[k]); });
 
 function numericDistractors(correct, count = 2) {
   const n = parseFloat(correct);
@@ -541,8 +983,24 @@ function stringDistractors(correct, count = 2) {
     return cands.slice(0, count);
   }
 
-  // Fallback: build a generic pool of all non-numeric answers from the question bank
-  // and pick ones that look similar (same first letter or similar length).
+  // Topic-aware fallback: if we know the topic of the correct answer,
+  // prefer other answers from the same topic so distractors stay relevant.
+  // Within the topic, prefer answers with similar length or starting letter.
+  const topic = ANSWER_TO_POOL[correct];
+  if (topic && ANSWER_POOLS[topic]) {
+    const topicPool = ANSWER_POOLS[topic].filter(v => v !== correct);
+    if (topicPool.length >= count) {
+      const similar = topicPool.filter(v => {
+        const vl = v.toLowerCase().replace(/\s+/g, '');
+        return vl[0] === lower[0] || Math.abs(vl.length - lower.length) <= 3;
+      });
+      const cands = shuffle(similar.length >= count ? similar : topicPool);
+      return cands.slice(0, count);
+    }
+  }
+
+  // Generic fallback: build a pool of all non-numeric answers and pick ones
+  // that look similar (same first letter or similar length).
   const genericPool = ALL_STRING_ANSWERS.filter(v => v !== correct);
   const similar = genericPool.filter(v => {
     const vl = v.toLowerCase().replace(/\s+/g, '');
