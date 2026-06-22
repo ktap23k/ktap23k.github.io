@@ -1,0 +1,476 @@
+/* =========================================
+   COURSE PAGE — Apache Airflow 3.2.x
+   Indigo / Violet accent theme
+   ========================================= */
+
+:root {
+  --course-accent:        #6366f1;   /* indigo-500 */
+  --course-accent-light:  #e0e7ff;   /* indigo-100 */
+  --course-accent-soft:   #f5f3ff;   /* violet-50 */
+  --course-accent-hover:  #4f46e5;   /* indigo-600 */
+  --course-violet:        #8b5cf6;   /* violet-500 */
+  --course-code-bg:       #0f172a;   /* slate-900 */
+  --course-code-border:   #1e293b;   /* slate-800 */
+  --course-text-code:     #e2e8f0;   /* slate-200 */
+}
+
+[data-theme="dark"] {
+  --course-accent:        #818cf8;   /* indigo-400 */
+  --course-accent-light:  #1e1b4b;   /* indigo-950 */
+  --course-accent-soft:   #1e1b4b;
+  --course-accent-hover:  #a5b4fc;   /* indigo-300 */
+  --course-violet:        #a78bfa;   /* violet-400 */
+  --course-code-bg:       #020617;   /* slate-950 */
+  --course-code-border:   #1e293b;
+  --course-text-code:     #cbd5e1;   /* slate-300 */
+}
+
+/* Override site accent on course pages */
+.course-hero,
+.course-content {
+  --accent:        var(--course-accent);
+  --accent-light:  var(--course-accent-light);
+  --accent-hover:  var(--course-accent-hover);
+}
+
+.course-hero .accent,
+.course-content .accent {
+  color: var(--course-accent);
+}
+
+/* =========================================
+   COURSE HERO
+   ========================================= */
+.course-hero {
+  padding: 72px 0 64px;
+  background:
+    radial-gradient(ellipse at top left, var(--course-accent-soft) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+    var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+[data-theme="dark"] .course-hero {
+  background:
+    radial-gradient(ellipse at top left, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(139, 92, 246, 0.10) 0%, transparent 50%),
+    var(--bg);
+}
+
+.course-hero__inner {
+  max-width: 880px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.course-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--course-accent), var(--course-violet));
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  margin-bottom: 22px;
+}
+
+.course-hero__title {
+  font-family: var(--font-sans);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+
+.course-hero__subtitle {
+  font-size: clamp(1.1rem, 2.5vw, 1.45rem);
+  font-weight: 500;
+  color: var(--course-accent);
+  margin-bottom: 22px;
+}
+
+.course-hero__desc {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  line-height: 1.75;
+  max-width: 760px;
+  margin: 0 auto 32px;
+}
+
+.course-hero__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1.5px solid transparent;
+}
+
+.badge--primary {
+  background: var(--course-accent);
+  color: #fff;
+  border-color: var(--course-accent);
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.25);
+}
+
+.badge--secondary {
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .badge--secondary {
+  background: var(--bg-alt);
+}
+
+.course-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px 32px;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meta-item__icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* =========================================
+   COURSE CONTENT LAYOUT
+   ========================================= */
+.course-content {
+  padding: 56px 0 96px;
+  background: var(--bg);
+}
+
+.course-body {
+  min-width: 0;
+}
+
+/* Breadcrumb tweaks */
+.course-body .breadcrumb {
+  margin-bottom: 32px;
+}
+
+/* Hide the redundant markdown TOC heading from article flow visual (keep anchor) */
+#mc-lc {
+  scroll-margin-top: 90px;
+}
+
+/* =========================================
+   CODE BLOCKS (dark theme)
+   ========================================= */
+.course-body pre {
+  background: var(--course-code-bg);
+  border: 1px solid var(--course-code-border);
+  border-radius: 12px;
+  padding: 22px 26px;
+  overflow-x: auto;
+  margin: 1.6em 0;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.course-body pre code {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: var(--course-text-code);
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.course-body p code,
+.course-body li code,
+.course-body td code,
+.course-body th code {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 2px 6px;
+  color: var(--course-accent);
+  font-size: 0.84em;
+}
+
+[data-theme="dark"] .course-body p code,
+[data-theme="dark"] .course-body li code,
+[data-theme="dark"] .course-body td code,
+[data-theme="dark"] .course-body th code {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.25);
+  color: var(--course-accent);
+}
+
+/* =========================================
+   TABLES
+   ========================================= */
+.table-wrap {
+  overflow-x: auto;
+  margin: 1.6em 0;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.course-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  background: var(--bg-card);
+}
+
+.course-body thead {
+  background: linear-gradient(135deg, var(--course-accent), var(--course-violet));
+  color: #fff;
+}
+
+.course-body th {
+  padding: 14px 18px;
+  text-align: left;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.course-body td {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: top;
+}
+
+.course-body tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.course-body tbody tr:nth-child(even) {
+  background: var(--bg-alt);
+}
+
+.course-body tbody tr:hover {
+  background: var(--course-accent-light);
+}
+
+[data-theme="dark"] .course-body tbody tr:hover {
+  background: rgba(99, 102, 241, 0.10);
+}
+
+/* =========================================
+   BLOCKQUOTES / WARNINGS
+   ========================================= */
+.course-body blockquote {
+  margin: 1.6em 0;
+  padding: 16px 22px;
+  border-left: 4px solid var(--course-accent);
+  background: var(--course-accent-light);
+  border-radius: 0 12px 12px 0;
+  color: var(--text);
+}
+
+[data-theme="dark"] .course-body blockquote {
+  background: rgba(99, 102, 241, 0.10);
+}
+
+.course-body blockquote p {
+  margin: 0;
+}
+
+/* =========================================
+   PDF DOWNLOAD LIST
+   ========================================= */
+.pdf-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin: 1.4em 0;
+}
+
+.pdf-list li {
+  margin: 0;
+}
+
+.pdf-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow);
+}
+
+.pdf-link:hover {
+  border-color: var(--course-accent);
+  color: var(--course-accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* =========================================
+   TABLE OF CONTENTS (override accent)
+   ========================================= */
+.course-content .toc__list li a:hover,
+.course-content .toc__list li a.active {
+  border-left-color: var(--course-accent);
+  color: var(--course-accent);
+  background: var(--course-accent-light);
+}
+
+[data-theme="dark"] .course-content .toc__list li a:hover,
+[data-theme="dark"] .course-content .toc__list li a.active {
+  background: rgba(99, 102, 241, 0.12);
+}
+
+/* =========================================
+   PROGRESS BAR (override color)
+   ========================================= */
+.progress-bar {
+  background: linear-gradient(90deg, var(--course-accent), var(--course-violet));
+}
+
+/* =========================================
+   BACK TO TOP (override color)
+   ========================================= */
+.back-to-top {
+  background: var(--course-accent);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+}
+
+.back-to-top:hover {
+  background: var(--course-accent-hover);
+}
+
+/* =========================================
+   HEADER / FOOTER OVERRIDES (global on course page)
+   ========================================= */
+.header {
+  --accent: var(--course-accent);
+}
+
+.header .nav__link.active {
+  color: var(--course-accent);
+  background: var(--course-accent-light);
+}
+
+.header .nav__link:hover {
+  color: var(--course-accent);
+}
+
+.header .nav__link--cv {
+  color: var(--course-accent);
+  border-color: var(--course-accent);
+}
+
+.header .nav__link--cv:hover,
+.header .nav__link--cv.active {
+  background: var(--course-accent);
+  border-color: var(--course-accent);
+  color: #fff;
+}
+
+.theme-toggle:hover {
+  border-color: var(--course-accent);
+  color: var(--course-accent);
+}
+
+.footer__links a:hover,
+.course-body a:hover {
+  color: var(--course-accent);
+}
+
+.course-body a {
+  color: var(--course-accent);
+}
+
+.course-body {
+  font-family: var(--font-sans);
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+@media (max-width: 800px) {
+  .course-hero {
+    padding: 52px 0 44px;
+  }
+
+  .course-hero__badges,
+  .course-hero__meta {
+    gap: 8px;
+  }
+
+  .course-hero__badge {
+    font-size: 0.7rem;
+  }
+
+  .pdf-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .course-hero__title {
+    font-size: 1.8rem;
+  }
+
+  .course-hero__subtitle {
+    font-size: 1.05rem;
+  }
+
+  .course-body pre {
+    padding: 16px 18px;
+    border-radius: 10px;
+  }
+
+  .course-body pre code {
+    font-size: 0.8rem;
+  }
+
+  .course-body th,
+  .course-body td {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+}
+
+/* =========================================
+   CHECKBOX LISTS
+   ========================================= */
+.course-body li input[type="checkbox"] {
+  margin-right: 8px;
+  accent-color: var(--course-accent);
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+}
