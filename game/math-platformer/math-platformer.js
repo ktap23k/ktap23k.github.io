@@ -33,7 +33,12 @@ const player = {
   highJumpTimer: 0,
   animState: 'idle',
   animTimer: 0,
-  skin: 'fox'
+  skin: 'fox',
+  // Platformer polish
+  coyoteTimer: 0,
+  jumpBuffer: 0,
+  isJumping: false,
+  onMovingPlatform: null
 };
 
 // Endless run state
@@ -84,7 +89,13 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => {
   if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
   if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
-  if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.jump = false;
+  if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') {
+    // Variable jump height: cut upward velocity if jump released early
+    if (player.isJumping && player.vy < 0) {
+      player.vy *= JUMP_CUTOFF;
+    }
+    keys.jump = false;
+  }
 });
 
 document.querySelectorAll('.jmp-touch__btn').forEach(btn => {
@@ -257,12 +268,43 @@ function startRun(fresh = false) {
   player.vx = 0;
   player.vy = 0;
   player.facing = 1;
+  player.coyoteTimer = 0;
+  player.jumpBuffer = 0;
+  player.isJumping = false;
+  player.onMovingPlatform = null;
   cameraX = Math.max(0, player.x - canvas.width / 3);
   cameraY = Math.max(0, player.y + player.h / 2 - canvas.height * 0.45);
 
   updateStats();
   updateEffectsUI();
   saveProgress();
+}
+
+function getQuestionTopic(q) {
+  if (!q || !q.q) return { icon: '📝', label: 'Nhiệm vụ' };
+  const text = q.q.toLowerCase();
+  if (text.includes('tiếng anh') || /^"/.test(q.q)) return { icon: '🔤', label: 'Tiếng Anh' };
+  if (text.includes('ký hiệu') || text.includes('công thức') || text.includes('khí') || text.includes('nguyên tố')) return { icon: '⚗️', label: 'Khoa học' };
+  if (text.includes('thủ đô') || text.includes('sông') || text.includes('núi') || text.includes('đại dương')) return { icon: '🌍', label: 'Địa lý' };
+  if (text.includes('năm') || text.includes('vua') || text.includes('chiến thắng') || text.includes('phát minh')) return { icon: '📜', label: 'Lịch sử' };
+  if (text.includes('con gì') || text.includes('cái gì') || text.includes('số tiếp theo')) return { icon: '🧩', label: 'Logic' };
+  if (text.includes('thể thao') || text.includes('olympic') || text.includes('bóng đá') || text.includes('world cup')) return { icon: '⚽', label: 'Thể thao' };
+  if (text.includes('nhạc') || text.includes('họa sĩ') || text.includes('tác giả') || text.includes('màu')) return { icon: '🎨', label: 'Nghệ thuật' };
+  return { icon: '🧮', label: 'Toán học' };
+}
+
+function updateQuestionProgress() {
+  const wrap = document.getElementById('questionProgressWrap');
+  const bar = document.getElementById('questionProgress');
+  if (!wrap || !bar) return;
+  // Progress within current segment: distance from last checkpoint to world end
+  const cpX = runState.checkpoints.length > 0
+    ? runState.checkpoints[runState.checkpoints.length - 1].x
+    : 0;
+  const endX = getWorldWidth() - 240;
+  const playerX = player.x;
+  const pct = Math.max(0, Math.min(100, ((playerX - cpX) / Math.max(1, endX - cpX)) * 100));
+  bar.style.width = pct + '%';
 }
 
 function pickQuestionForSegment() {
@@ -275,10 +317,14 @@ function pickQuestionForSegment() {
   }
   runState.question = q.q;
   runState.correctAnswer = q.a;
-  const label = isBoss ? '💀 Nhiệm vụ BOSS' : 'Nhiệm vụ';
-  const labelEl = document.querySelector('.jmp-question__label');
+  const topic = getQuestionTopic(q);
+  const label = isBoss ? '💀 Nhiệm vụ BOSS' : topic.label;
+  const labelEl = document.getElementById('questionLabel');
   if (labelEl) labelEl.textContent = label;
+  const iconEl = document.getElementById('questionIcon');
+  if (iconEl) iconEl.textContent = isBoss ? '💀' : topic.icon;
   document.getElementById('questionText').textContent = q.q;
+  updateQuestionProgress();
 }
 
 function appendSegment(startX, startY, segmentIndex, isFirst = false, withCollectables = true) {
@@ -356,11 +402,15 @@ function getWorldWidth() {
 
 function updateStats() {
   document.getElementById('levelStat').textContent = runState.segmentIndex + 1;
-  document.getElementById('scoreStat').textContent = score;
+  document.getElementById('scoreStat').textContent = score.toLocaleString('vi');
   document.getElementById('livesStat').textContent = lives;
+  const lifeBar = document.getElementById('lifeBar');
+  if (lifeBar) lifeBar.style.width = Math.max(0, Math.min(100, (lives / MAX_LIVES) * 100)) + '%';
   const coinEl = document.getElementById('coinStat');
-  if (coinEl) coinEl.textContent = Shop ? Shop.getCoins() : 0;
+  if (coinEl) coinEl.textContent = Shop ? Shop.getCoins().toLocaleString('vi') : 0;
 }
+
+let lastComboToast = 0;
 
 function updateEffectsUI() {
   const panel = document.getElementById('effectsPanel');
@@ -376,6 +426,15 @@ function updateEffectsUI() {
   if (combo.count >= 2) {
     items.push(`<span class="jmp-effect jmp-effect--combo">🔥 x${combo.count}</span>`);
   }
+  // Combo milestone toast
+  const milestones = [5, 10, 15, 20];
+  const milestone = milestones.find(m => combo.count >= m && lastComboToast < m);
+  if (milestone) {
+    showToast(`🔥 Combo x${milestone}!`, 'warn', 2500);
+    lastComboToast = milestone;
+  } else if (combo.count === 0) {
+    lastComboToast = 0;
+  }
   if (bonusStageActive && bonusTimer > 0) {
     items.push(`<span class="jmp-effect jmp-effect--bonus">⏱ ${Math.ceil(bonusTimer / 1000)}s</span>`);
   }
@@ -383,29 +442,51 @@ function updateEffectsUI() {
 }
 
 /* ========== PHYSICS ========== */
-const GRAVITY = 0.6;
-const MOVE_SPEED = 4.5;
-const JUMP_FORCE = -12;
+const GRAVITY = 0.58;
+const MOVE_SPEED = 4.8;
+const ACCEL = 0.95;
+const JUMP_FORCE = -12.2;
+const JUMP_GRAVITY = 0.34;        // lighter gravity while holding jump
+const FALL_GRAVITY = 0.58;        // normal gravity
+const JUMP_CUTOFF = -0.45;        // scale vy by this when releasing jump
 const FRICTION = 0.82;
 const ICE_FRICTION = 0.98;
-const HIGH_JUMP_FORCE = -15;
-const DOUBLE_JUMP_FORCE = -10;
+const HIGH_JUMP_FORCE = -15.2;
+const DOUBLE_JUMP_FORCE = -10.5;
 const MAX_LIVES = 5;
+const COYOTE_TIME = 90;           // ms
+const JUMP_BUFFER_TIME = 110;     // ms
 
 function getMaxAirJumps() {
   return player.highJumpTimer > 0 ? 2 : player.maxAirJumpsBase;
 }
 
+function doJump(force) {
+  player.vy = force;
+  player.onGround = false;
+  player.coyoteTimer = 0;
+  player.jumpBuffer = 0;
+  player.isJumping = true;
+}
+
 function tryJump() {
   if (!running || paused) return;
-  if (player.onGround) {
-    player.vy = player.highJumpTimer > 0 ? HIGH_JUMP_FORCE : JUMP_FORCE;
-    player.onGround = false;
+
+  // Buffer the jump input if not grounded yet
+  if (!player.onGround && player.coyoteTimer <= 0 && player.airJumps === 0) {
+    player.jumpBuffer = JUMP_BUFFER_TIME;
+    return;
+  }
+
+  const canGroundJump = player.onGround || player.coyoteTimer > 0;
+  if (canGroundJump) {
+    const force = player.highJumpTimer > 0 ? HIGH_JUMP_FORCE : JUMP_FORCE;
+    doJump(force);
     player.airJumps = getMaxAirJumps();
     if (AudioManager) AudioManager.playJump();
   } else if (player.airJumps > 0) {
     const force = player.highJumpTimer > 0 ? HIGH_JUMP_FORCE : DOUBLE_JUMP_FORCE;
-    player.vy = force;
+    doJump(force);
     player.airJumps--;
     spawnParticles(player.x + player.w / 2, player.y + player.h, '#60a5fa');
     if (AudioManager) AudioManager.playDoubleJump();
@@ -418,6 +499,8 @@ function update(dt) {
   // Timers
   if (player.invincibleTimer > 0) player.invincibleTimer = Math.max(0, player.invincibleTimer - dt);
   if (player.highJumpTimer > 0) player.highJumpTimer = Math.max(0, player.highJumpTimer - dt);
+  if (player.coyoteTimer > 0) player.coyoteTimer = Math.max(0, player.coyoteTimer - dt);
+  if (player.jumpBuffer > 0) player.jumpBuffer = Math.max(0, player.jumpBuffer - dt);
   player.animTimer += dt;
 
   // BGM pitch up when invincible
@@ -436,18 +519,45 @@ function update(dt) {
   const timeScale = slowMotionTimer > 0 ? 0.4 : 1;
   const scaledDt = dt * timeScale;
 
+  // Consume buffered jump if now possible
+  if (player.jumpBuffer > 0 && (player.onGround || player.coyoteTimer > 0)) {
+    tryJump();
+  }
+
   // Movement (scaled by timeScale for slow motion)
-  if (keys.left) { player.vx -= 0.8 * timeScale; player.facing = -1; }
-  if (keys.right) { player.vx += 0.8 * timeScale; player.facing = 1; }
+  if (keys.left) { player.vx -= ACCEL * timeScale; player.facing = -1; }
+  if (keys.right) { player.vx += ACCEL * timeScale; player.facing = 1; }
   player.vx *= Math.pow(FRICTION, timeScale);
   player.vx = Math.max(-MOVE_SPEED, Math.min(MOVE_SPEED, player.vx));
+
+  // Carry player with moving platform while standing on it
+  if (player.onMovingPlatform && player.onGround) {
+    player.x += player.onMovingPlatform.dx * timeScale;
+  }
+
   player.x += player.vx * timeScale;
   handleCollisions('x');
 
-  player.vy += GRAVITY * timeScale;
+  // Variable gravity: lighter while holding jump and moving upward
+  const grav = (player.isJumping && keys.jump && player.vy < 0) ? JUMP_GRAVITY : FALL_GRAVITY;
+  player.vy += grav * timeScale;
   player.y += player.vy * timeScale;
+
+  const wasGrounded = player.onGround;
   player.onGround = false;
+  player.onMovingPlatform = null;
   handleCollisions('y');
+
+  // Coyote time: allow ground jump shortly after leaving a platform
+  if (wasGrounded && !player.onGround) {
+    player.coyoteTimer = COYOTE_TIME;
+  }
+
+  // Reset jump state when landing
+  if (player.onGround) {
+    player.isJumping = false;
+    player.airJumps = getMaxAirJumps();
+  }
 
   // Dust effects when landing or running
   if (player.onGround) {
@@ -567,7 +677,10 @@ function update(dt) {
         if (Shop) {
           const combo = Effects ? Effects.getCombo() : { count: 0 };
           const newSkins = Shop.checkUnlocks({ segmentIndex: runState.segmentIndex, score, comboMax: combo.max });
-          newSkins.forEach(name => Effects.spawnFloatingText(player.x, player.y - 30, 'Mở khóa: ' + name, '#a855f7'));
+          newSkins.forEach(name => {
+            Effects.spawnFloatingText(player.x, player.y - 30, 'Mở khóa: ' + name, '#a855f7');
+            showToast(`🎉 Đã mở khóa skin: ${name}`, 'success', 3500);
+          });
         }
 
         // Boss break effect
@@ -605,28 +718,33 @@ function update(dt) {
 
   // Predictive camera follow: look slightly ahead based on player velocity
   // so the movement feels fluid, especially near segment edges.
-  const lookahead = Math.max(-60, Math.min(120, player.vx * 18));
+  const lookahead = Math.max(-70, Math.min(140, player.vx * 22));
   const targetCam = player.x - canvas.width / 3 + lookahead;
   const worldEnd = getWorldWidth();
   // Soft right boundary: allow the camera to overshoot a little so the
   // player doesn't feel abruptly stopped at the end of a segment.
   const maxCam = Math.max(0, worldEnd - canvas.width * 0.55);
-  const lerp = (worldEnd - (player.x + canvas.width) < 350) ? 0.16 : 0.1;
+  const lerp = (worldEnd - (player.x + canvas.width) < 350) ? 0.18 : 0.12;
   cameraX += (targetCam - cameraX) * lerp;
   cameraX = Math.max(0, Math.min(cameraX, maxCam));
 
-  // Vertical camera follow with soft clamping so up/down exploration feels natural.
+  // Vertical camera follow with deadzone to avoid jitter on small hops.
   const targetCamY = player.y + player.h / 2 - canvas.height * 0.45;
-  cameraY += (targetCamY - cameraY) * 0.08;
+  const dy = targetCamY - cameraY;
+  const deadzone = 35; // px
+  if (Math.abs(dy) > deadzone) {
+    cameraY += (dy - Math.sign(dy) * deadzone) * 0.09;
+  }
   const groundY = Math.max(0, runState.world.platforms.reduce((m, p) => Math.max(m, p.y + p.h), 0));
   const topY = Math.min(0, runState.world.platforms.reduce((m, p) => Math.min(m, p.y), canvas.height));
-  cameraY = Math.max(topY - 40, Math.min(cameraY, groundY - canvas.height + 80));
+  cameraY = Math.max(topY - 60, Math.min(cameraY, groundY - canvas.height + 100));
 
   updateParticles(scaledDt);
   updateConfetti(scaledDt);
   if (Effects) Effects.update(dt);
   updateStats();
   updateEffectsUI();
+  updateQuestionProgress();
 
   wasOnGround = player.onGround;
   prevLives = lives;
@@ -724,7 +842,8 @@ function handleCollisions(axis) {
         player.y = p.y - player.h;
         player.onGround = true;
         player.vy = 0;
-        if (p.dx) player.x += p.dx;
+        // Track moving platform so update() can carry the player smoothly
+        if (p.dx) player.onMovingPlatform = p;
         if (p.type === 'ice') {
           player.vx *= ICE_FRICTION;
         }
@@ -789,6 +908,10 @@ function respawnAtCheckpoint() {
   player.y = cp.y - player.h - 2;
   player.vx = 0;
   player.vy = 0;
+  player.coyoteTimer = 0;
+  player.jumpBuffer = 0;
+  player.isJumping = false;
+  player.onMovingPlatform = null;
   player.invincibleTimer = 1000; // brief mercy invincibility
   cameraX = Math.max(0, player.x - canvas.width / 3);
   cameraY = Math.max(0, player.y + player.h / 2 - canvas.height * 0.45);
@@ -1177,20 +1300,32 @@ function draw() {
   }
 }
 
+const THEME_COLORS = {
+  grass:  { base: '#a1887f', top: '#4ade80', rim: '#86efac', darkBase: '#3e352c', darkTop: '#34d399', darkRim: '#6ee7b7' },
+  ice:    { base: '#bfdbfe', top: '#e0f2fe', rim: '#7dd3fc', darkBase: '#1e3a4c', darkTop: '#7dd3fc', darkRim: '#38bdf8' },
+  desert: { base: '#d4a373', top: '#fbbf24', rim: '#fde68a', darkBase: '#5c3a21', darkTop: '#f59e0b', darkRim: '#fcd34d' },
+  lava:   { base: '#57534e', top: '#ef4444', rim: '#fca5a5', darkBase: '#292524', darkTop: '#dc2626', darkRim: '#fecaca' },
+  space:  { base: '#4c1d95', top: '#a855f7', rim: '#d8b4fe', darkBase: '#2e1065', darkTop: '#9333ea', darkRim: '#c084fc' }
+};
+
 function drawPlatform(ctx, p, isDark, moving = false) {
   let base, top, rim;
-  if (p.type === 'ice') {
-    base = isDark ? '#1e3a4c' : '#bfdbfe';
-    top = isDark ? '#7dd3fc' : '#e0f2fe';
-    rim = isDark ? '#38bdf8' : '#7dd3fc';
-  } else if (p.type === 'crumble' && p.crumbleTimer !== null) {
+  // Support both string theme names and theme objects from levels.js
+  let themeName = 'grass';
+  if (p.type === 'ice' || p.type === 'crumble') {
+    themeName = 'ice';
+  } else if (p.theme) {
+    themeName = typeof p.theme === 'string' ? p.theme : (p.theme.name || 'grass');
+  }
+  const theme = THEME_COLORS[themeName] || THEME_COLORS.grass;
+  if (p.type === 'crumble' && p.crumbleTimer !== null) {
     base = isDark ? '#4a3b32' : '#d7ccc8';
     top = isDark ? '#a1887f' : '#bcaaa4';
     rim = isDark ? '#d7ccc8' : '#8d6e63';
   } else {
-    base = isDark ? (moving ? '#574c3f' : '#3e352c') : (moving ? '#8d6e63' : '#a1887f');
-    top = isDark ? '#34d399' : '#4ade80';
-    rim = isDark ? '#6ee7b7' : '#86efac';
+    base = isDark ? (moving ? shadeColor(theme.darkBase, 10) : theme.darkBase) : (moving ? shadeColor(theme.base, -12) : theme.base);
+    top = isDark ? theme.darkTop : theme.top;
+    rim = isDark ? theme.darkRim : theme.rim;
   }
 
   ctx.save();
@@ -1473,6 +1608,17 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.lineTo(x, y + rr);
   ctx.quadraticCurveTo(x, y, x + rr, y);
   ctx.closePath();
+}
+
+/* ========== TOAST NOTIFICATIONS ========== */
+function showToast(message, type = 'info', duration = 3000) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  const el = document.createElement('div');
+  el.className = `jmp-toast__item jmp-toast__item--${type}`;
+  el.textContent = message;
+  toast.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, duration + 300);
 }
 
 /* ========== LOOP ========== */

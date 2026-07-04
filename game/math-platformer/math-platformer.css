@@ -90,21 +90,44 @@
 }
 
 .jmp-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 9px 14px;
+  padding: 8px 12px;
   font-size: 0.9rem;
   font-weight: 700;
   box-shadow: var(--shadow);
-  transition: transform 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.jmp-stat:hover { transform: translateY(-2px); }
+.jmp-stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
 
-.jmp-stat span {
+.jmp-stat__icon { font-size: 1.05em; line-height: 1; }
+
+.jmp-stat__value {
   color: var(--accent);
   font-size: 1.05em;
+}
+
+.jmp-stat--lives { flex-direction: column; align-items: flex-start; gap: 4px; min-width: 78px; }
+
+.jmp-life-bar {
+  width: 100%;
+  height: 5px;
+  background: rgba(239, 68, 68, 0.2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.jmp-life-bar__fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  border-radius: 999px;
+  transition: width 0.25s ease;
 }
 
 .jmp-question {
@@ -113,15 +136,15 @@
   z-index: 2;
   margin: 10px 10px 0;
   background: var(--bg-card);
-  background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+  background: color-mix(in srgb, var(--bg-card) 94%, transparent);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 8px 12px;
+  border-radius: 14px;
+  padding: 10px 14px;
   text-align: center;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), 0 8px 24px rgba(0,0,0,0.06);
   overflow: hidden;
   pointer-events: none;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
 }
 
 .jmp-question::before {
@@ -131,15 +154,25 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #22c55e, #f59e0b, #22c55e);
-  background-size: 200% 100%;
-  animation: gradientMove 5s linear infinite;
+  background: linear-gradient(90deg, #22c55e, #f59e0b, #3b82f6, #22c55e);
+  background-size: 300% 100%;
+  animation: gradientMove 4s linear infinite;
 }
 
 @keyframes gradientMove {
   0% { background-position: 0% 0; }
-  100% { background-position: 200% 0; }
+  100% { background-position: 300% 0; }
 }
+
+.jmp-question__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.jmp-question__icon { font-size: 0.85rem; }
 
 .jmp-question__label {
   font-size: 0.65rem;
@@ -147,20 +180,39 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
-  margin-bottom: 3px;
 }
 
 .jmp-question__text {
   font-size: clamp(0.95rem, 2.4vw, 1.35rem);
   font-weight: 800;
   line-height: 1.25;
+  min-height: 1.35em;
+}
+
+.jmp-question__progress {
+  width: 100%;
+  height: 6px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 999px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .jmp-question__progress { background: rgba(255,255,255,0.08); }
+
+.jmp-question__progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #22c55e, #f59e0b);
+  border-radius: 999px;
+  transition: width 0.3s ease;
 }
 
 .jmp-effects {
   display: flex;
   justify-content: center;
   gap: 6px;
-  margin-top: 5px;
+  margin-top: 6px;
   min-height: 22px;
 }
 
@@ -227,6 +279,17 @@
   pointer-events: auto;
 }
 
+.jmp-overlay__card {
+  background: rgba(30, 41, 59, 0.92);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 28px 32px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+  animation: popIn 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .jmp-overlay h2 {
   font-size: 1.9rem;
   font-weight: 800;
@@ -242,6 +305,45 @@
 @keyframes popIn {
   from { transform: scale(0.92) translateY(10px); opacity: 0; }
   to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Toast notifications */
+.jmp-toast {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.jmp-toast__item {
+  background: rgba(15, 23, 42, 0.9);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  animation: toastIn 0.35s cubic-bezier(0.22, 1, 0.36, 1), toastOut 0.35s ease 2.6s forwards;
+  max-width: 260px;
+  line-height: 1.4;
+}
+
+.jmp-toast__item--success { border-left: 4px solid #22c55e; }
+.jmp-toast__item--info    { border-left: 4px solid #3b82f6; }
+.jmp-toast__item--warn    { border-left: 4px solid #f59e0b; }
+.jmp-toast__item--error   { border-left: 4px solid #ef4444; }
+
+@keyframes toastIn {
+  from { transform: translateX(30px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes toastOut {
+  to { transform: translateX(30px); opacity: 0; }
 }
 
 /* Pause menu */
@@ -368,8 +470,8 @@
 .jmp-touch__group { display: flex; gap: 10px; }
 
 .jmp-touch__btn {
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   border: 1px solid var(--border);
   background: var(--bg-card);
@@ -381,12 +483,20 @@
   user-select: none;
   touch-action: manipulation;
   box-shadow: var(--shadow);
-  transition: transform 0.1s, background 0.1s;
+  transition: transform 0.1s, background 0.1s, box-shadow 0.1s;
 }
 
 .jmp-touch__btn:active {
   background: var(--accent-light);
   transform: scale(0.95);
+  box-shadow: 0 0 0 4px rgba(232, 93, 4, 0.15);
+}
+
+.jmp-touch__btn--small {
+  width: 44px;
+  height: 44px;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .jmp-help {
@@ -404,8 +514,15 @@
 
 @media (max-width: 720px) {
   .jmp-touch { display: flex; }
-  .jmp-title { font-size: 1.2rem; }
+  .jmp-title { font-size: 1.1rem; }
+  .jmp-header { flex-direction: column; align-items: flex-start; }
+  .jmp-stats { width: 100%; justify-content: space-between; }
+  .jmp-stat { padding: 6px 10px; font-size: 0.8rem; }
+  .jmp-stat__icon { font-size: 0.95em; }
   .jmp-canvas-wrap { border-radius: 14px; }
+  .jmp-question { margin: 6px 6px 0; padding: 8px 10px; }
+  .jmp-question__text { font-size: 1rem; }
   .jmp-controls { justify-content: center; }
   .jmp-controls .btn { padding: 8px 12px; font-size: 0.8rem; }
+  .jmp-touch__btn { width: 56px; height: 56px; }
 }

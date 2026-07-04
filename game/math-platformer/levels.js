@@ -404,8 +404,8 @@ const QUESTION_BANK = {
       { q: '"Cô ấy" tiếng Anh là?', a: 'she' },
       { q: '"Chúng tôi" tiếng Anh là?', a: 'we' },
       { q: '"Họ" tiếng Anh là?', a: 'they' },
-      { q: '"Củả tôi" tiếng Anh là?', a: 'my' },
-      { q: '"Củả anh ấy" tiếng Anh là?', a: 'his' },
+      { q: '"Của tôi" tiếng Anh là?', a: 'my' },
+      { q: '"Của anh ấy" tiếng Anh là?', a: 'his' },
     ],
     tenses: [
       { q: '"Eat" quá khứ đơn là?', a: 'ate' },
@@ -475,7 +475,7 @@ const QUESTION_BANK = {
       { q: 'Ký hiệu hóa học của Đồng?', a: 'Cu' },
     ],
     biology: [
-      { q: 'Bộ phận nào hô hấp ở ngườ?', a: 'phổi' },
+      { q: 'Bộ phận nào hô hấp ở người?', a: 'phổi' },
       { q: 'Bộ phận nào bơm máu?', a: 'tim' },
       { q: 'Cơ quan tiêu hóa chính?', a: 'dạ dày' },
       { q: 'Nơi trao đổi chất của tế bào?', a: 'ti thể' },
@@ -518,7 +518,7 @@ const QUESTION_BANK = {
       { q: 'Sao chổi nổi tiếng đến gần Trái Đất 76 năm một lần?', a: 'Halley' },
     ],
     earth: [
-      { q: 'Lớp bảo vệ Trái Đất khỏi bức xạ mặt trờ?', a: 'tầng ôzôn' },
+      { q: 'Lớp bảo vệ Trái Đất khỏi bức xạ mặt trời?', a: 'tầng ôzôn' },
       { q: 'Vỏ Trái Đất chia thành mấn lớp kiến tạo chính?', a: '7' },
       { q: 'Hiện tượng đất rung chuyển gọi là?', a: 'động đất' },
       { q: 'Núi lửa phun ra chất gì nóng nhất?', a: 'magma' },
@@ -578,14 +578,14 @@ const QUESTION_BANK = {
   },
   history: {
     vietnam: [
-      { q: 'Vua Hùng là tổ tiên của?', a: 'ngườ Việt' },
-      { q: 'Năm Bình Nguyên lỗi?', a: '1285' },
+      { q: 'Vua Hùng là tổ tiên của?', a: 'người Việt' },
+      { q: 'Năm quân Nguyên lần thứ hai xâm lược Đại Việt?', a: '1285' },
       { q: 'Chiến thắng Điện Biên Phủ năm?', a: '1954' },
       { q: 'Ngày giải phóng miền Nam?', a: '30/4/1975' },
       { q: 'Bác Hồ đọc Tuyên ngôn năm?', a: '1945' },
       { q: 'Chiến thắng Bạch Đằng lịch sử do vua nào lãnh đạo?', a: 'Ngô Quyền' },
       { q: 'Vị tướng đánh tan quân Nam Hán?', a: 'Ngô Quyền' },
-      { q: 'Nữ tướng đánh tan quân Nam Hán trên sông Bạch Đằng?', a: 'Bà Triệu' },
+      { q: 'Nữ tướng nổi dậy chống quân Đông Hán?', a: 'Bà Triệu' },
       { q: 'Vị vua khai quốc nhà Lý?', a: 'Lý Thái Tổ' },
       { q: 'Kinh thành Thăng Long được xây dựng năm?', a: '1010' },
     ],
@@ -672,10 +672,10 @@ const QUESTION_BANK = {
       { q: 'Nhạc cụ gõ phím?', a: 'keyboard' },
     ],
     musicians: [
-      { q: 'Nhạc sĩ nổi tiếng ngườ Áo?', a: 'Mozart' },
-      { q: 'Nhà soạn nhạc Điếu Còn?', a: 'Beethoven' },
-      { q: 'Nhạc sĩ thiên tài ngườ Đức?', a: 'Bach' },
-      { q: 'Nhà soạn nhạc ngườ Nga viết "Hồ thiên nga"?', a: 'Tchaikovsky' },
+      { q: 'Nhạc sĩ nổi tiếng người Áo?', a: 'Mozart' },
+      { q: 'Nhà soạn nhạc người Đức bị điếc?', a: 'Beethoven' },
+      { q: 'Nhạc sĩ thiên tài người Đức?', a: 'Bach' },
+      { q: 'Nhà soạn nhạc người Nga viết "Hồ thiên nga"?', a: 'Tchaikovsky' },
     ],
     artists: [
       { q: 'Bức tranh Mona Lisa của ai?', a: 'Leonardo' },
@@ -685,7 +685,7 @@ const QUESTION_BANK = {
       { q: 'Họa sĩ ấn tượng Pháp vẽ "Bữa tiệc trôi nổi"?', a: 'Renoir' },
     ],
     colorMixing: [
-      { q: 'Màu xanh da trờ + vàng = ?', a: 'xanh lá' },
+      { q: 'Màu xanh da trời + vàng = ?', a: 'xanh lá' },
       { q: 'Màu đỏ + xanh dương = ?', a: 'tím' },
       { q: 'Màu đỏ + vàng = ?', a: 'cam' },
       { q: 'Trắng + đen = ?', a: 'xám' },
@@ -695,7 +695,7 @@ const QUESTION_BANK = {
       { q: 'Nhà văn nổi tiếng Việt Nam viết "Số đỏ"?', a: 'Vũ Trọng Phụng' },
       { q: 'Nhà thơ nổi tiếng với "Tố Hữu"?', a: 'Tố Hữu' },
       { q: 'Tác giả "Harry Potter"?', a: 'J.K. Rowling' },
-      { q: 'Tác giả "Những ngườ khốn khổ"?', a: 'Victor Hugo' },
+      { q: 'Tác giả "Những người khốn khổ"?', a: 'Victor Hugo' },
     ],
   },
   sports: {
@@ -708,8 +708,8 @@ const QUESTION_BANK = {
     football: [
       { q: 'Một đội bóng đá có bao nhiêu cầu thủ trên sân?', a: '11' },
       { q: 'Giải bóng đá vô địch thế giới gọi là?', a: 'World Cup' },
-      { q: 'Cầu thủ nổi tiếng ngườ Argentina?', a: 'Messi' },
-      { q: 'Cầu thủ nổi tiếng ngườ Bồ Đào Nha?', a: 'Ronaldo' },
+      { q: 'Cầu thủ nổi tiếng người Argentina?', a: 'Messi' },
+      { q: 'Cầu thủ nổi tiếng người Bồ Đào Nha?', a: 'Ronaldo' },
     ],
   },
   hard: {
@@ -765,10 +765,283 @@ const POOL_TOPIC_MAP = {
   artists: 'artists', colorMixing: 'colorMixing', literature: 'literature',
   olympics: 'olympics', football: 'football',
   inventors: 'inventors',
-  math: 'hard', mixed: 'hard'
+  mixed: 'hard'
 };
 
+/* ---------- Dynamic math question generators ---------- */
+const DYNAMIC_CACHE = new Map();
+
+function getDynamicPool(key, generator, level) {
+  const cacheKey = `${key}:${level}`;
+  if (!DYNAMIC_CACHE.has(cacheKey)) {
+    DYNAMIC_CACHE.set(cacheKey, generator(level));
+  }
+  return DYNAMIC_CACHE.get(cacheKey);
+}
+
+function generateAddQuestions(level) {
+  const count = 32;
+  const pairs = [];
+  const gen = level <= 2 ? () => [randInt(1, 9), randInt(1, 9)]
+          : level <= 6 ? () => [randInt(10, 99), randInt(10, 99)]
+                       : () => [randInt(100, 999), randInt(100, 999)];
+  const used = new Set();
+  while (pairs.length < count) {
+    const [a, b] = gen();
+    const key = `${a}+${b}`;
+    if (used.has(key)) continue;
+    used.add(key);
+    pairs.push({ q: `${a} + ${b} = ?`, a: String(a + b) });
+  }
+  return pairs;
+}
+
+function generateSubQuestions(level) {
+  const count = 32;
+  const pairs = [];
+  const gen = level <= 2 ? () => { const a = randInt(2, 9), b = randInt(1, a); return [a, b]; }
+          : level <= 6 ? () => { const a = randInt(10, 99), b = randInt(1, a); return [a, b]; }
+                       : () => { const a = randInt(100, 999), b = randInt(10, a); return [a, b]; };
+  const used = new Set();
+  while (pairs.length < count) {
+    const [a, b] = gen();
+    const key = `${a}-${b}`;
+    if (used.has(key)) continue;
+    used.add(key);
+    pairs.push({ q: `${a} - ${b} = ?`, a: String(a - b) });
+  }
+  return pairs;
+}
+
+function generateMulQuestions(level) {
+  const count = 32;
+  const pairs = [];
+  const gen = level <= 2 ? () => [randInt(1, 9), randInt(1, 9)]
+          : level <= 6 ? () => [randInt(2, 12), randInt(2, 20)]
+                       : () => [randInt(2, 30), randInt(10, 50)];
+  const used = new Set();
+  while (pairs.length < count) {
+    const [a, b] = gen();
+    const key = `${a}*${b}`;
+    if (used.has(key)) continue;
+    used.add(key);
+    pairs.push({ q: `${a} × ${b} = ?`, a: String(a * b) });
+  }
+  return pairs;
+}
+
+function generateDivQuestions(level) {
+  const count = 32;
+  const pairs = [];
+  const gen = level <= 2 ? () => { const b = randInt(2, 9), a = b * randInt(2, 9); return [a, b]; }
+          : level <= 6 ? () => { const b = randInt(2, 12), a = b * randInt(2, 20); return [a, b]; }
+                       : () => { const b = randInt(2, 25), a = b * randInt(2, 40); return [a, b]; };
+  const used = new Set();
+  while (pairs.length < count) {
+    const [a, b] = gen();
+    const key = `${a}/${b}`;
+    if (used.has(key)) continue;
+    used.add(key);
+    pairs.push({ q: `${a} ÷ ${b} = ?`, a: String(Math.round(a / b)) });
+  }
+  return pairs;
+}
+
+function generatePercentQuestions(level) {
+  const count = 32;
+  const pairs = [];
+  const gen = level <= 2 ? () => [randInt(1, 9) * 10, randInt(1, 9) * 10]
+          : level <= 6 ? () => [randInt(1, 20) * 5, randInt(2, 20) * 10]
+                       : () => [randInt(1, 50), randInt(10, 200)];
+  const used = new Set();
+  while (pairs.length < count) {
+    const [p, base] = gen();
+    const key = `${p}%${base}`;
+    if (used.has(key)) continue;
+    used.add(key);
+    const raw = p * base / 100;
+    const ans = Number.isInteger(raw) ? String(raw) : String(raw.toFixed(2)).replace('.', ',');
+    pairs.push({ q: `${p}% của ${base} = ?`, a: ans });
+  }
+  return pairs;
+}
+
+function generateSquareQuestions(level) {
+  const minN = level <= 2 ? 2 : level <= 6 ? 5 : 10;
+  const maxN = level <= 2 ? 9 : level <= 6 ? 20 : 50;
+  const count = Math.min(24, maxN - minN + 1);
+  const nums = [];
+  const gen = level <= 2 ? () => randInt(2, 9)
+          : level <= 6 ? () => randInt(5, 20)
+                       : () => randInt(10, 50);
+  const used = new Set();
+  while (nums.length < count) {
+    const n = gen();
+    if (used.has(n)) continue;
+    used.add(n);
+    nums.push({ q: `${n}² = ?`, a: String(n * n) });
+  }
+  return nums;
+}
+
+function generateSqrtQuestions(level) {
+  const minN = level <= 2 ? 1 : level <= 6 ? 5 : 10;
+  const maxN = level <= 2 ? 5 : level <= 6 ? 15 : 30;
+  const count = Math.min(24, maxN - minN + 1);
+  const nums = [];
+  const gen = level <= 2 ? () => randInt(1, 5)
+          : level <= 6 ? () => randInt(5, 15)
+                       : () => randInt(10, 30);
+  const used = new Set();
+  while (nums.length < count) {
+    const n = gen();
+    if (used.has(n)) continue;
+    used.add(n);
+    nums.push({ q: `√${n * n} = ?`, a: String(n) });
+  }
+  return nums;
+}
+
+function generateEquationQuestions(level) {
+  const count = 32;
+  const qs = [];
+  const used = new Set();
+  while (qs.length < count) {
+    let q, a;
+    if (level <= 2) {
+      if (Math.random() < 0.5) {
+        const x = randInt(1, 9);
+        const b = randInt(1, 9);
+        const c = x + b;
+        q = `x + ${b} = ${c}, x = ?`;
+        a = String(x);
+      } else {
+        const x = randInt(1, 9);
+        const b = randInt(0, x);
+        const c = x - b;
+        q = `x - ${b} = ${c}, x = ?`;
+        a = String(x);
+      }
+    } else if (level <= 6) {
+      const type = randInt(0, 2);
+      if (type === 0) {
+        const aCoef = randInt(2, 5);
+        const x = randInt(2, 12);
+        const c = aCoef * x;
+        q = `${aCoef}x = ${c}, x = ?`;
+        a = String(x);
+      } else if (type === 1) {
+        const aCoef = randInt(2, 5);
+        const x = randInt(2, 10);
+        const b = randInt(1, 9);
+        const c = aCoef * x + b;
+        q = `${aCoef}x + ${b} = ${c}, x = ?`;
+        a = String(x);
+      } else {
+        const b = randInt(2, 9);
+        const x = randInt(2, 20);
+        q = `x ÷ ${b} = ${x}, x = ?`;
+        a = String(x * b);
+      }
+    } else {
+      const type = randInt(0, 2);
+      if (type === 0) {
+        const aCoef = randInt(3, 9);
+        const x = randInt(5, 20);
+        const b = randInt(2, 15);
+        const c = aCoef * x - b;
+        q = `${aCoef}x - ${b} = ${c}, x = ?`;
+        a = String(x);
+      } else if (type === 1) {
+        const aCoef = randInt(2, 5);
+        const cCoef = randInt(6, 9);
+        const x = randInt(5, 20);
+        const d = randInt(1, 20);
+        const b = cCoef * x + d - aCoef * x;
+        q = `${aCoef}x + ${b} = ${cCoef}x + ${d}, x = ?`;
+        a = String(x);
+      } else {
+        const b = randInt(3, 12);
+        const x = randInt(5, 20);
+        q = `x ÷ ${b} = ${x}, x = ?`;
+        a = String(x * b);
+      }
+    }
+    if (used.has(q)) continue;
+    used.add(q);
+    qs.push({ q, a });
+  }
+  return qs;
+}
+
+/* ---------- Question context for smart distractors ---------- */
+let _lastQuestion = null;
+function setLastQuestion(q) { _lastQuestion = q; }
+function getLastQuestion() { return _lastQuestion; }
+
+function normalizeDecimal(s) {
+  return String(s).replace(/,/g, '.');
+}
+
+function parseMathQuestion(qText) {
+  if (!qText) return null;
+  const t = normalizeDecimal(qText);
+  let m;
+  if ((m = t.match(/^(-?\d+(?:\.\d+)?)\s*([+\-])\s*(-?\d+(?:\.\d+)?)\s*=\s*\?/))) {
+    return { op: m[2] === '+' ? 'add' : 'sub', a: parseFloat(m[1]), b: parseFloat(m[3]) };
+  }
+  if ((m = t.match(/^(-?\d+(?:\.\d+)?)\s*[×x]\s*(-?\d+(?:\.\d+)?)\s*=\s*\?/))) {
+    return { op: 'mul', a: parseFloat(m[1]), b: parseFloat(m[2]) };
+  }
+  if ((m = t.match(/^(-?\d+(?:\.\d+)?)\s*÷\s*(-?\d+(?:\.\d+)?)\s*=\s*\?/))) {
+    return { op: 'div', a: parseFloat(m[1]), b: parseFloat(m[2]) };
+  }
+  if ((m = t.match(/^(\d+(?:\.\d+)?)%\s*của\s*(\d+(?:\.\d+)?)\s*=\s*\?/i))) {
+    return { op: 'percent', p: parseFloat(m[1]), base: parseFloat(m[2]) };
+  }
+  if ((m = t.match(/^(\d+)\s*²\s*=\s*\?/))) {
+    return { op: 'square', a: parseFloat(m[1]) };
+  }
+  if ((m = t.match(/^√(\d+(?:\.\d+)?)\s*=\s*\?/))) {
+    return { op: 'sqrt', a: parseFloat(m[1]) };
+  }
+  if ((m = t.match(/x\s*([+\-])\s*(\d+)\s*=\s*(\d+)/))) {
+    return { op: 'eq', type: m[1], b: parseFloat(m[2]), c: parseFloat(m[3]) };
+  }
+  if ((m = t.match(/(\d+)x\s*=\s*(\d+)/))) {
+    return { op: 'eq', type: 'ax', a: parseFloat(m[1]), c: parseFloat(m[2]) };
+  }
+  if ((m = t.match(/(\d+)x\s*([+\-])\s*(\d+)\s*=\s*(\d+)/))) {
+    return { op: 'eq', type: 'ax+b', a: parseFloat(m[1]), sign: m[2], b: parseFloat(m[3]), c: parseFloat(m[4]) };
+  }
+  return null;
+}
+
+function computeExpected(ctx) {
+  if (!ctx) return null;
+  switch (ctx.op) {
+    case 'add': return ctx.a + ctx.b;
+    case 'sub': return ctx.a - ctx.b;
+    case 'mul': return ctx.a * ctx.b;
+    case 'div': return ctx.b !== 0 ? ctx.a / ctx.b : null;
+    case 'percent': return ctx.p * ctx.base / 100;
+    case 'square': return ctx.a * ctx.a;
+    case 'sqrt': return Math.sqrt(ctx.a);
+    case 'eq':
+      if (ctx.type === '+') return ctx.c - ctx.b;
+      if (ctx.type === '-') return ctx.c + ctx.b;
+      if (ctx.type === 'ax') return ctx.c / ctx.a;
+      if (ctx.type === 'ax+b') {
+        const rhs = ctx.sign === '+' ? ctx.c - ctx.b : ctx.c + ctx.b;
+        return rhs / ctx.a;
+      }
+      return null;
+    default: return null;
+  }
+}
+
 /* ---------- Distractor generators ---------- */
+
 const FRACTION_CHARS = {
   '½': { value: 0.5, text: '½' },
   '⅓': { value: 1 / 3, text: '⅓' },
@@ -806,9 +1079,93 @@ Object.entries(QUESTION_BANK).forEach(([cat, pools]) => {
 Object.keys(ANSWER_POOLS).forEach(k => { ANSWER_POOLS[k] = Array.from(ANSWER_POOLS[k]); });
 
 function numericDistractors(correct, count = 2) {
-  const n = parseFloat(correct);
+  const n = parseFloat(normalizeDecimal(correct));
   const out = [];
+  const ctx = parseMathQuestion(_lastQuestion && _lastQuestion.q);
+  const expected = computeExpected(ctx);
+  const ctxValid = ctx && expected !== null && normalizeDecimal(String(expected)) === normalizeDecimal(String(correct));
 
+  const addDistractor = (v) => {
+    if (!Number.isFinite(v)) return;
+    let s = Number.isInteger(v) ? String(v) : String(Number(v.toFixed(2))).replace('.', ',');
+    if (normalizeDecimal(s) === normalizeDecimal(String(correct))) return;
+    if (!out.includes(s)) out.push(s);
+  };
+
+  const reverseDigits = (v) => {
+    if (!Number.isInteger(v) || Math.abs(v) < 10) return null;
+    const sign = v < 0 ? '-' : '';
+    const rev = parseInt(String(Math.abs(v)).split('').reverse().join(''), 10);
+    return parseFloat(sign + rev);
+  };
+
+  if (ctxValid && Number.isFinite(n)) {
+    if (ctx.op === 'add') {
+      const a = ctx.a, b = ctx.b, res = a + b;
+      addDistractor(res + 1);
+      addDistractor(res - 1);
+      addDistractor(res + 10);
+      addDistractor((a + 1) + b);
+      addDistractor(a + (b + 1));
+      addDistractor(reverseDigits(res));
+    } else if (ctx.op === 'sub') {
+      const a = ctx.a, b = ctx.b, res = a - b;
+      addDistractor(res + 1);
+      addDistractor(res - 1);
+      addDistractor(res + 10);
+      addDistractor(a + b);
+      addDistractor(Math.abs(b - a));
+      addDistractor(reverseDigits(res));
+    } else if (ctx.op === 'mul') {
+      const a = ctx.a, b = ctx.b, res = a * b;
+      addDistractor(a * (b + 1));
+      addDistractor(a * (b - 1));
+      addDistractor((a + 1) * b);
+      addDistractor((a - 1) * b);
+      addDistractor(a + b);
+      addDistractor(reverseDigits(res));
+    } else if (ctx.op === 'div') {
+      const a = ctx.a, b = ctx.b, res = a / b;
+      if (Number.isInteger(res)) {
+        addDistractor(res + 1);
+        addDistractor(res - 1);
+        addDistractor(res + b);
+        addDistractor(a % b);
+        if (b > 1 && a % (b + 1) === 0) addDistractor(a / (b + 1));
+        if (b > 2 && a % (b - 1) === 0) addDistractor(a / (b - 1));
+        addDistractor(reverseDigits(res));
+      }
+    } else if (ctx.op === 'percent') {
+      const p = ctx.p, base = ctx.base, res = (p * base) / 100;
+      addDistractor(p * base);
+      addDistractor((p / 10) * base);
+      addDistractor(res + 1);
+      addDistractor(res - 1);
+      addDistractor(res * 10);
+    } else if (ctx.op === 'square') {
+      const a = ctx.a, res = a * a;
+      addDistractor(res + 1);
+      addDistractor(res - 1);
+      addDistractor(a + a);
+      addDistractor(a * 2);
+      addDistractor(res * 2);
+    } else if (ctx.op === 'sqrt') {
+      const a = ctx.a, res = Math.sqrt(a);
+      if (Number.isInteger(res)) {
+        addDistractor(res + 1);
+        addDistractor(res - 1);
+        addDistractor(res * 2);
+        addDistractor(Math.round(res / 2));
+      }
+    } else if (ctx.op === 'eq') {
+      addDistractor(n + 1);
+      addDistractor(n - 1);
+      addDistractor(n * 2);
+      addDistractor(reverseDigits(n));
+    }
+  }
+
+  // Fallback/generic heuristics
   while (out.length < count) {
     const offset = randInt(1, Math.max(2, Math.floor(Math.abs(n) || 1) + 3));
     const sign = Math.random() > 0.5 ? 1 : -1;
@@ -816,29 +1173,35 @@ function numericDistractors(correct, count = 2) {
     if (Number.isInteger(n)) {
       v = n + offset * sign;
     } else {
-      v = Number((n + offset * sign * 0.5).toFixed(1));
+      v = Number((n + offset * sign * 0.5).toFixed(2));
     }
-    const s = String(v);
-    if (s !== correct && !out.includes(s)) out.push(s);
+    addDistractor(v);
   }
-  return out;
+  return out.slice(0, count);
 }
 
+
 function fractionDistractors(correct, count = 2) {
-  // Pick other fractions or nearby simple integers
   const out = [];
   const info = FRACTION_CHARS[correct];
+  const pool = FRACTION_POOL.filter(f => f !== correct);
   while (out.length < count) {
-    if (Math.random() < 0.6) {
-      const cand = pick(FRACTION_POOL.filter(f => f !== correct));
+    if (info && Math.random() < 0.6 && pool.length > 0) {
+      const cand = pick(pool);
       if (!out.includes(cand)) out.push(cand);
     } else {
-      const near = String(Math.round((info.value + (Math.random() > 0.5 ? 1 : -1) * randInt(1, 2))));
+      const base = info ? info.value : 0.5;
+      const near = String(Math.round((base + (Math.random() > 0.5 ? 1 : -1) * randInt(1, 2))));
       if (near !== correct && !out.includes(near)) out.push(near);
     }
+    if (out.length === 0 && pool.length === 0) {
+      out.push('\u00bd', '\u00bc');
+      break;
+    }
   }
-  return out;
+  return out.slice(0, count);
 }
+
 
 function stringDistractors(correct, count = 2) {
   const pools = {
@@ -1001,13 +1364,15 @@ function stringDistractors(correct, count = 2) {
 
   // Generic fallback: build a pool of all non-numeric answers and pick ones
   // that look similar (same first letter or similar length).
-  const genericPool = ALL_STRING_ANSWERS.filter(v => v !== correct);
+  const genericPool = (ALL_STRING_ANSWERS || []).filter(v => v !== correct);
   const similar = genericPool.filter(v => {
     const vl = v.toLowerCase().replace(/\s+/g, '');
     return vl[0] === lower[0] || Math.abs(vl.length - lower.length) <= 2;
   });
   const cands = shuffle(similar.length >= count ? similar : genericPool);
-  return cands.slice(0, count).map(v => String(v));
+  const result = cands.slice(0, count).map(v => String(v));
+  while (result.length < count) result.push('?');
+  return result;
 }
 
 function distractorsFor(correct, type = 'number') {
@@ -1126,39 +1491,50 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true, s
   const windZones = [];
   const enemies = [];
   const candidateSpots = [];
+  const mainSpots = [];
 
   let x = startX;
   let y = startY;
-  // Wider vertical range so levels can climb high or drop low for more interesting routes.
-  const yRange = { min: 60, max: 520 };
-  const minLength = 1500 + difficulty * 90;
+  const yRange = { min: 80, max: 520 };
+  const minLength = 1800 + difficulty * 100;
 
-  // Determine segment index if not passed explicitly
   if (segmentIndex === undefined) {
     segmentIndex = Math.max(0, Math.round((seed - (typeof runState !== 'undefined' ? runState.seedOffset : 0)) / 999983));
   }
 
-  // Boss segment: harder layout every 10 segments (index % 10 === 9 and index > 0)
   const isBoss = segmentIndex > 0 && segmentIndex % 10 === 9;
   const bossBoost = isBoss ? 1.35 : 1;
 
-  // First platform: landing pad from previous segment
+  const getTheme = (idx) => {
+    if (idx < 10) return { name: 'grass', top: '#4ade80', base: '#78350f' };
+    if (idx < 20) return { name: 'ice', top: '#93c5fd', base: '#e0f2fe' };
+    if (idx < 30) return { name: 'desert', top: '#fdba74', base: '#c2410c' };
+    return { name: 'lava', top: '#7f1d1d', base: '#4c1d95' };
+  };
+
+  // Reachability constraints using normal jump as the guaranteed baseline.
+  const MAX_NORMAL_GAP = 170;
+  const MAX_NORMAL_DY = 100;
+
   if (addStartPad) {
     const startW = 170;
-    platforms.push({ x: startX, y: startY, w: startW, h: 28 });
+    platforms.push({ x: startX, y: startY, w: startW, h: 28, type: 'normal', theme: getTheme(segmentIndex) });
     x += startW;
   }
 
-  // Build platforms until the segment reaches a reasonable length
   while (x - startX < minLength * bossBoost) {
-    const gapMin = (70 + difficulty * 2) * bossBoost;
-    const gapMax = Math.min(170, (85 + difficulty * 8) * bossBoost);
-    const gap = seededRandInt(rng, gapMin, gapMax);
     const w = seededRandInt(rng, 90, 180);
 
-    // More generous vertical shifts: the larger the gap, the smaller the dy
-    const maxDy = Math.max(45, 140 - gap * 0.28);
-    const dy = seededRandInt(rng, -maxDy, maxDy);
+    // Pick vertical change first, then clamp reachable gap.
+    const maxDyUp = Math.min(MAX_NORMAL_DY, y - yRange.min);
+    const maxDyDown = Math.min(MAX_NORMAL_DY, yRange.max - y);
+    const dy = seededRandInt(rng, -maxDyUp, maxDyDown);
+
+    // Horizontal reach shrinks as vertical change grows.
+    const absDy = Math.abs(dy);
+    const gapMax = Math.min(MAX_NORMAL_GAP, Math.floor(MAX_NORMAL_GAP - absDy * 0.55));
+    const gapMin = Math.min(70, Math.max(50, gapMax - 40));
+    const gap = seededRandInt(rng, gapMin, gapMax);
 
     x += gap;
     y = Math.max(yRange.min, Math.min(yRange.max, y + dy));
@@ -1169,30 +1545,32 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true, s
       x = lastP.x + lastP.w + 30;
     }
 
-    // Platform type: ice (segment 15+) or crumble (segment 20+)
     let type = 'normal';
     if (segmentIndex >= 20 && rng() < 0.22) type = 'crumble';
     else if (segmentIndex >= 15 && rng() < 0.28) type = 'ice';
 
-    const platform = { x, y, w, h: 24, type };
+    const theme = getTheme(segmentIndex);
+    const platform = { x, y, w, h: 24, type, theme };
     if (type === 'crumble') platform.crumbleTimer = null;
     platforms.push(platform);
 
-    // Candidate collectable spot above this platform
+    // Main-path collectable spot
     if (platforms.length > 1) {
-      candidateSpots.push({ x: x + w / 2 - 17, y: y - 85 });
+      const spot = { x: x + w / 2 - 17, y: y - 70 };
+      candidateSpots.push(spot);
+      mainSpots.push(spot);
     }
 
-    // Optional vertical route: a side platform above or below the main path,
-    // reachable with a double jump or by dropping down.
+    // Optional side platform (alternative route, may need double jump)
     if (rng() < 0.35 + difficulty * 0.03) {
-      const sideY = Math.max(yRange.min, Math.min(yRange.max, y + (rng() < 0.5 ? -1 : 1) * seededRandInt(rng, 90, 160)));
-      const sideX = x + seededRandInt(rng, -w - 30, -40);
+      const sideDir = rng() < 0.5 ? -1 : 1;
+      const sideY = Math.max(yRange.min, Math.min(yRange.max, y + sideDir * seededRandInt(rng, 90, 150)));
       const sideW = seededRandInt(rng, 60, 110);
-      if (sideX > startX + 60) {
-        platforms.push({ x: sideX, y: sideY, w: sideW, h: 22, type });
+      const sideX = x + seededRandInt(rng, -w - 40, -50);
+      if (sideX > startX + 60 && sideX + sideW + 20 < x) {
+        platforms.push({ x: sideX, y: sideY, w: sideW, h: 22, type, theme });
         if (rng() < 0.5) {
-          candidateSpots.push({ x: sideX + sideW / 2 - 17, y: sideY - 85 });
+          candidateSpots.push({ x: sideX + sideW / 2 - 17, y: sideY - 70 });
         }
       }
     }
@@ -1202,7 +1580,7 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true, s
     // Moving bridge platform across the gap
     if (rng() < 0.28 + difficulty * 0.04) {
       const mx = x - w - gap / 2 - 45;
-      const my = Math.max(150, Math.min(470, y + seededRandInt(rng, -80, 80)));
+      const my = Math.max(150, Math.min(470, y + seededRandInt(rng, -60, 60)));
       movingPlatforms.push({
         x: mx, y: my, w: 90, h: 22,
         dx: seededRand(rng, 0.9, 2.2) * (rng() > 0.5 ? 1 : -1),
@@ -1211,11 +1589,18 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true, s
       });
     }
 
-    // Spike patch on this platform
+    // Spike patch - keep away from the launch edge if a real jump is required
     if (difficulty > 0 && rng() < (0.20 + difficulty * 0.03) * bossBoost) {
       const sw = Math.min(w - 30, seededRandInt(rng, 30, 50));
-      const sx = seededRandInt(rng, x - w + 15, x - 15 - sw);
-      hazards.push({ x: sx, y: y - 20, w: sw, h: 20 });
+      let sxMin = x - w + 15;
+      let sxMax = x - 15 - sw;
+      if (gap > 120) {
+        sxMax = Math.min(sxMax, x - 45 - sw);
+      }
+      if (sxMin <= sxMax) {
+        const sx = seededRandInt(rng, sxMin, sxMax);
+        hazards.push({ x: sx, y: y - 20, w: sw, h: 20 });
+      }
     }
 
     // Floor spikes below a gap
@@ -1248,19 +1633,24 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true, s
     }
   }
 
-  // End reward platform (always reachable from the last generated platform)
+  // Final reward platform reachable from the last generated platform
   const finalW = 180;
-  const finalGap = seededRandInt(rng, 70, 110) * bossBoost;
-  const finalDy = seededRandInt(rng, -70, 70);
+  const finalGapMax = Math.min(110 * bossBoost, MAX_NORMAL_GAP);
+  const finalGap = seededRandInt(rng, 70 * bossBoost, finalGapMax);
+  const finalDyMaxUp = Math.min(MAX_NORMAL_DY, y - yRange.min);
+  const finalDyMaxDown = Math.min(MAX_NORMAL_DY, yRange.max - y);
+  const finalDy = seededRandInt(rng, -finalDyMaxUp, finalDyMaxDown);
   const finalX = x + finalGap;
   const finalY = Math.max(yRange.min, Math.min(yRange.max, y + finalDy));
-  platforms.push({ x: finalX, y: finalY, w: finalW, h: 28, type: 'normal' });
-  candidateSpots.push({ x: finalX + finalW / 2 - 17, y: finalY - 85 });
+  platforms.push({ x: finalX, y: finalY, w: finalW, h: 28, type: 'normal', theme: getTheme(segmentIndex) });
+  const finalSpot = { x: finalX + finalW / 2 - 17, y: finalY - 70 };
+  candidateSpots.push(finalSpot);
+  mainSpots.push(finalSpot);
 
-  // Last 3 spots are reserved for answers (correct one at the very end)
-  const answerXs = candidateSpots.slice(-3);
+  // Last 3 main-path spots are reserved for answers
+  const answerXs = mainSpots.slice(-3);
   let powerupSpots = [];
-  const available = candidateSpots.slice(0, -3);
+  const available = candidateSpots.filter(s => !answerXs.includes(s));
   const powerupCount = available.length > 0 ? (rng() < 0.65 ? 1 : 2) : 0;
   while (powerupSpots.length < powerupCount && available.length > 0) {
     const idx = Math.floor(rng() * available.length);
@@ -1281,6 +1671,7 @@ function generateSegment(startX, startY, difficulty, seed, addStartPad = true, s
   };
 }
 
+
 function makeSegmentAnswers(rng, correct, answerXs) {
   const [d1, d2] = distractorsFor(correct);
   const positions = answerXs.slice(-3);
@@ -1291,13 +1682,14 @@ function makeSegmentAnswers(rng, correct, answerXs) {
     { v: d1, c: false },
     { v: d2, c: false }
   ]);
-  return positions.map((p, i) => ({
+  return positions.slice(0, 3).map((p, i) => ({
     x: Math.round(p.x),
     y: Math.round(p.y),
     value: values[i].v,
     correct: values[i].c
   }));
 }
+
 
 /* ---------- Power-ups ---------- */
 const POWERUP_TYPES = [
@@ -2053,8 +2445,24 @@ function getTotalLevels() {
 }
 
 function getSegmentQuestion(index) {
-  return ALL_QUESTIONS[index % ALL_QUESTIONS.length];
+  const difficulty = Math.min(10, Math.floor(index / 2));
+  const generatorKeys = [
+    ['add', generateAddQuestions],
+    ['sub', generateSubQuestions],
+    ['mul', generateMulQuestions],
+    ['div', generateDivQuestions],
+    ['percent', generatePercentQuestions],
+    ['square', generateSquareQuestions],
+    ['sqrt', generateSqrtQuestions],
+    ['equation', generateEquationQuestions]
+  ];
+  const [key, generator] = generatorKeys[index % generatorKeys.length];
+  const pool = getDynamicPool(key, generator, difficulty);
+  const q = pool[index % pool.length];
+  setLastQuestion(q);
+  return q;
 }
+
 
 // Expose for the game engine
 if (typeof window !== 'undefined') {

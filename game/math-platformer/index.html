@@ -17,26 +17,49 @@
       <div class="jmp-header">
         <h1 class="jmp-title">🦊 Math Jump Adventure</h1>
         <div class="jmp-stats">
-          <div class="jmp-stat">Màn <span id="levelStat">1</span></div>
-          <div class="jmp-stat">Điểm <span id="scoreStat">0</span></div>
-          <div class="jmp-stat">Mạng <span id="livesStat">3</span></div>
-          <div class="jmp-stat">🪙 <span id="coinStat">0</span></div>
+          <div class="jmp-stat jmp-stat--level" title="Màn hiện tại">
+            <span class="jmp-stat__icon">🎮</span>
+            <span class="jmp-stat__value" id="levelStat">1</span>
+          </div>
+          <div class="jmp-stat jmp-stat--score" title="Điểm">
+            <span class="jmp-stat__icon">⭐</span>
+            <span class="jmp-stat__value" id="scoreStat">0</span>
+          </div>
+          <div class="jmp-stat jmp-stat--lives" title="Mạng">
+            <span class="jmp-stat__icon">❤️</span>
+            <span class="jmp-stat__value" id="livesStat">3</span>
+            <div class="jmp-life-bar"><div class="jmp-life-bar__fill" id="lifeBar"></div></div>
+          </div>
+          <div class="jmp-stat jmp-stat--coins" title="Coins">
+            <span class="jmp-stat__icon">🪙</span>
+            <span class="jmp-stat__value" id="coinStat">0</span>
+          </div>
         </div>
       </div>
 
       <div class="jmp-canvas-wrap" id="canvasWrap">
         <div class="jmp-question">
-          <div class="jmp-question__label">Nhiệm vụ</div>
+          <div class="jmp-question__header">
+            <span class="jmp-question__icon" id="questionIcon">📝</span>
+            <span class="jmp-question__label" id="questionLabel">Nhiệm vụ</span>
+          </div>
           <div class="jmp-question__text" id="questionText">Đang tải...</div>
+          <div class="jmp-question__progress" id="questionProgressWrap">
+            <div class="jmp-question__progress-bar" id="questionProgress"></div>
+          </div>
           <div class="jmp-effects" id="effectsPanel"></div>
         </div>
 
         <canvas id="gameCanvas" width="960" height="600"></canvas>
 
+        <div class="jmp-toast" id="toast" aria-live="polite"></div>
+
         <div class="jmp-overlay" id="overlay">
-          <h2 id="overlayTitle">Sẵn sàng?</h2>
-          <p id="overlayDesc">Dùng phím mũi tên hoặc WASD để di chuyển, Space để nhảy. Thu thập đáp án đúng!</p>
-          <button class="btn btn--primary" id="overlayBtn">Bắt đầu</button>
+          <div class="jmp-overlay__card">
+            <h2 id="overlayTitle">Sẵn sàng?</h2>
+            <p id="overlayDesc">Dùng phím mũi tên hoặc WASD để di chuyển, Space để nhảy. Thu thập đáp án đúng!</p>
+            <button class="btn btn--primary" id="overlayBtn">Bắt đầu</button>
+          </div>
         </div>
       </div>
 
@@ -54,7 +77,10 @@
           <button class="jmp-touch__btn" data-key="left">←</button>
           <button class="jmp-touch__btn" data-key="right">→</button>
         </div>
-        <button class="jmp-touch__btn" data-key="jump">↑</button>
+        <div class="jmp-touch__group">
+          <button class="jmp-touch__btn" data-key="jump">↑</button>
+          <button class="jmp-touch__btn jmp-touch__btn--small" data-key="jump">2×</button>
+        </div>
       </div>
 
       <div class="jmp-help">
