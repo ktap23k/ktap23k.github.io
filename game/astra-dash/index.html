@@ -14,6 +14,7 @@
   <canvas id="gameCanvas"></canvas>
 
   <a href="../index.html" class="nav-pill" aria-label="Quay lại Arcade">Arcade</a>
+  <button id="audioBtn" class="icon-btn audio-btn" aria-label="Tắt nhạc">♪</button>
   <button id="pauseBtn" class="icon-btn pause-btn hidden" aria-label="Tạm dừng">Ⅱ</button>
 
   <section class="hud" id="hud" aria-live="polite">
@@ -29,9 +30,10 @@
       <span class="hud-label">Năng lượng</span>
       <div class="energy-track"><span id="energyFill"></span></div>
     </div>
-    <div class="hud-card">
-      <span class="hud-label">Tim</span>
-      <strong id="heartText">3</strong>
+    <div class="hud-card hud-card--life">
+      <span class="hud-label">Mạng sống</span>
+      <div class="life-meter" id="heartIcons" aria-label="Mạng sống còn lại"></div>
+      <strong class="life-count"><span id="heartText">3</span>/5</strong>
     </div>
   </section>
 
