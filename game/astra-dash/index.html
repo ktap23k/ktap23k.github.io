@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Astra Bloom Dash — Ktap Arcade</title>
+  <meta name="description" content="Game runner canvas với nhân vật Astra, hiệu ứng đẹp, combo và lưu điểm cao local." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="astra-dash.css" />
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <a href="../index.html" class="nav-pill" aria-label="Quay lại Arcade">Arcade</a>
+  <button id="pauseBtn" class="icon-btn pause-btn hidden" aria-label="Tạm dừng">Ⅱ</button>
+
+  <section class="hud" id="hud" aria-live="polite">
+    <div class="hud-card hud-card--wide">
+      <span class="hud-label">Điểm</span>
+      <strong id="scoreText">0</strong>
+    </div>
+    <div class="hud-card">
+      <span class="hud-label">Combo</span>
+      <strong id="comboText">x1</strong>
+    </div>
+    <div class="hud-card hud-card--wide">
+      <span class="hud-label">Năng lượng</span>
+      <div class="energy-track"><span id="energyFill"></span></div>
+    </div>
+    <div class="hud-card">
+      <span class="hud-label">Tim</span>
+      <strong id="heartText">3</strong>
+    </div>
+  </section>
+
+  <section class="overlay" id="startScreen">
+    <div class="hero-panel">
+      <div class="hero-badge">New Run</div>
+      <h1>Astra Bloom Dash</h1>
+      <p>Rượt qua thành phố pha lê, gom mảnh sao và giữ chuỗi combo sáng lâu nhất.</p>
+      <button id="startBtn" class="primary-btn">Bắt đầu</button>
+      <div class="best-line">Kỷ lục <span id="bestStart">0</span></div>
+    </div>
+  </section>
+
+  <section class="overlay hidden" id="pauseScreen">
+    <div class="modal-panel">
+      <h2>Tạm dừng</h2>
+      <button id="resumeBtn" class="primary-btn">Tiếp tục</button>
+      <button id="restartPauseBtn" class="ghost-btn">Chơi lại</button>
+    </div>
+  </section>
+
+  <section class="overlay hidden" id="gameOverScreen">
+    <div class="modal-panel">
+      <h2>Hành trình kết thúc</h2>
+      <div class="result-grid">
+        <div>
+          <span>Điểm</span>
+          <strong id="finalScore">0</strong>
+        </div>
+        <div>
+          <span>Kỷ lục</span>
+          <strong id="finalBest">0</strong>
+        </div>
+      </div>
+      <button id="restartBtn" class="primary-btn">Chạy lại</button>
+      <a href="../index.html" class="ghost-btn">Arcade</a>
+    </div>
+  </section>
+
+  <div class="touch-pad" aria-hidden="true">
+    <button class="touch-btn" data-action="left">←</button>
+    <button class="touch-btn touch-btn--jump" data-action="jump">↑</button>
+    <button class="touch-btn" data-action="right">→</button>
+    <button class="touch-btn touch-btn--dash" data-action="dash">✦</button>
+  </div>
+
+  <script src="astra-dash.js"></script>
+</body>
+</html>

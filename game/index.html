@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Game — Ktap Arcade</title>
-  <meta name="description" content="Khu vực trò chơi HTML/CSS/JS: Pikachu, Math Jump Adventure và nhiều trò chơi giáo dục khác." />
+  <meta name="description" content="Khu vực trò chơi HTML/CSS/JS: Pikachu, Math Jump Adventure, Neon Defender, Astra Bloom Dash và nhiều trò chơi khác." />
   <link rel="stylesheet" href="../assets/css/style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -261,6 +261,23 @@
           <span class="btn btn--primary game-card__cta">Chơi ngay →</span>
         </a>
 
+        <a href="astra-dash/index.html" class="game-card">
+          <div class="game-card__icon">✦</div>
+          <div>
+            <h2 class="game-card__title">Astra Bloom Dash</h2>
+            <div class="game-card__tags">
+              <span class="tag tag--cat">Runner</span>
+              <span class="tag">Animation</span>
+            </div>
+          </div>
+          <p class="game-card__desc">
+            Runner canvas với nhân vật Astra, nền parallax, hiệu ứng hạt,
+            lướt né chướng ngại, gom pha lê và giữ chuỗi combo.
+          </p>
+          <div class="game-card__meta" id="astraHigh">Điểm cao: 0</div>
+          <span class="btn btn--primary game-card__cta">Chơi ngay →</span>
+        </a>
+
         <div class="game-card coming-soon">
           <div class="game-card__icon">🧩</div>
           <div>
@@ -287,6 +304,8 @@
       document.getElementById('pikaHigh').textContent = 'Điểm cao: ' + pikaHigh;
       const neonHigh = localStorage.getItem('neon_defender_highscore') || '0';
       document.getElementById('neonHigh').textContent = 'Điểm cao: ' + neonHigh;
+      const astraHigh = localStorage.getItem('astra_dash_highscore') || '0';
+      document.getElementById('astraHigh').textContent = 'Điểm cao: ' + astraHigh;
     })();
   </script>
 </body>
