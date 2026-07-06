@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-15",
+  "generated": "2026-07-06",
   "posts": [
     {
       "slug": "microservices-architecture",
@@ -13,6 +13,21 @@
         "Architecture"
       ],
       "featured": true
+    },
+    {
+      "slug": "mcp-custom-server-thuc-chien",
+      "title": "MCP thực chiến — tự tạo custom server cho AI agent",
+      "excerpt": "Phân tích Model Context Protocol: kiến trúc host-client-server, tools/resources/prompts và hướng dẫn tạo một MCP server custom bằng TypeScript.",
+      "date": "6 tháng 7, 2026",
+      "dateISO": "2026-07-06",
+      "readTime": 13,
+      "tags": [
+        "LLM",
+        "AI",
+        "MCP",
+        "Tool Use"
+      ],
+      "featured": false
     },
     {
       "slug": "qdrant-thuc-chien",

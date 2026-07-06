@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCP thực chiến — tự tạo custom server cho AI agent — tuanta</title>
+  <meta name="description" content="Phân tích Model Context Protocol: kiến trúc host-client-server, tools/resources/prompts và hướng dẫn tạo một MCP server custom bằng TypeScript." />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<main>
+  <div class="container">
+
+    <nav class="breadcrumb">
+      <a href="../index.html">Trang chủ</a>
+      <span class="breadcrumb__sep">/</span>
+      <a href="../index.html#posts">Bài viết</a>
+      <span class="breadcrumb__sep">/</span>
+      <span>MCP thực chiến</span>
+    </nav>
+
+    <header class="article-header">
+      <div class="article-header__tags">
+        <span class="tag tag--cat">LLM</span>
+        <span class="tag">AI</span>
+        <span class="tag">MCP</span>
+        <span class="tag">Tool Use</span>
+      </div>
+      <h1 class="article-title">MCP thực chiến — tự tạo custom server cho AI agent</h1>
+      <div class="article-meta">
+        <span class="article-meta__author">
+          <span class="article-meta__avatar">TA</span>
+          Tuan Anh
+        </span>
+        <span class="article-meta__sep">·</span>
+        <span>6 tháng 7, 2026</span>
+        <span class="article-meta__sep">·</span>
+        <span>⏱ 13 phút đọc</span>
+      </div>
+    </header>
+
+    <div class="post-layout">
+      <article class="article-body">
+
+        <p>
+          Khi làm AI agent, phần khó không chỉ là prompt. Phần khó hơn là làm sao để model
+          truy cập đúng dữ liệu, gọi đúng hành động, và vẫn giữ được quyền kiểm soát ở phía
+          hệ thống. <strong>Model Context Protocol</strong> (MCP) sinh ra để giải quyết đúng
+          khoảng trống đó: một chuẩn chung để AI application kết nối với file, database, API
+          nội bộ và workflow của bạn.
+        </p>
+
+        <p>
+          Nếu ví function calling là cách bạn đưa vài hàm vào một model cụ thể, thì MCP là
+          lớp giao thức để đóng gói các hàm, tài nguyên và prompt đó thành một server có thể
+          dùng lại qua nhiều client: Claude Desktop, Claude Code, VS Code, Cursor hoặc client
+          tự viết.
+        </p>
+
+        <h2 id="mcp-la-gi">MCP là gì?</h2>
+
+        <p>
+          MCP là một chuẩn mở cho phép AI application kết nối tới hệ thống bên ngoài. Theo
+          tài liệu chính thức, MCP cho phép ứng dụng AI truy cập data sources, tools và
+          workflow thông qua một giao thức thống nhất. Cách hiểu thực dụng nhất:
+          <strong>MCP là API adapter dành cho AI agent</strong>.
+        </p>
+
+        <p>
+          Thay vì mỗi app AI tự tích hợp riêng với GitHub, PostgreSQL, Figma, Jira hoặc hệ
+          thống nội bộ, bạn viết một MCP server expose capability. Client nào hiểu MCP đều có
+          thể discover và gọi capability đó theo cùng một protocol.
+        </p>
+
+        <h2 id="kien-truc">Kiến trúc: host, client, server</h2>
+
+        <p>MCP dùng mô hình client-server nhưng có ba vai trò cần phân biệt:</p>
+
+        <ul>
+          <li><strong>MCP Host</strong>: ứng dụng AI người dùng đang dùng, ví dụ Claude Desktop hoặc một IDE có agent.</li>
+          <li><strong>MCP Client</strong>: thành phần bên trong host, giữ kết nối tới từng MCP server.</li>
+          <li><strong>MCP Server</strong>: process cung cấp context hoặc hành động cho host.</li>
+        </ul>
+
+        <p>
+          Một host có thể kết nối nhiều server cùng lúc. Ví dụ một coding assistant có thể
+          dùng server filesystem để đọc repo, server database để inspect schema, và server
+          Jira nội bộ để đọc ticket. Mỗi server chỉ cần tập trung vào một domain rõ ràng.
+        </p>
+
+        <h2 id="data-layer-transport">Data layer và transport layer</h2>
+
+        <p>
+          Về mặt giao thức, MCP tách thành hai lớp. <strong>Data layer</strong> dùng JSON-RPC
+          2.0 để mô tả lifecycle, capability negotiation, discovery và execution.
+          <strong>Transport layer</strong> quyết định message đi qua đâu: local process qua
+          stdio, hoặc remote server qua Streamable HTTP.
+        </p>
+
+        <p>
+          Với custom server chạy local, stdio là lựa chọn phổ biến nhất. Client launch process
+          server, rồi trao đổi JSON-RPC qua stdin/stdout. Vì vậy có một rule rất quan trọng:
+          <strong>server stdio không được log ra stdout</strong>. Log ra stdout sẽ làm hỏng
+          stream JSON-RPC. Hãy dùng stderr hoặc file log.
+        </p>
+
+        <h2 id="primitives">Ba primitive chính: tools, resources, prompts</h2>
+
+        <p>MCP server có thể expose ba loại capability chính:</p>
+
+        <ul>
+          <li>
+            <strong>Tools</strong>: hàm có side effect hoặc tính toán chủ động, ví dụ query
+            database, tạo issue, gọi API, chạy phân tích.
+          </li>
+          <li>
+            <strong>Resources</strong>: dữ liệu dạng đọc, ví dụ file content, schema, record,
+            log, report. Resource giống một URL mà client có thể đọc để thêm context.
+          </li>
+          <li>
+            <strong>Prompts</strong>: template tái sử dụng để hướng dẫn model làm một workflow
+            cụ thể, ví dụ review PR, phân tích incident, viết release note.
+          </li>
+        </ul>
+
+        <p>
+          Trong thực tế, hãy bắt đầu bằng <strong>tools</strong>. Khi tool ổn định, bổ sung
+          resource để model có context tốt hơn, rồi thêm prompt khi bạn thấy người dùng lặp
+          đi lặp lại cùng một workflow.
+        </p>
+
+        <h2 id="khi-nao-nen-tao-custom-mcp">Khi nào nên tạo custom MCP?</h2>
+
+        <p>Custom MCP server đáng làm khi bạn có ít nhất một trong các nhu cầu sau:</p>
+
+        <ul>
+          <li>Agent cần truy cập dữ liệu nội bộ không nên public ra internet.</li>
+          <li>Nhiều AI client cần dùng cùng một integration.</li>
+          <li>Bạn muốn kiểm soát permission, logging, audit và validation ở một lớp riêng.</li>
+          <li>Workflow có logic domain riêng, không thể giải quyết chỉ bằng prompt.</li>
+        </ul>
+
+        <p>
+          Ngược lại, nếu use case chỉ là gọi một API duy nhất trong app của bạn, function
+          calling trực tiếp có thể đơn giản hơn. MCP phát huy giá trị khi integration cần tái
+          sử dụng, cần chạy cục bộ, hoặc cần tách biệt khỏi code của AI host.
+        </p>
+
+        <h2 id="vi-du">Ví dụ: tạo MCP server đọc tri thức nội bộ</h2>
+
+        <p>
+          Ta sẽ tạo một server nhỏ tên <code>team-knowledge</code>. Server này expose hai tool:
+          <code>search_notes</code> để tìm ghi chú theo keyword và <code>get_note</code> để
+          đọc chi tiết một ghi chú. Ví dụ dùng TypeScript vì SDK chính thức khá gọn và hợp với
+          các team web/backend.
+        </p>
+
+        <h3 id="setup-project">1. Setup project</h3>
+
+<pre><code>mkdir team-knowledge-mcp
+cd team-knowledge-mcp
+npm init -y
+npm install @modelcontextprotocol/sdk zod@3
+npm install -D typescript @types/node</code></pre>
+
+        <p>Thêm cấu hình tối thiểu vào <code>package.json</code>:</p>
+
+<pre><code>{
+  "type": "module",
+  "bin": {
+    "team-knowledge-mcp": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod 755 build/index.js"
+  }
+}</code></pre>
+
+        <p>Và <code>tsconfig.json</code>:</p>
+
+<pre><code>{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "outDir": "./build",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*"]
+}</code></pre>
+
+        <h3 id="viet-server">2. Viết server</h3>
+
+        <p>Tạo file <code>src/index.ts</code>:</p>
+
+<pre><code>import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+type Note = {
+  id: string;
+  title: string;
+  tags: string[];
+  body: string;
+};
+
+const notes: Note[] = [
+  {
+    id: "deploy-checklist",
+    title: "Production deploy checklist",
+    tags: ["devops", "release"],
+    body: "Run tests, verify migrations, check feature flags, monitor logs after deploy."
+  },
+  {
+    id: "incident-template",
+    title: "Incident review template",
+    tags: ["sre", "incident"],
+    body: "Impact, timeline, root cause, detection gap, action items, owners."
+  }
+];
+
+const server = new McpServer({
+  name: "team-knowledge",
+  version: "1.0.0"
+});
+
+server.registerTool(
+  "search_notes",
+  {
+    description: "Search internal team notes by keyword or tag.",
+    inputSchema: {
+      query: z.string().min(2).describe("Keyword or tag to search")
+    }
+  },
+  async ({ query }) => {
+    const q = query.toLowerCase();
+    const matches = notes.filter((note) =>
+      note.title.toLowerCase().includes(q) ||
+      note.body.toLowerCase().includes(q) ||
+      note.tags.some((tag) => tag.includes(q))
+    );
+
+    return {
+      content: [{
+        type: "text",
+        text: matches.length
+          ? matches.map((n) => `${n.id}: ${n.title} [${n.tags.join(", ")}]`).join("\n")
+          : "No matching notes found."
+      }]
+    };
+  }
+);
+
+server.registerTool(
+  "get_note",
+  {
+    description: "Read one internal note by id.",
+    inputSchema: {
+      id: z.string().describe("Note id returned by search_notes")
+    }
+  },
+  async ({ id }) => {
+    const note = notes.find((item) => item.id === id);
+
+    return {
+      content: [{
+        type: "text",
+        text: note
+          ? `# ${note.title}\nTags: ${note.tags.join(", ")}\n\n${note.body}`
+          : `Note not found: ${id}`
+      }]
+    };
+  }
+);
+
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error("team-knowledge MCP server running on stdio");
+}
+
+main().catch((error) => {
+  console.error("Fatal error:", error);
+  process.exit(1);
+});</code></pre>
+
+        <p>
+          Điểm đáng chú ý là schema input dùng <code>zod</code>. Schema này không chỉ validate
+          tham số ở runtime, mà còn giúp client hiểu tool cần gì để model gọi đúng hơn.
+        </p>
+
+        <h3 id="build-test">3. Build và test</h3>
+
+<pre><code>npm run build
+npx @modelcontextprotocol/inspector node ./build/index.js</code></pre>
+
+        <p>
+          MCP Inspector giúp bạn xem server expose tool nào, gọi thử input, đọc response và
+          debug lỗi protocol mà không cần mở hẳn một AI client.
+        </p>
+
+        <h3 id="cau-hinh-client">4. Cấu hình client</h3>
+
+        <p>
+          Với client hỗ trợ local MCP server, cấu hình thường có dạng command + args. Ví dụ
+          cho một host dùng format <code>mcpServers</code>:
+        </p>
+
+<pre><code>{
+  "mcpServers": {
+    "team-knowledge": {
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/team-knowledge-mcp/build/index.js"]
+    }
+  }
+}</code></pre>
+
+        <p>
+          Luôn dùng absolute path. Sau khi cấu hình, restart host để nó launch server và chạy
+          bước capability discovery. Từ đó model có thể thấy <code>search_notes</code> và
+          <code>get_note</code> như tools có thể gọi.
+        </p>
+
+        <h2 id="thiet-ke-tool">Thiết kế tool tốt cho LLM</h2>
+
+        <p>
+          Tool cho LLM không giống API cho con người. Model cần tên, mô tả và schema thật rõ.
+          Một vài nguyên tắc mình thấy hiệu quả:
+        </p>
+
+        <ul>
+          <li><strong>Tên tool cụ thể</strong>: dùng <code>search_notes</code> thay vì <code>search</code>.</li>
+          <li><strong>Description nói rõ khi nào dùng</strong>, không chỉ nói tool làm gì.</li>
+          <li><strong>Input nhỏ và typed</strong>: tránh nhận blob JSON quá lớn nếu không cần.</li>
+          <li><strong>Output dễ đọc</strong>: trả text có cấu trúc, id ổn định, lỗi rõ ràng.</li>
+          <li><strong>Idempotent nếu có thể</strong>: tool mutate dữ liệu nên yêu cầu xác nhận ở tầng client hoặc app.</li>
+        </ul>
+
+        <h2 id="resources-prompts">Khi nào thêm resources và prompts?</h2>
+
+        <p>
+          Sau khi có tools, bạn có thể expose resource cho dữ liệu đọc thường xuyên. Ví dụ
+          <code>team://notes/deploy-checklist</code> đọc checklist deploy, hoặc
+          <code>db://schema/public</code> đọc schema database. Resource hữu ích khi context
+          nên được đọc trực tiếp thay vì thông qua tool search.
+        </p>
+
+        <p>
+          Prompts thì phù hợp với workflow lặp lại. Ví dụ prompt <code>incident_review</code>
+          có thể yêu cầu model đọc note template, hỏi thêm missing fields, rồi viết postmortem.
+          Khi prompt sống trong MCP server, team có thể version và chia sẻ workflow thay vì
+          copy paste prompt trong từng client.
+        </p>
+
+        <h2 id="bao-mat">Bảo mật: đừng coi MCP là magic sandbox</h2>
+
+        <p>
+          MCP giúp chuẩn hóa giao tiếp, nhưng không tự giải quyết toàn bộ bảo mật. Nếu server
+          của bạn có quyền đọc file, query database hoặc gọi API production, agent cũng có thể
+          đề xuất dùng những quyền đó. Cần thiết kế theo nguyên tắc least privilege.
+        </p>
+
+        <ul>
+          <li>Chạy server với credential scope hẹp nhất có thể.</li>
+          <li>Validate input bằng schema và kiểm tra lại ở code, đặc biệt với path, SQL, URL.</li>
+          <li>Không expose tool destructive nếu chưa có cơ chế xác nhận rõ.</li>
+          <li>Ghi audit log cho tool quan trọng, nhưng với stdio hãy log ra stderr hoặc file.</li>
+          <li>Với HTTP transport, dùng auth token/OAuth, HTTPS và kiểm soát redirect/SSRF.</li>
+          <li>Không đặt secret trong description của tool, resource hoặc prompt.</li>
+        </ul>
+
+        <p>
+          Một rủi ro thực tế là tool poisoning: description hoặc dữ liệu trả về có thể chứa
+          instruction lừa model bỏ qua rule ban đầu. Vì vậy dữ liệu từ MCP server vẫn nên được
+          coi là untrusted input nếu nó đến từ hệ thống bên ngoài hoặc người dùng khác.
+        </p>
+
+        <h2 id="debug-production">Debug và đưa vào production</h2>
+
+        <p>Checklist ngắn trước khi dùng MCP trong workflow thật:</p>
+
+        <ul>
+          <li>Test từng tool bằng MCP Inspector.</li>
+          <li>Đảm bảo build artifact chạy được bằng command giống hệt config client.</li>
+          <li>Thêm timeout cho API/database call.</li>
+          <li>Trả lỗi có cấu trúc, không throw stack trace chứa secret.</li>
+          <li>Version server và ghi changelog khi đổi schema tool.</li>
+          <li>Theo dõi latency, số lần gọi tool và tỉ lệ lỗi.</li>
+        </ul>
+
+        <h2 id="ket-luan">Kết luận</h2>
+
+        <p>
+          MCP là một bước tiến quan trọng cho hệ sinh thái AI agent: nó biến integration thành
+          một server chuẩn hóa, discoverable và tái sử dụng được. Với custom MCP server, bạn
+          có thể đưa tri thức nội bộ, API riêng và workflow domain vào AI client mà không phải
+          viết lại integration cho từng app.
+        </p>
+
+        <p>
+          Cách bắt đầu tốt nhất là chọn một use case nhỏ: search tài liệu team, đọc schema
+          database, tạo release note, hoặc truy vấn hệ thống monitoring. Viết 1-2 tool thật
+          rõ, test bằng Inspector, rồi mới mở rộng sang resources, prompts và remote transport.
+        </p>
+
+        <h2 id="tai-lieu-tham-khao">Tài liệu tham khảo</h2>
+
+        <ul>
+          <li><a href="https://modelcontextprotocol.io/docs/getting-started/intro" target="_blank" rel="noopener">Model Context Protocol — What is MCP?</a></li>
+          <li><a href="https://modelcontextprotocol.io/docs/learn/architecture" target="_blank" rel="noopener">MCP Architecture overview</a></li>
+          <li><a href="https://modelcontextprotocol.io/docs/develop/build-server" target="_blank" rel="noopener">Build an MCP server</a></li>
+          <li><a href="https://modelcontextprotocol.io/docs/tools/inspector" target="_blank" rel="noopener">MCP Inspector</a></li>
+          <li><a href="https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices" target="_blank" rel="noopener">MCP Security Best Practices</a></li>
+          <li><a href="https://github.com/modelcontextprotocol/typescript-sdk" target="_blank" rel="noopener">Official TypeScript SDK</a></li>
+        </ul>
+
+        <hr />
+
+        <p><em>Nếu bạn đang xây agent nội bộ, MCP là lớp integration rất đáng thử trước khi tự thiết kế một protocol riêng.</em></p>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc__title">Mục lục</p>
+        <div id="toc"></div>
+      </aside>
+    </div>
+
+  </div>
+
+  <div class="container">
+    <nav class="post-nav">
+      <a href="qdrant-thuc-chien.html" class="post-nav__item">
+        <span class="post-nav__label">← Bài trước</span>
+        <span class="post-nav__title">Qdrant thực chiến — vector database mạnh mẽ và dễ dùng</span>
+      </a>
+      <span></span><!-- newest post, no next -->
+    </nav>
+  </div>
+</main>
+
+<script src="../assets/js/shared.js"></script>
+<script src="../assets/js/antigravity.js"></script>
+</body>
+</html>
