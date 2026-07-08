@@ -381,6 +381,7 @@ def main():
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Khoá học Apache Airflow 3.2.x — Ktap</title>
   <meta name="description" content="Khoá học Apache Airflow 3.2.x từ LocalExecutor đến Production cho Backend / Distributed Systems Engineer." />
+  <link rel="icon" type="image/jpeg" href="../../avt.jpg" />
   <link rel="stylesheet" href="../../assets/css/style.css" />
   <link rel="stylesheet" href="../../assets/css/course.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -394,7 +395,7 @@ def main():
   <header class="header">
     <div class="container header__inner">
       <a href="../../index.html" class="logo">
-        <span class="logo__icon">✦</span>
+        <img class="logo__icon" src="../../avt.jpg" alt="" />
         <span class="logo__text">Ktap</span>
       </a>
 

@@ -11,6 +11,19 @@ const ROOT = /\/game\/[^/]+\//.test(path) ? '../../'
 // Game nav link needs special handling to avoid /game/game/index.html
 const GAME_LINK = /\/game\/(index\.html)?$/.test(path) ? './index.html'
                 : ROOT + 'game/index.html';
+const AVATAR_SRC = ROOT + 'avt.jpg';
+
+/* ── FAVICON ───────────────────────────────────────────────── */
+function initFavicon() {
+  let link = document.querySelector('link[rel~="icon"]');
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+  }
+  link.type = 'image/jpeg';
+  link.href = AVATAR_SRC;
+}
 
 /* ── RENDER HEADER ─────────────────────────────────────────── */
 function renderHeader() {
@@ -19,7 +32,7 @@ function renderHeader() {
   header.innerHTML = `
     <div class="container header__inner">
       <a href="${ROOT}index.html" class="logo">
-        <span class="logo__icon">✦</span>
+        <img class="logo__icon" src="${AVATAR_SRC}" alt="" />
         <span class="logo__text">tuanta</span>
       </a>
       <nav class="nav" id="nav">
@@ -155,6 +168,7 @@ function initTOC() {
 
 /* ── INIT ALL ──────────────────────────────────────────────── */
 (function init() {
+  initFavicon();
   renderHeader();
   renderFooter();
   initDarkMode();
