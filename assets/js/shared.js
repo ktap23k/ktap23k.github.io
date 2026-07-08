@@ -12,6 +12,7 @@ const ROOT = /\/game\/[^/]+\//.test(path) ? '../../'
 const GAME_LINK = /\/game\/(index\.html)?$/.test(path) ? './index.html'
                 : ROOT + 'game/index.html';
 const AVATAR_SRC = ROOT + 'avt.jpg';
+const FAVICON_SRC = ROOT + 'favicon.svg';
 
 /* ── FAVICON ───────────────────────────────────────────────── */
 function initFavicon() {
@@ -21,8 +22,8 @@ function initFavicon() {
     link.rel = 'icon';
     document.head.appendChild(link);
   }
-  link.type = 'image/jpeg';
-  link.href = AVATAR_SRC;
+  link.type = 'image/svg+xml';
+  link.href = FAVICON_SRC;
 }
 
 /* ── RENDER HEADER ─────────────────────────────────────────── */
