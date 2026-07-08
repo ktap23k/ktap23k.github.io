@@ -1,14 +1,16 @@
 /* =========================================
-   COURSE PAGE — Apache Airflow 3.2.x
-   Indigo / Violet accent theme
+   COURSE PAGES
+   Shared course layout with per-course accent themes
    ========================================= */
 
 :root {
   --course-accent:        #6366f1;   /* indigo-500 */
+  --course-accent-rgb:    99, 102, 241;
   --course-accent-light:  #e0e7ff;   /* indigo-100 */
   --course-accent-soft:   #f5f3ff;   /* violet-50 */
   --course-accent-hover:  #4f46e5;   /* indigo-600 */
   --course-violet:        #8b5cf6;   /* violet-500 */
+  --course-violet-rgb:    139, 92, 246;
   --course-code-bg:       #0f172a;   /* slate-900 */
   --course-code-border:   #1e293b;   /* slate-800 */
   --course-text-code:     #e2e8f0;   /* slate-200 */
@@ -16,13 +18,35 @@
 
 [data-theme="dark"] {
   --course-accent:        #818cf8;   /* indigo-400 */
+  --course-accent-rgb:    129, 140, 248;
   --course-accent-light:  #1e1b4b;   /* indigo-950 */
   --course-accent-soft:   #1e1b4b;
   --course-accent-hover:  #a5b4fc;   /* indigo-300 */
   --course-violet:        #a78bfa;   /* violet-400 */
+  --course-violet-rgb:    167, 139, 250;
   --course-code-bg:       #020617;   /* slate-950 */
   --course-code-border:   #1e293b;
   --course-text-code:     #cbd5e1;   /* slate-300 */
+}
+
+body.course-kafka {
+  --course-accent:        #0f766e;   /* teal-700 */
+  --course-accent-rgb:    15, 118, 110;
+  --course-accent-light:  #ccfbf1;   /* teal-100 */
+  --course-accent-soft:   #f0fdfa;   /* teal-50 */
+  --course-accent-hover:  #115e59;   /* teal-800 */
+  --course-violet:        #f97316;   /* orange-500 */
+  --course-violet-rgb:    249, 115, 22;
+}
+
+[data-theme="dark"] body.course-kafka {
+  --course-accent:        #2dd4bf;   /* teal-400 */
+  --course-accent-rgb:    45, 212, 191;
+  --course-accent-light:  #134e4a;   /* teal-900 */
+  --course-accent-soft:   #0f2f2c;
+  --course-accent-hover:  #5eead4;   /* teal-300 */
+  --course-violet:        #fb923c;   /* orange-400 */
+  --course-violet-rgb:    251, 146, 60;
 }
 
 /* Override site accent on course pages */
@@ -45,15 +69,15 @@
   padding: 72px 0 64px;
   background:
     radial-gradient(ellipse at top left, var(--course-accent-soft) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom right, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(var(--course-violet-rgb), 0.12) 0%, transparent 50%),
     var(--bg);
   border-bottom: 1px solid var(--border);
 }
 
 [data-theme="dark"] .course-hero {
   background:
-    radial-gradient(ellipse at top left, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom right, rgba(139, 92, 246, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at top left, rgba(var(--course-accent-rgb), 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(var(--course-violet-rgb), 0.10) 0%, transparent 50%),
     var(--bg);
 }
 
@@ -75,7 +99,7 @@
   text-transform: uppercase;
   background: linear-gradient(135deg, var(--course-accent), var(--course-violet));
   color: #fff;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 14px rgba(var(--course-accent-rgb), 0.35);
   margin-bottom: 22px;
 }
 
@@ -126,7 +150,7 @@
   background: var(--course-accent);
   color: #fff;
   border-color: var(--course-accent);
-  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 2px 10px rgba(var(--course-accent-rgb), 0.25);
 }
 
 .badge--secondary {
@@ -221,8 +245,8 @@
 [data-theme="dark"] .course-body li code,
 [data-theme="dark"] .course-body td code,
 [data-theme="dark"] .course-body th code {
-  background: rgba(99, 102, 241, 0.12);
-  border-color: rgba(99, 102, 241, 0.25);
+  background: rgba(var(--course-accent-rgb), 0.12);
+  border-color: rgba(var(--course-accent-rgb), 0.25);
   color: var(--course-accent);
 }
 
@@ -276,7 +300,7 @@
 }
 
 [data-theme="dark"] .course-body tbody tr:hover {
-  background: rgba(99, 102, 241, 0.10);
+  background: rgba(var(--course-accent-rgb), 0.10);
 }
 
 /* =========================================
@@ -292,7 +316,7 @@
 }
 
 [data-theme="dark"] .course-body blockquote {
-  background: rgba(99, 102, 241, 0.10);
+  background: rgba(var(--course-accent-rgb), 0.10);
 }
 
 .course-body blockquote p {
@@ -349,7 +373,7 @@
 
 [data-theme="dark"] .course-content .toc__list li a:hover,
 [data-theme="dark"] .course-content .toc__list li a.active {
-  background: rgba(99, 102, 241, 0.12);
+  background: rgba(var(--course-accent-rgb), 0.12);
 }
 
 /* =========================================
@@ -364,7 +388,7 @@
    ========================================= */
 .back-to-top {
   background: var(--course-accent);
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 16px rgba(var(--course-accent-rgb), 0.4);
 }
 
 .back-to-top:hover {
@@ -418,6 +442,107 @@
 }
 
 /* =========================================
+   COMPACT LEARNING BLOCKS
+   ========================================= */
+.course-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 1.6em 0 2em;
+}
+
+.course-kpi {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+}
+
+.course-kpi__label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.course-kpi__value {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.learning-map {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 1.6em 0 2em;
+}
+
+.lesson-card {
+  position: relative;
+  padding: 20px 20px 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+}
+
+.lesson-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  border-radius: 12px 0 0 12px;
+  background: linear-gradient(180deg, var(--course-accent), var(--course-violet));
+}
+
+.lesson-card h3 {
+  margin-top: 0;
+  padding-left: 2px;
+}
+
+.lesson-card p {
+  margin-bottom: 0.8em;
+}
+
+.version-note {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--course-accent-soft), var(--bg-card));
+  margin: 1.4em 0 2em;
+}
+
+[data-theme="dark"] .version-note {
+  background: linear-gradient(135deg, rgba(var(--course-accent-rgb), 0.12), var(--bg-card));
+}
+
+.version-note strong {
+  color: var(--course-accent);
+}
+
+.version-note__pill {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--course-accent);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* =========================================
    RESPONSIVE
    ========================================= */
 @media (max-width: 800px) {
@@ -432,6 +557,15 @@
 
   .course-hero__badge {
     font-size: 0.7rem;
+  }
+
+  .course-kpi-grid,
+  .learning-map {
+    grid-template-columns: 1fr;
+  }
+
+  .version-note {
+    grid-template-columns: 1fr;
   }
 
   .pdf-list {

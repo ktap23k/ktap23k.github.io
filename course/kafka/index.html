@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Khoá học Apache Kafka 4.3.x - Ktap</title>
+  <meta name="description" content="Khoá học Apache Kafka 4.3.x theo hướng KRaft-first, từ event streaming nền tảng đến production operations." />
+  <link rel="stylesheet" href="../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Merriweather:ital,wght@0,400;0,700;1,400&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet" />
+</head>
+<body class="course-kafka">
+  <div class="progress-bar" id="progressBar"></div>
+
+  <header class="header">
+    <div class="container header__inner">
+      <a href="../../index.html" class="logo">
+        <span class="logo__icon">✦</span>
+        <span class="logo__text">Ktap</span>
+      </a>
+
+      <nav class="nav" id="nav">
+        <a href="../../index.html#home" class="nav__link">Trang chủ</a>
+        <a href="../../index.html#posts" class="nav__link">Bài viết</a>
+        <a href="../../index.html#courses" class="nav__link active">Khoá học</a>
+        <a href="../../index.html#about" class="nav__link">Về tôi</a>
+        <a href="../../index.html#contact" class="nav__link">Liên hệ</a>
+        <a href="../../game/index.html" class="nav__link">Game</a>
+        <a href="../../cv.html" class="nav__link nav__link--cv">CV</a>
+      </nav>
+
+      <div class="header__actions">
+        <button class="theme-toggle" id="themeToggle" aria-label="Chuyển giao diện">
+          <span class="theme-toggle__icon">☾</span>
+        </button>
+        <button class="hamburger" id="hamburger" aria-label="Mở menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="course-hero" id="home">
+      <div class="container course-hero__inner">
+        <div class="course-hero__badge">Lộ trình 10-12 ngày</div>
+        <h1 class="course-hero__title">Khoá học Apache Kafka <span class="accent">4.3.x</span></h1>
+        <p class="course-hero__subtitle">Event streaming thực chiến, KRaft-first</p>
+        <p class="course-hero__desc">
+          Học Kafka theo cách dễ nắm: hiểu event log, chạy local bằng Docker, viết Python producer/consumer đúng,
+          nắm KRaft, Kafka Connect, stream processing bằng Python, rồi đưa vào production với monitoring, security và checklist vận hành.
+        </p>
+        <div class="course-hero__badges">
+          <span class="badge badge--primary">Apache Kafka 4.3.1</span>
+          <span class="badge badge--secondary">KRaft</span>
+          <span class="badge badge--secondary">Python 3.8+</span>
+          <span class="badge badge--secondary">Docker</span>
+        </div>
+        <div class="course-hero__meta">
+          <div class="meta-item">
+            <span class="meta-item__icon">👤</span>
+            <span>Backend Engineer, Data Engineer, DevOps</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-item__icon">⏱</span>
+            <span>10-12 ngày · 1.5-2.5 giờ/ngày</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-item__icon">🎯</span>
+            <span>Local Kafka → client correctness → production</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="course-content">
+      <div class="container post-layout">
+        <article class="article-body course-body">
+          <div class="breadcrumb">
+            <a href="../../index.html">Trang chủ</a>
+            <span class="breadcrumb__sep">/</span>
+            <span>Khoá học</span>
+            <span class="breadcrumb__sep">/</span>
+            <span>Apache Kafka 4.3.x</span>
+          </div>
+
+          <h1 id="apache-kafka-learning-path">Apache Kafka Learning Path</h1>
+          <p>
+            Khoá học này ưu tiên học nhanh nhưng chắc: mỗi module có mục tiêu rõ, lệnh chạy được,
+            quyết định thiết kế thường gặp và checklist để tự kiểm tra.
+          </p>
+
+          <div class="version-note">
+            <div>
+              <strong>Phiên bản mục tiêu:</strong> Apache Kafka 4.3.x, dùng bản thực hành <strong>4.3.1</strong>.
+              Cập nhật theo tài liệu chính thức ngày 08/07/2026. Kafka 4.x đi theo hướng KRaft.
+              Phần app trong khoá học dùng Python với <code>confluent-kafka</code> 2.15.0;
+              broker Kafka vẫn chạy trong Docker image chính thức.
+            </div>
+            <span class="version-note__pill">Latest: 4.3.1</span>
+          </div>
+
+          <div class="course-kpi-grid" aria-label="Tổng quan khoá học">
+            <div class="course-kpi">
+              <span class="course-kpi__label">Đầu ra</span>
+              <span class="course-kpi__value">Thiết kế được event-driven pipeline có topic, partition, schema, retry và monitoring.</span>
+            </div>
+            <div class="course-kpi">
+              <span class="course-kpi__label">Stack</span>
+              <span class="course-kpi__value">Kafka 4.3.1, Docker, Python 3.8+, confluent-kafka 2.15.0, Connect, Prometheus/Grafana.</span>
+            </div>
+            <div class="course-kpi">
+              <span class="course-kpi__label">Phù hợp</span>
+              <span class="course-kpi__value">Backend làm microservices, data pipeline, e-invoice, audit log hoặc async workflow.</span>
+            </div>
+          </div>
+
+          <h2 id="muc-tieu-hoc">Mục tiêu học</h2>
+          <ul>
+            <li>Hiểu Kafka là distributed event log, không chỉ là queue.</li>
+            <li>Biết chọn key, partition, retention, replication factor và consumer group đúng bài toán.</li>
+            <li>Viết producer/consumer tránh mất message, duplicate vô tội vạ và lag khó kiểm soát.</li>
+            <li>Biết dùng Kafka Connect cho tích hợp hệ thống và Python stream processor cho xử lý event liên tục.</li>
+            <li>Vận hành được cluster KRaft cơ bản: metrics, alert, security, capacity và upgrade.</li>
+          </ul>
+
+          <h2 id="lo-trinh">Lộ trình 6 module</h2>
+          <div class="learning-map">
+            <section class="lesson-card">
+              <h3 id="module-1-foundation">1. Foundation</h3>
+              <p>Ngày 1-2. Nắm event, topic, partition, offset, consumer group và chạy Kafka local.</p>
+              <p><strong>Bài tập:</strong> tạo topic invoice-events, produce/consume, đọc lại từ beginning.</p>
+            </section>
+            <section class="lesson-card">
+              <h3 id="module-2-client-correctness">2. Producer &amp; Consumer correctness</h3>
+              <p>Ngày 3-4. Key ordering, idempotent producer, acks, retry, manual commit và backpressure.</p>
+              <p><strong>Bài tập:</strong> mô phỏng consumer fail giữa chừng và kiểm tra offset.</p>
+            </section>
+            <section class="lesson-card">
+              <h3 id="module-3-kraft-architecture">3. KRaft architecture</h3>
+              <p>Ngày 5-6. Broker, controller, metadata log, replication, ISR và thay đổi lớn sau Kafka 4.x.</p>
+              <p><strong>Bài tập:</strong> vẽ topology 3 controller + 3 broker cho production nhỏ.</p>
+            </section>
+            <section class="lesson-card">
+              <h3 id="module-4-connect-integration">4. Kafka Connect &amp; integration</h3>
+              <p>Ngày 7-8. Source/sink connector, standalone vs distributed, REST API, offset management.</p>
+              <p><strong>Bài tập:</strong> thiết kế luồng Postgres outbox → Kafka → object storage.</p>
+            </section>
+            <section class="lesson-card">
+              <h3 id="module-5-streams-processing">5. Python stream processing</h3>
+              <p>Ngày 9-10. Consume-transform-produce, windows, state nhẹ, idempotent sink và DLT.</p>
+              <p><strong>Bài tập:</strong> aggregate invoice amount theo MST trong tumbling window.</p>
+            </section>
+            <section class="lesson-card">
+              <h3 id="module-6-production">6. Production operations</h3>
+              <p>Ngày 11-12. Monitoring, lag, storage, tiered storage, security, incident playbook và upgrade.</p>
+              <p><strong>Bài tập:</strong> lập dashboard tối thiểu và bảng alert cho consumer lag.</p>
+            </section>
+          </div>
+
+          <h2 id="stage-1-foundation">Stage 1: Foundation - chạy Kafka local</h2>
+          <h3 id="mental-model">Mental model cần nhớ</h3>
+          <ul>
+            <li><strong>Event:</strong> bản ghi gồm key, value, timestamp và headers.</li>
+            <li><strong>Topic:</strong> nơi lưu event theo dòng thời gian, có retention thay vì xoá ngay sau khi đọc.</li>
+            <li><strong>Partition:</strong> đơn vị song song và ordering. Cùng key sẽ đi vào cùng partition nếu partition count không đổi.</li>
+            <li><strong>Consumer group:</strong> nhiều consumer chia nhau đọc partitions. Một partition chỉ do một consumer trong cùng group xử lý tại một thời điểm.</li>
+            <li><strong>Offset:</strong> vị trí đọc của consumer. Commit offset là quyết định nghiệp vụ, không chỉ là kỹ thuật.</li>
+          </ul>
+
+          <h3 id="quickstart-docker">Quickstart bằng Docker</h3>
+          <pre><code class="language-bash">docker pull apache/kafka:4.3.1
+docker run --name kafka-dev -p 9092:9092 apache/kafka:4.3.1
+
+# Terminal khác
+docker exec -it kafka-dev /opt/kafka/bin/kafka-topics.sh \
+  --create --topic invoice-events \
+  --partitions 3 --replication-factor 1 \
+  --bootstrap-server localhost:9092
+
+docker exec -it kafka-dev /opt/kafka/bin/kafka-console-producer.sh \
+  --topic invoice-events --bootstrap-server localhost:9092
+
+docker exec -it kafka-dev /opt/kafka/bin/kafka-console-consumer.sh \
+  --topic invoice-events --from-beginning \
+  --bootstrap-server localhost:9092</code></pre>
+
+          <blockquote>
+            <p>Dùng `--bootstrap-server` cho Kafka 4.x. Không thiết kế bài học mới quanh ZooKeeper vì KRaft là hướng mặc định của Kafka hiện đại.</p>
+          </blockquote>
+
+          <h3 id="topic-design">Topic design đầu tiên</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Quyết định</th>
+                  <th>Gợi ý bắt đầu</th>
+                  <th>Khi nào đổi?</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Topic name</td>
+                  <td><code>domain.event.v1</code>, ví dụ <code>invoice.issued.v1</code></td>
+                  <td>Khi schema hoặc semantic thay đổi không tương thích.</td>
+                </tr>
+                <tr>
+                  <td>Key</td>
+                  <td><code>invoice_id</code> hoặc <code>tax_code</code></td>
+                  <td>Đổi khi ordering theo entity khác quan trọng hơn.</td>
+                </tr>
+                <tr>
+                  <td>Partitions</td>
+                  <td>3 cho local, 6-12 cho service nhỏ</td>
+                  <td>Khi throughput tăng hoặc cần thêm consumer song song.</td>
+                </tr>
+                <tr>
+                  <td>Retention</td>
+                  <td>7-30 ngày cho event nghiệp vụ</td>
+                  <td>Khi cần replay dài hơn hoặc đã có archive riêng.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="stage-2-client-correctness">Stage 2: Producer &amp; Consumer correctness</h2>
+          <h3 id="producer-rules">Producer rules</h3>
+          <ul>
+            <li>Dùng key ổn định cho event cần giữ thứ tự theo entity.</li>
+            <li>Đặt <code>acks=all</code> và <code>enable.idempotence=true</code> cho event quan trọng.</li>
+            <li>Không retry vô hạn nếu downstream tạo side effect không idempotent.</li>
+            <li>Đo latency theo percentiles, không chỉ nhìn average.</li>
+          </ul>
+
+          <pre><code class="language-bash">python3 -m venv .venv
+source .venv/bin/activate
+pip install "confluent-kafka==2.15.0"</code></pre>
+
+          <pre><code class="language-python">import json
+import socket
+from confluent_kafka import Producer
+
+delivery_errors = []
+
+def on_delivery(err, msg):
+    if err is not None:
+        delivery_errors.append(err)
+        return
+    print(f"delivered topic={msg.topic()} partition={msg.partition()} offset={msg.offset()}")
+
+producer = Producer({
+    "bootstrap.servers": "localhost:9092",
+    "client.id": f"invoice-producer-{socket.gethostname()}",
+    "acks": "all",
+    "enable.idempotence": True,
+    "delivery.timeout.ms": 120000,
+})
+
+event = {
+    "invoice_id": "INV-001",
+    "tax_code": "0101243150",
+    "amount": 1200000,
+    "currency": "VND",
+}
+
+producer.produce(
+    "invoice.issued.v1",
+    key=event["tax_code"],
+    value=json.dumps(event, ensure_ascii=False).encode("utf-8"),
+    callback=on_delivery,
+)
+producer.flush(10)
+
+if delivery_errors:
+    raise RuntimeError(delivery_errors[0])</code></pre>
+
+          <h3 id="consumer-rules">Consumer rules</h3>
+          <ul>
+            <li>Commit offset sau khi xử lý thành công nếu cần at-least-once.</li>
+            <li>Giữ processing idempotent vì at-least-once có thể đọc lại message.</li>
+            <li>Dùng dead-letter topic cho lỗi dữ liệu không thể retry.</li>
+            <li>Đặt giới hạn xử lý theo batch để tránh vượt <code>max.poll.interval.ms</code>.</li>
+          </ul>
+
+          <pre><code class="language-python">import json
+from confluent_kafka import Consumer, KafkaError, KafkaException
+
+def validate_invoice(event):
+    required = ["invoice_id", "tax_code", "amount"]
+    missing = [field for field in required if field not in event]
+    if missing:
+        raise ValueError(f"missing fields: {missing}")
+    if event["amount"] <= 0:
+        raise ValueError("amount must be positive")
+
+consumer = Consumer({
+    "bootstrap.servers": "localhost:9092",
+    "group.id": "invoice-validator",
+    "enable.auto.commit": False,
+    "auto.offset.reset": "earliest",
+})
+
+consumer.subscribe(["invoice.issued.v1"])
+
+try:
+    while True:
+        msg = consumer.poll(1.0)
+        if msg is None:
+            continue
+        if msg.error():
+            if msg.error().code() == KafkaError._PARTITION_EOF:
+                continue
+            raise KafkaException(msg.error())
+
+        event = json.loads(msg.value().decode("utf-8"))
+        validate_invoice(event)
+        consumer.commit(message=msg, asynchronous=False)
+finally:
+    consumer.close()</code></pre>
+
+          <h3 id="delivery-semantics">Delivery semantics</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mode</th>
+                  <th>Ý nghĩa</th>
+                  <th>Dùng khi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>At-most-once</td>
+                  <td>Có thể mất message, ít duplicate.</td>
+                  <td>Telemetry không quan trọng từng event.</td>
+                </tr>
+                <tr>
+                  <td>At-least-once</td>
+                  <td>Không mất nếu retry đúng, có thể duplicate.</td>
+                  <td>Phần lớn nghiệp vụ backend.</td>
+                </tr>
+                <tr>
+                  <td>Exactly-once</td>
+                  <td>Producer transaction + consumer isolation + sink hỗ trợ.</td>
+                  <td>Stream processing có state hoặc write lại Kafka.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="stage-3-kraft-architecture">Stage 3: KRaft architecture</h2>
+          <h3 id="kraft-core">KRaft core</h3>
+          <p>
+            KRaft thay ZooKeeper bằng metadata quorum nằm trong Kafka. Controller quản lý metadata,
+            broker phục vụ data plane. Khi vận hành production, nên tách vai trò controller và broker để giảm blast radius.
+          </p>
+          <ul>
+            <li><strong>Controller quorum:</strong> thường 3 node để chịu lỗi 1 node.</li>
+            <li><strong>Broker:</strong> nơi chứa partition log và phục vụ producer/consumer.</li>
+            <li><strong>Metadata log:</strong> nguồn sự thật cho topic, partition, ACL, configs.</li>
+            <li><strong>ISR:</strong> tập replica đang bắt kịp leader, ảnh hưởng trực tiếp tới durability.</li>
+          </ul>
+
+          <h3 id="compatibility-notes">Compatibility notes</h3>
+          <ul>
+            <li>Kafka 4.x thay đổi mạnh ở phía broker/runtime; khi chạy bằng Docker image chính thức bạn không cần cài runtime riêng trên máy học.</li>
+            <li><code>confluent-kafka</code> là Python binding trên <code>librdkafka</code>; vẫn cần regression test producer/consumer trước khi upgrade broker.</li>
+            <li>Các lệnh admin cũ dùng <code>--zookeeper</code> đã bị loại bỏ. Dùng <code>--bootstrap-server</code>.</li>
+            <li>Cluster ZooKeeper cũ cần kế hoạch migration riêng, không nâng bừa trong cùng một maintenance window ngắn.</li>
+          </ul>
+
+          <h3 id="production-topology">Topology production nhỏ</h3>
+          <pre><code class="language-text">3 controllers:
+  kafka-ctrl-1
+  kafka-ctrl-2
+  kafka-ctrl-3
+
+3 brokers:
+  kafka-broker-1
+  kafka-broker-2
+  kafka-broker-3
+
+Topic defaults:
+  replication.factor=3
+  min.insync.replicas=2
+  unclean.leader.election.enable=false</code></pre>
+
+          <h2 id="stage-4-connect-integration">Stage 4: Kafka Connect &amp; integration</h2>
+          <h3 id="connect-when">Khi nào dùng Kafka Connect?</h3>
+          <p>
+            Dùng Connect khi bạn cần đưa dữ liệu vào/ra Kafka theo cách lặp lại được: database CDC,
+            file/object storage, search index, warehouse, audit stream hoặc bridge giữa hệ thống batch và streaming.
+          </p>
+          <ul>
+            <li><strong>Standalone mode:</strong> local dev, demo, job nhỏ.</li>
+            <li><strong>Distributed mode:</strong> production, nhiều worker, REST API quản lý connector.</li>
+            <li><strong>Offset management:</strong> Connect quản lý offset để connector developer không tự xử lý phần dễ lỗi này.</li>
+          </ul>
+
+          <h3 id="connect-design">Design pattern cho e-invoice</h3>
+          <pre><code class="language-text">Invoice service
+  -> outbox table
+  -> source connector / CDC
+  -> topic invoice.issued.v1
+  -> validator consumer
+  -> topic invoice.validated.v1
+  -> sink connector to warehouse/object storage</code></pre>
+
+          <h3 id="connect-checklist">Connect checklist</h3>
+          <ul>
+            <li>Mỗi connector có owner, SLA và dashboard riêng.</li>
+            <li>Không deploy plugin lạ vào cluster production trước khi scan license và security.</li>
+            <li>Đặt retry/backoff rõ ràng; lỗi dữ liệu nên đi DLT, lỗi hạ tầng nên retry.</li>
+            <li>Theo dõi connector task failed, source lag, sink latency và offset commit error.</li>
+          </ul>
+
+          <h2 id="stage-5-streams-processing">Stage 5: Python stream processing</h2>
+          <h3 id="streams-mental-model">Python stream processor mental model</h3>
+          <p>
+            Bản Python của khoá học dùng pattern <strong>consume → transform → produce</strong>.
+            State nhẹ có thể giữ trong process để học,
+            còn production lớn nên cân nhắc Flink, Spark Structured Streaming hoặc một state store ngoài.
+          </p>
+
+          <pre><code class="language-python">import json
+from collections import defaultdict
+from confluent_kafka import Consumer, Producer, KafkaException
+
+WINDOW_SECONDS = 300
+state = defaultdict(lambda: {"count": 0, "amount": 0})
+
+consumer = Consumer({
+    "bootstrap.servers": "localhost:9092",
+    "group.id": "invoice-summary-worker",
+    "enable.auto.commit": False,
+    "auto.offset.reset": "earliest",
+})
+producer = Producer({"bootstrap.servers": "localhost:9092", "enable.idempotence": True})
+consumer.subscribe(["invoice.issued.v1"])
+
+def window_start(epoch_seconds):
+    return int(epoch_seconds // WINDOW_SECONDS) * WINDOW_SECONDS
+
+try:
+    while True:
+        msg = consumer.poll(1.0)
+        if msg is None:
+            continue
+        if msg.error():
+            raise KafkaException(msg.error())
+
+        event = json.loads(msg.value().decode("utf-8"))
+        bucket = window_start(event.get("issued_at_epoch", 0))
+        key = (event["tax_code"], bucket)
+        state[key]["count"] += 1
+        state[key]["amount"] += event["amount"]
+
+        summary = {
+            "tax_code": event["tax_code"],
+            "window_start": bucket,
+            "count": state[key]["count"],
+            "amount": state[key]["amount"],
+        }
+        producer.produce(
+            "invoice.summary.5m.v1",
+            key=event["tax_code"],
+            value=json.dumps(summary).encode("utf-8"),
+        )
+        producer.poll(0)
+        consumer.commit(message=msg, asynchronous=False)
+finally:
+    producer.flush(10)
+    consumer.close()</code></pre>
+
+          <h3 id="streams-decisions">Quyết định khi dùng Streams</h3>
+          <ul>
+            <li>Chọn window theo nghiệp vụ, không theo cảm giác. Invoice daily report khác fraud detection realtime.</li>
+            <li>State trong memory chỉ dùng cho bài học hoặc job nhỏ; production cần checkpoint hoặc external state store.</li>
+            <li>Output topic nên có key ổn định để downstream deduplicate dễ hơn.</li>
+            <li>Với exception, phân loại: lỗi dữ liệu, lỗi code, lỗi downstream và lỗi hạ tầng.</li>
+          </ul>
+
+          <h2 id="stage-6-production-operations">Stage 6: Production operations</h2>
+          <h3 id="monitoring">Monitoring tối thiểu</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nhóm metric</th>
+                  <th>Cần nhìn</th>
+                  <th>Ý nghĩa</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Broker health</td>
+                  <td>Under replicated partitions, offline partitions, request latency</td>
+                  <td>Cluster có còn phục vụ ổn không.</td>
+                </tr>
+                <tr>
+                  <td>Consumer</td>
+                  <td>Consumer lag, rebalance rate, poll latency</td>
+                  <td>Consumer có theo kịp producer không.</td>
+                </tr>
+                <tr>
+                  <td>Storage</td>
+                  <td>Disk usage, log segment growth, retention pressure</td>
+                  <td>Nguy cơ đầy disk và mất khả năng ghi.</td>
+                </tr>
+                <tr>
+                  <td>Controller</td>
+                  <td>Active controller, metadata log latency, quorum health</td>
+                  <td>KRaft metadata plane có ổn định không.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="security">Security baseline</h3>
+          <ul>
+            <li>Bật TLS cho traffic ngoài dev laptop.</li>
+            <li>Dùng SASL/OAuth hoặc mTLS theo chuẩn hạ tầng hiện có.</li>
+            <li>ACL theo service account, không share user giữa nhiều app.</li>
+            <li>Không log raw payload nếu có PII, invoice data hoặc secret.</li>
+          </ul>
+
+          <h3 id="consumer-rebalance-new-protocol">New consumer rebalance protocol</h3>
+          <p>
+            Kafka 4.x có consumer rebalance protocol thế hệ mới. Server hỗ trợ từ 4.0, consumer cần bật
+            <code>group.protocol=consumer</code>. Nên thử ở staging trước vì thay đổi này ảnh hưởng cách group assign partition.
+          </p>
+
+          <pre><code class="language-properties">group.id=invoice-validator
+group.protocol=consumer
+group.remote.assignor=uniform
+enable.auto.commit=false
+max.poll.records=500</code></pre>
+
+          <h2 id="anti-patterns">Anti-patterns cần tránh</h2>
+          <ul>
+            <li><strong>Dùng Kafka như database chính:</strong> Kafka lưu event log tốt, nhưng query linh hoạt vẫn cần storage/query engine phù hợp.</li>
+            <li><strong>Partition quá nhiều ngay từ đầu:</strong> tăng overhead controller, file handle và recovery time.</li>
+            <li><strong>Message quá lớn:</strong> đưa blob/XML lớn vào object storage, chỉ gửi reference + metadata qua Kafka.</li>
+            <li><strong>Consumer side effect không idempotent:</strong> retry sẽ tạo duplicate order, duplicate invoice hoặc gọi API nhiều lần.</li>
+            <li><strong>Không có DLT:</strong> một record xấu có thể chặn cả partition.</li>
+            <li><strong>Không đo lag theo consumer group:</strong> chỉ nhìn broker healthy vẫn chưa biết pipeline có đang trễ không.</li>
+          </ul>
+
+          <h2 id="troubleshooting">Troubleshooting nhanh</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Triệu chứng</th>
+                  <th>Nguyên nhân thường gặp</th>
+                  <th>Hướng xử lý</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Consumer lag tăng đều</td>
+                  <td>Consumer chậm, partition ít, downstream nghẽn</td>
+                  <td>Tối ưu xử lý, tăng partition/consumer, kiểm tra DB/API downstream.</td>
+                </tr>
+                <tr>
+                  <td>Rebalance liên tục</td>
+                  <td>Consumer poll quá lâu hoặc session timeout thấp</td>
+                  <td>Giảm batch, tăng timeout hợp lý, kiểm tra GC và network.</td>
+                </tr>
+                <tr>
+                  <td>Duplicate message</td>
+                  <td>At-least-once + retry/commit lại</td>
+                  <td>Làm sink idempotent, dùng key tự nhiên, ghi dedup table nếu cần.</td>
+                </tr>
+                <tr>
+                  <td>Producer timeout</td>
+                  <td>Broker overload, ISR thiếu, request queue đầy</td>
+                  <td>Kiểm tra broker latency, min ISR, disk/network và throttling.</td>
+                </tr>
+                <tr>
+                  <td>Disk đầy nhanh</td>
+                  <td>Retention quá dài, message lớn, topic nội bộ tăng</td>
+                  <td>Rà retention, compaction, tiered storage và archive policy.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="exercise-checklist">Exercise checklist</h2>
+          <ul>
+            <li><input type="checkbox" disabled /> Chạy Kafka 4.3.1 bằng Docker và tạo topic 3 partitions.</li>
+            <li><input type="checkbox" disabled /> Produce 20 invoice events với key là tax code, kiểm tra phân phối partition.</li>
+            <li><input type="checkbox" disabled /> Viết consumer manual commit và test crash trước/sau commit.</li>
+            <li><input type="checkbox" disabled /> Thiết kế DLT cho lỗi JSON/schema validation.</li>
+            <li><input type="checkbox" disabled /> Vẽ topology 3 controller + 3 broker, chọn replication factor và min ISR.</li>
+            <li><input type="checkbox" disabled /> Thiết kế Kafka Connect pipeline cho outbox hoặc audit log.</li>
+            <li><input type="checkbox" disabled /> Viết Python stream processor aggregate theo window 5 phút.</li>
+            <li><input type="checkbox" disabled /> Lập dashboard consumer lag, under replicated partitions và disk usage.</li>
+            <li><input type="checkbox" disabled /> Viết runbook xử lý consumer lag tăng đột biến.</li>
+          </ul>
+
+          <h2 id="references">Nguồn chính thức</h2>
+          <ul>
+            <li><a href="https://kafka.apache.org/blog/2026/06/25/apache-kafka-4.3.1-release-announcement/">Apache Kafka 4.3.1 Release Announcement</a></li>
+            <li><a href="https://kafka.apache.org/quickstart/">Apache Kafka Quickstart</a></li>
+            <li><a href="https://kafka.apache.org/43/">Apache Kafka 4.3.x Documentation</a></li>
+            <li><a href="https://kafka.apache.org/43/getting-started/docker/">Kafka Docker image documentation</a></li>
+            <li><a href="https://kafka.apache.org/43/getting-started/compatibility/">Kafka compatibility matrix</a></li>
+            <li><a href="https://kafka.apache.org/43/getting-started/zk2kraft/">KRaft vs ZooKeeper</a></li>
+            <li><a href="https://kafka.apache.org/43/apis/">Kafka APIs</a></li>
+            <li><a href="https://kafka.apache.org/43/kafka-connect/overview/">Kafka Connect overview</a></li>
+            <li><a href="https://docs.confluent.io/kafka-clients/python/current/overview.html">Confluent Python Client for Apache Kafka</a></li>
+            <li><a href="https://pypi.org/project/confluent-kafka/">confluent-kafka on PyPI</a></li>
+            <li><a href="https://kafka.apache.org/43/operations/consumer-rebalance-protocol/">Consumer rebalance protocol</a></li>
+          </ul>
+        </article>
+
+        <aside class="toc" id="toc">
+          <h4 class="toc__title">Mục lục</h4>
+          <ul class="toc__list"></ul>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p>© 2026 <strong>tuanta</strong> · Được xây dựng với HTML thuần</p>
+      <div class="footer__links">
+        <a href="../../index.html">Trang chủ</a>
+        <a href="../../index.html#posts">Bài viết</a>
+        <a href="../../cv.html">CV</a>
+      </div>
+    </div>
+  </footer>
+
+  <button class="back-to-top" id="backToTop" aria-label="Lên đầu trang">↑</button>
+
+  <script>
+    (function () {
+      const html = document.documentElement;
+      const themeToggle = document.getElementById('themeToggle');
+      const themeIcon = themeToggle.querySelector('.theme-toggle__icon');
+      const savedTheme = localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+      function applyTheme(theme) {
+        html.setAttribute('data-theme', theme);
+        themeIcon.textContent = theme === 'dark' ? '☼' : '☾';
+      }
+
+      applyTheme(savedTheme);
+      themeToggle.addEventListener('click', () => {
+        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+        localStorage.setItem('theme', next);
+      });
+
+      const hamburger = document.getElementById('hamburger');
+      const nav = document.getElementById('nav');
+      hamburger.addEventListener('click', () => {
+        const open = nav.classList.toggle('open');
+        hamburger.classList.toggle('open', open);
+      });
+      nav.querySelectorAll('.nav__link').forEach(link => {
+        link.addEventListener('click', () => {
+          nav.classList.remove('open');
+          hamburger.classList.remove('open');
+        });
+      });
+    })();
+
+    (function () {
+      const progressBar = document.getElementById('progressBar');
+      const backToTop = document.getElementById('backToTop');
+      const tocList = document.querySelector('.toc__list');
+      const headings = Array.from(document.querySelectorAll('.course-body h2[id], .course-body h3[id]'));
+
+      headings.forEach(heading => {
+        const item = document.createElement('li');
+        const link = document.createElement('a');
+        if (heading.tagName === 'H3') item.className = 'toc-h3';
+        link.href = '#' + heading.id;
+        link.textContent = heading.textContent;
+        item.appendChild(link);
+        tocList.appendChild(item);
+      });
+
+      const tocLinks = document.querySelectorAll('.toc__list a');
+
+      function updateProgress() {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        progressBar.style.width = pct + '%';
+        backToTop.classList.toggle('visible', scrollTop > 400);
+      }
+
+      function updateToc() {
+        const scrollPos = window.scrollY + 100;
+        let current = headings[0]?.id || '';
+        for (const heading of headings) {
+          if (heading.offsetTop <= scrollPos) current = heading.id;
+        }
+        tocLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+        });
+      }
+
+      window.addEventListener('scroll', () => {
+        updateProgress();
+        updateToc();
+      }, { passive: true });
+
+      backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      updateProgress();
+      updateToc();
+    })();
+  </script>
+</body>
+</html>
