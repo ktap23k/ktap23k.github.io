@@ -16,6 +16,7 @@
 html, body {
   width: 100%;
   height: 100%;
+  min-height: 100dvh;
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
@@ -28,7 +29,7 @@ html, body {
 #gameCanvas {
   display: block;
   width: 100%;
-  height: 100%;
+  height: 100dvh;
   background: radial-gradient(ellipse at center, #0c0c1a 0%, #05050b 100%);
 }
 
@@ -350,11 +351,89 @@ html, body {
 }
 
 @media (max-width: 640px) {
-  .hud { padding: 14px 16px; }
-  .hud__value { font-size: 1.1rem; }
-  .health-bar { width: 100px; }
-  .panel { padding: 30px 22px; }
+  .back-link {
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    padding: 9px 12px;
+    font-size: 0.78rem;
+  }
+
+  .toggle-sound,
+  .pause-btn {
+    top: max(12px, env(safe-area-inset-top));
+    width: 40px;
+    height: 40px;
+  }
+
+  .toggle-sound { right: max(12px, env(safe-area-inset-right)); }
+  .pause-btn { right: calc(max(12px, env(safe-area-inset-right)) + 50px); }
+
+  .hud {
+    top: calc(max(12px, env(safe-area-inset-top)) + 52px);
+    padding: 0 12px;
+    display: grid;
+    grid-template-columns: 1.1fr 0.72fr 1fr;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .hud__group {
+    min-width: 0;
+    padding: 8px 9px;
+    border: 1px solid rgba(0, 240, 255, 0.18);
+    border-radius: 10px;
+    background: rgba(5, 5, 11, 0.48);
+    backdrop-filter: blur(12px);
+  }
+
+  .hud__label {
+    font-size: 0.56rem;
+    letter-spacing: 0.1em;
+  }
+
+  .hud__value {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .health-bar {
+    width: 100%;
+    height: 7px;
+  }
+
+  .ui-layer {
+    padding: calc(max(16px, env(safe-area-inset-top)) + 18px) 16px max(18px, env(safe-area-inset-bottom));
+  }
+
+  .panel {
+    max-width: min(420px, calc(100vw - 32px));
+    padding: 26px 18px;
+    border-radius: 18px;
+  }
+
   .panel__stats { grid-template-columns: 1fr; }
-  .pause-btn { right: 62px; }
-  .toggle-sound { right: 14px; }
+  .btn { min-height: 48px; padding: 13px 18px; font-size: 0.88rem; }
+  .controls-hint {
+    gap: 7px;
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  .hud {
+    top: max(10px, env(safe-area-inset-top));
+    left: 116px;
+    right: 116px;
+    padding: 0;
+  }
+
+  .panel {
+    max-width: 420px;
+    padding: 22px;
+  }
+
+  .panel__subtitle {
+    margin-bottom: 18px;
+    line-height: 1.45;
+  }
 }

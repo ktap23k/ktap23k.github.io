@@ -5,8 +5,9 @@
 /* Animated page background */
 .pika-page {
   position: relative;
-  padding: 28px 0 80px;
+  padding: max(28px, env(safe-area-inset-top)) 0 max(80px, env(safe-area-inset-bottom));
   min-height: 100vh;
+  min-height: 100dvh;
   background:
     radial-gradient(circle at 22% 28%, rgba(255, 200, 120, 0.11) 0%, transparent 34%),
     radial-gradient(circle at 78% 72%, rgba(255, 183, 77, 0.1) 0%, transparent 34%),
@@ -152,6 +153,7 @@
     var(--shadow),
     0 20px 60px rgba(232, 93, 4, 0.08);
   align-self: center;
+  max-width: 100%;
   user-select: none;
   overflow: hidden;
 }
@@ -161,11 +163,13 @@
   gap: 6px;
   position: relative;
   z-index: 1;
+  width: max-content;
+  max-width: 100%;
 }
 
 .pika-cell {
-  width: 44px;
-  height: 44px;
+  width: clamp(30px, calc((100vw - 88px) / 10), 44px);
+  height: clamp(30px, calc((100vw - 88px) / 10), 44px);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -274,8 +278,94 @@
 }
 
 @media (max-width: 600px) {
-  .pika-cell { width: 36px; height: 36px; font-size: 1.2rem; }
-  .pika-board { gap: 4px; }
-  .pika-board-wrap { padding: 12px; border-radius: 14px; }
-  .pika-title { font-size: 1.3rem; }
+  .pika-page {
+    padding-top: max(18px, env(safe-area-inset-top));
+    padding-bottom: max(28px, env(safe-area-inset-bottom));
+  }
+
+  .pika-shell {
+    gap: 12px;
+  }
+
+  .pika-header {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .pika-title {
+    width: 100%;
+    font-size: 1.25rem;
+    line-height: 1.2;
+  }
+
+  .pika-stats {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .pika-stat {
+    justify-content: center;
+    padding: 8px 7px;
+    font-size: 0.76rem;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  .pika-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .pika-controls .btn {
+    min-width: 0;
+    padding: 10px 8px;
+    font-size: 0.78rem;
+    white-space: normal;
+    line-height: 1.2;
+  }
+
+  .pika-board {
+    gap: 4px;
+  }
+
+  .pika-board-wrap {
+    width: calc(100vw - 16px);
+    margin-left: calc(50% - 50vw + 8px);
+    margin-right: calc(50% - 50vw + 8px);
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .pika-cell {
+    width: clamp(24px, calc((100vw - 76px) / 10), 36px);
+    height: clamp(24px, calc((100vw - 76px) / 10), 36px);
+    border-radius: 8px;
+    font-size: clamp(1rem, 4.7vw, 1.2rem);
+  }
+
+  .pika-toast {
+    bottom: max(22px, env(safe-area-inset-bottom));
+    width: calc(100vw - 32px);
+    padding: 10px 14px;
+    text-align: center;
+    font-size: 0.86rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .pika-cell {
+    width: clamp(23px, calc((100vw - 76px) / 10), 30px);
+    height: clamp(23px, calc((100vw - 76px) / 10), 30px);
+    font-size: 0.96rem;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  .pika-page { padding-top: 14px; }
+  .pika-shell { gap: 10px; }
+  .pika-header { gap: 10px; }
+  .pika-controls .btn { padding: 8px 12px; }
 }

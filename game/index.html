@@ -2,7 +2,7 @@
 <html lang="vi" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Game — Ktap Arcade</title>
   <meta name="description" content="Khu vực trò chơi HTML/CSS/JS: Pikachu, Math Jump Adventure, Neon Defender, Astra Bloom Dash và nhiều trò chơi khác." />
   <link rel="stylesheet" href="../assets/css/style.css" />
@@ -195,6 +195,72 @@
     .coming-soon .game-card__icon {
       filter: grayscale(0.7);
       background: var(--bg-alt);
+    }
+
+    @media (max-width: 760px) {
+      .games-page {
+        min-height: 100dvh;
+        padding: max(22px, env(safe-area-inset-top)) 0 max(34px, env(safe-area-inset-bottom));
+        overflow-x: hidden;
+      }
+
+      .games-page::before,
+      .games-page::after,
+      .games-orb {
+        display: none;
+      }
+
+      .games-hero {
+        text-align: left;
+        padding: 12px 0 26px;
+      }
+
+      .games-hero__title {
+        font-size: clamp(2rem, 12vw, 2.75rem);
+        line-height: 1.05;
+        margin-bottom: 12px;
+      }
+
+      .games-hero__desc {
+        max-width: none;
+        margin: 0;
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+
+      .games-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .game-card {
+        min-height: 0;
+        padding: 18px;
+        border-radius: 14px;
+        gap: 12px;
+      }
+
+      .game-card__icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
+        font-size: 1.65rem;
+      }
+
+      .game-card__title {
+        font-size: 1.12rem;
+        line-height: 1.25;
+      }
+
+      .game-card__desc {
+        font-size: 0.88rem;
+        line-height: 1.58;
+      }
+
+      .game-card__cta {
+        width: 100%;
+        align-self: stretch;
+      }
     }
   </style>
 </head>
