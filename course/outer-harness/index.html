@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Khoá học Outer Harness cho LLM Agents - Ktap</title>
+  <meta name="description" content="Khoá học xây dựng outer harness cho LLM agents bằng Python: tool loop, state, memory, guardrails, tracing, evals và production API." />
+  <link rel="icon" type="image/svg+xml" href="../../favicon.svg" />
+  <link rel="stylesheet" href="../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Merriweather:ital,wght@0,400;0,700;1,400&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet" />
+</head>
+<body class="course-outer-harness">
+  <div class="progress-bar" id="progressBar"></div>
+
+  <header class="header">
+    <div class="container header__inner">
+      <a href="../../index.html" class="logo">
+        <img class="logo__icon" src="../../avt.jpg" alt="" />
+        <span class="logo__text">Ktap</span>
+      </a>
+
+      <nav class="nav" id="nav">
+        <a href="../../index.html#home" class="nav__link">Trang chủ</a>
+        <a href="../../index.html#posts" class="nav__link">Bài viết</a>
+        <a href="../../index.html#courses" class="nav__link active">Khoá học</a>
+        <a href="../../index.html#about" class="nav__link">Về tôi</a>
+        <a href="../../index.html#contact" class="nav__link">Liên hệ</a>
+        <a href="../../game/index.html" class="nav__link">Game</a>
+        <a href="../../cv.html" class="nav__link nav__link--cv">CV</a>
+      </nav>
+
+      <div class="header__actions">
+        <button class="theme-toggle" id="themeToggle" aria-label="Chuyển giao diện">
+          <span class="theme-toggle__icon">☾</span>
+        </button>
+        <button class="hamburger" id="hamburger" aria-label="Mở menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="course-hero" id="home">
+      <div class="container course-hero__inner">
+        <div class="course-hero__badge">Lộ trình 14 ngày</div>
+        <h1 class="course-hero__title">Khoá học <span class="accent">Outer Harness</span> cho LLM Agents</h1>
+        <p class="course-hero__subtitle">Python-first agent engineering</p>
+        <p class="course-hero__desc">
+          Xây lớp điều phối bao quanh LLM để agent biết dùng tool, quản lý state, kiểm soát context,
+          retry lỗi, trace từng bước, chạy eval và triển khai production API. Python là ngôn ngữ chính;
+          framework chỉ là phần mở rộng sau khi bạn hiểu lõi.
+        </p>
+        <div class="course-hero__badges">
+          <span class="badge badge--primary">Python 3.11+</span>
+          <span class="badge badge--secondary">Pydantic</span>
+          <span class="badge badge--secondary">FastAPI</span>
+          <span class="badge badge--secondary">LangGraph optional</span>
+        </div>
+        <div class="course-hero__meta">
+          <div class="meta-item">
+            <span class="meta-item__icon">AI</span>
+            <span>Backend, AI Engineer, LLM App Developer</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-item__icon">14d</span>
+            <span>14 ngày · 2-3 giờ/ngày</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-item__icon">Py</span>
+            <span>Tool loop → memory → evals → production</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="course-content">
+      <div class="container post-layout">
+        <article class="article-body course-body">
+          <div class="breadcrumb">
+            <a href="../../index.html">Trang chủ</a>
+            <span class="breadcrumb__sep">/</span>
+            <span>Khoá học</span>
+            <span class="breadcrumb__sep">/</span>
+            <span>Outer Harness</span>
+          </div>
+
+          <h1 id="outer-harness-learning-path">Outer Harness Learning Path</h1>
+          <p>
+            Outer harness là lớp phần mềm đứng ngoài model: nó quyết định input nào đi vào model,
+            tool nào được gọi, state nào được lưu, lỗi nào được retry, hành động nào cần chặn,
+            và kết quả nào đủ tốt để trả về. Với agent production, chất lượng không chỉ đến từ
+            model hay prompt, mà đến từ cấu hình model + harness + dữ liệu + đánh giá.
+          </p>
+
+          <div class="version-note">
+            <div>
+              <strong>Cập nhật nghiên cứu:</strong> 09/07/2026. Khoá học tổng hợp từ hướng nghiên cứu
+              harness engineering, tài liệu LangChain/LangGraph, OpenAI Agents SDK, Pydantic AI
+              và kinh nghiệm thiết kế backend Python cho hệ thống có tool execution.
+            </div>
+            <span class="version-note__pill">Python-first</span>
+          </div>
+
+          <div class="course-kpi-grid" aria-label="Tổng quan khoá học">
+            <div class="course-kpi">
+              <span class="course-kpi__label">Đầu ra</span>
+              <span class="course-kpi__value">Tự xây được agent harness có tool loop, state, memory, guardrails, tracing, evals và API.</span>
+            </div>
+            <div class="course-kpi">
+              <span class="course-kpi__label">Stack</span>
+              <span class="course-kpi__value">Python 3.11, Pydantic, SQLite/Postgres, FastAPI, pytest, OpenTelemetry, LangGraph optional.</span>
+            </div>
+            <div class="course-kpi">
+              <span class="course-kpi__label">Dự án cuối</span>
+              <span class="course-kpi__value">Invoice Operations Copilot: agent đọc yêu cầu, tra cứu dữ liệu, lập kế hoạch và trả kết quả có kiểm chứng.</span>
+            </div>
+          </div>
+
+          <h2 id="muc-tieu-hoc">Mục tiêu học</h2>
+          <ul>
+            <li>Phân biệt prompt, agent loop, framework, runtime và outer harness.</li>
+            <li>Thiết kế contract rõ ràng giữa model, tool, memory, guardrail và evaluator.</li>
+            <li>Viết Python harness tối thiểu có thể test mà không phụ thuộc vendor.</li>
+            <li>Dùng schema để ép structured output, tool arguments và final answer.</li>
+            <li>Quản lý context window bằng memory, retrieval, summarization và budget.</li>
+            <li>Thêm tracing, replay, eval dataset và regression test cho agent workflow.</li>
+            <li>Triển khai agent thành FastAPI service có quota, timeout và human approval point.</li>
+          </ul>
+
+          <h2 id="outer-harness-la-gi">Outer harness là gì?</h2>
+          <p>
+            Trong khóa học này, <strong>harness</strong> là mọi thứ bao quanh model call: prompt,
+            message history, tool registry, memory, retry policy, budget, sandbox, permissions,
+            observability và evaluator. <strong>Outer harness</strong> là lớp điều phối bên ngoài
+            agent loop đơn lẻ: nó chạy nhiều candidate, đọc trace, phân loại failure, thay đổi
+            prompt/tool/context/policy, rồi đo lại bằng eval.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Khái niệm</th>
+                  <th>Vai trò</th>
+                  <th>Ví dụ trong Python</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Model</td>
+                  <td>Dự đoán text, tool call hoặc structured output.</td>
+                  <td><code>ModelClient.complete(messages)</code></td>
+                </tr>
+                <tr>
+                  <td>Prompt</td>
+                  <td>Instruction và policy mềm cho model.</td>
+                  <td><code>system_prompt + task + context</code></td>
+                </tr>
+                <tr>
+                  <td>Agent loop</td>
+                  <td>Gọi model, dispatch tool, đưa observation trở lại model.</td>
+                  <td><code>while budget.has_turns(): run_step()</code></td>
+                </tr>
+                <tr>
+                  <td>Harness</td>
+                  <td>Gói agent loop với state, guardrail, tracing, retry, memory.</td>
+                  <td><code>AgentHarness.run(request)</code></td>
+                </tr>
+                <tr>
+                  <td>Outer harness</td>
+                  <td>Tối ưu và kiểm soát nhiều lần chạy bằng eval, trace và failure taxonomy.</td>
+                  <td><code>ExperimentRunner.compare(configs, dataset)</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="lo-trinh">Lộ trình 8 module</h2>
+          <div class="learning-map">
+            <section class="lesson-card">
+              <h3 id="module-1-mental-model">1. Mental model</h3>
+              <p>Ngày 1. Hiểu model + harness, execution trace, state machine và failure mode của agent.</p>
+              <p><strong>Bài tập:</strong> phân tích một chatbot RAG thành các thành phần harness.</p>
+            </section>
+            <section class="lesson-card">
+              <h3 id="module-2-python-loop">2. Python agent loop</h3>
+              <p>Ngày 2-3. Viết model adapter, schema, message state, tool registry và loop tối thiểu.</p>
+              <p><strong>Bài tập:</strong> build calculator/retriever tool và test bằng fake model.</p>
+            </section>
+            <section class="lesson-card">
+              <h3 id="module-3-tools-contracts">3. Tools &amp; contracts</h3>
+              <p>Ngày 4-5. Tool schema, permission, timeout, idempotency, validation và tool-result trimming.</p>
+              <p><strong>Bài tập:</strong> thêm tool tra cứu invoice với Pydantic arguments.</p>
+            </section>
+            <section class="lesson-card">
+              <h3 id="module-4-context-memory">4. Context &amp; memory</h3>
+              <p>Ngày 6-7. Quản lý context window, short-term state, long-term store, retrieval và summarization.</p>
+              <p><strong>Bài tập:</strong> viết SQLite memory store và context assembler có token budget.</p>
+            </section>
+            <section class="lesson-card">
+              <h3 id="module-5-guardrails">5. Guardrails &amp; recovery</h3>
+              <p>Ngày 8-9. Structured output, policy gate, retry, fallback, human approval và failure taxonomy.</p>
+              <p><strong>Bài tập:</strong> chặn tool ghi dữ liệu khi thiếu approval.</p>
+            </section>
+            <section class="lesson-card">
+              <h3 id="module-6-evals-tracing">6. Evals &amp; tracing</h3>
+              <p>Ngày 10-11. Trace schema, replay, eval dataset, pytest regression và metric theo workflow.</p>
+              <p><strong>Bài tập:</strong> tạo 20 case eval cho invoice copilot.</p>
+            </section>
+            <section class="lesson-card">
+              <h3 id="module-7-frameworks">7. Framework mapping</h3>
+              <p>Ngày 12. Map lõi tự xây sang OpenAI Agents SDK, LangChain agent và LangGraph state graph.</p>
+              <p><strong>Bài tập:</strong> port một flow sang LangGraph để có persistence.</p>
+            </section>
+            <section class="lesson-card">
+              <h3 id="module-8-production">8. Production service</h3>
+              <p>Ngày 13-14. FastAPI, streaming, auth, quota, observability, deployment và playbook vận hành.</p>
+              <p><strong>Bài tập:</strong> đóng gói harness thành API và chạy eval trước khi release.</p>
+            </section>
+          </div>
+
+          <h2 id="stage-1-mental-model">Stage 1: Mental model</h2>
+          <h3 id="agent-failures">Agent thường fail ở đâu?</h3>
+          <ul>
+            <li><strong>Context sai:</strong> model thiếu thông tin cần thiết hoặc nhận quá nhiều nhiễu.</li>
+            <li><strong>Tool sai:</strong> tool schema mơ hồ, output dài, permission quá rộng hoặc side effect không kiểm soát.</li>
+            <li><strong>State sai:</strong> agent quên quyết định trước đó, ghi nhớ dữ liệu nhạy cảm, hoặc replay không được.</li>
+            <li><strong>Loop sai:</strong> retry vô hạn, gọi tool lặp, kết thúc sớm, hoặc không phân biệt lỗi tạm thời với lỗi nghiệp vụ.</li>
+            <li><strong>Eval sai:</strong> chỉ nhìn final answer, không kiểm trace, chi phí, latency, tool call và evidence.</li>
+          </ul>
+
+          <h3 id="trace-first-thinking">Trace-first thinking</h3>
+          <p>
+            Khi thiết kế harness, hãy coi mỗi lần chạy là một bản ghi audit. Trace tối thiểu cần có:
+            request id, user intent, prompt version, model version, tool calls, tool results, token usage,
+            guardrail decisions, final output, lỗi và evaluator score.
+          </p>
+
+          <pre><code class="language-json">{
+  "run_id": "run_20260709_001",
+  "prompt_version": "invoice-copilot@0.3.0",
+  "model": "provider/model-name",
+  "steps": [
+    {"type": "model", "latency_ms": 820, "output": "tool_call:get_invoice"},
+    {"type": "tool", "name": "get_invoice", "status": "ok"},
+    {"type": "model", "latency_ms": 640, "output": "final_answer"}
+  ],
+  "scores": {"task_success": 1, "grounded": 1, "policy_safe": 1}
+}</code></pre>
+
+          <blockquote>
+            <p>Một agent khó debug là agent không có trace. Một harness tốt luôn giúp bạn trả lời được: model đã thấy gì, đã làm gì, vì sao được phép làm vậy, và kết quả được kiểm bằng gì.</p>
+          </blockquote>
+
+          <h2 id="stage-2-project-setup">Stage 2: Project setup</h2>
+          <h3 id="project-layout">Cấu trúc project đề xuất</h3>
+          <pre><code class="language-text">outer-harness-course/
+  app/
+    __init__.py
+    main.py
+    harness.py
+    models.py
+    prompts.py
+    tools.py
+    memory.py
+    guardrails.py
+    tracing.py
+    evals.py
+  tests/
+    test_harness_loop.py
+    test_tools.py
+    test_evals.py
+  eval_datasets/
+    invoice_cases.jsonl
+  pyproject.toml</code></pre>
+
+          <h3 id="dependencies">Dependencies tối thiểu</h3>
+          <pre><code class="language-toml">[project]
+name = "outer-harness-course"
+version = "0.1.0"
+requires-python = "&gt;=3.11"
+dependencies = [
+  "pydantic&gt;=2.8",
+  "httpx&gt;=0.27",
+  "tenacity&gt;=8.4",
+  "fastapi&gt;=0.111",
+  "uvicorn[standard]&gt;=0.30",
+  "pytest&gt;=8.2",
+  "opentelemetry-api&gt;=1.25"
+]</code></pre>
+
+          <p>
+            Bạn có thể thêm <code>openai</code>, <code>langgraph</code>, <code>langchain</code> hoặc
+            <code>pydantic-ai</code> sau. Lõi khóa học vẫn giữ một interface vendor-neutral để test
+            được bằng fake model.
+          </p>
+
+          <h2 id="stage-3-core-schemas">Stage 3: Core schemas</h2>
+          <h3 id="message-state">Message, tool call và state</h3>
+          <pre><code class="language-python"># app/models.py
+from __future__ import annotations
+
+from enum import Enum
+from typing import Any, Literal
+from pydantic import BaseModel, Field
+
+
+Role = Literal["system", "user", "assistant", "tool"]
+
+
+class Message(BaseModel):
+    role: Role
+    content: str
+    name: str | None = None
+
+
+class ToolCall(BaseModel):
+    name: str
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    call_id: str
+
+
+class ToolResult(BaseModel):
+    call_id: str
+    name: str
+    ok: bool
+    content: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class FinishReason(str, Enum):
+    FINAL = "final"
+    TOOL_CALL = "tool_call"
+    REFUSAL = "refusal"
+    ERROR = "error"
+
+
+class ModelResponse(BaseModel):
+    content: str = ""
+    finish_reason: FinishReason
+    tool_calls: list[ToolCall] = Field(default_factory=list)
+    usage: dict[str, int] = Field(default_factory=dict)
+
+
+class AgentState(BaseModel):
+    run_id: str
+    messages: list[Message] = Field(default_factory=list)
+    tool_results: list[ToolResult] = Field(default_factory=list)
+    turn: int = 0
+    cost_usd: float = 0.0
+    metadata: dict[str, Any] = Field(default_factory=dict)</code></pre>
+
+          <h3 id="config-budget">Config và budget</h3>
+          <pre><code class="language-python"># app/models.py
+class HarnessConfig(BaseModel):
+    prompt_version: str = "invoice-copilot@0.1.0"
+    max_turns: int = 8
+    max_tool_calls: int = 12
+    max_context_chars: int = 24_000
+    tool_timeout_seconds: float = 8.0
+    require_approval_for_writes: bool = True
+
+
+class RunBudget(BaseModel):
+    turns_left: int
+    tool_calls_left: int
+
+    def consume_turn(self) -&gt; None:
+        if self.turns_left &lt;= 0:
+            raise RuntimeError("Turn budget exceeded")
+        self.turns_left -= 1
+
+    def consume_tool_call(self) -&gt; None:
+        if self.tool_calls_left &lt;= 0:
+            raise RuntimeError("Tool budget exceeded")
+        self.tool_calls_left -= 1</code></pre>
+
+          <p>
+            Schema không chỉ để validation. Nó là contract giữa model adapter, tool dispatcher,
+            trace writer và evaluator. Khi contract rõ, bạn có thể replay, test và thay model mà
+            không đổi toàn bộ hệ thống.
+          </p>
+
+          <h2 id="stage-4-model-adapter">Stage 4: Model adapter</h2>
+          <h3 id="vendor-neutral-interface">Interface trung lập</h3>
+          <pre><code class="language-python"># app/harness.py
+from typing import Protocol
+from app.models import Message, ModelResponse
+
+
+class ModelClient(Protocol):
+    async def complete(
+        self,
+        messages: list[Message],
+        tools: list[dict],
+        response_schema: dict | None = None,
+    ) -&gt; ModelResponse:
+        """Return text, tool calls, refusal or structured output."""</code></pre>
+
+          <h3 id="fake-model-testing">Fake model để test loop</h3>
+          <pre><code class="language-python"># tests/fakes.py
+from app.models import FinishReason, ModelResponse, ToolCall
+
+
+class FakeModel:
+    def __init__(self, responses: list[ModelResponse]):
+        self.responses = list(responses)
+        self.calls = 0
+
+    async def complete(self, messages, tools, response_schema=None):
+        self.calls += 1
+        if not self.responses:
+            return ModelResponse(
+                content="No more fake responses",
+                finish_reason=FinishReason.ERROR,
+            )
+        return self.responses.pop(0)
+
+
+def fake_invoice_lookup_call() -&gt; ModelResponse:
+    return ModelResponse(
+        finish_reason=FinishReason.TOOL_CALL,
+        tool_calls=[
+            ToolCall(
+                call_id="call_1",
+                name="get_invoice",
+                arguments={"invoice_id": "INV-001"},
+            )
+        ],
+    )</code></pre>
+
+          <p>
+            Đây là điểm then chốt của khóa học: agent loop phải test được bằng fake model. Nếu test
+            chỉ chạy được khi gọi model thật, bạn sẽ khó bắt regression và chi phí eval sẽ tăng nhanh.
+          </p>
+
+          <h2 id="stage-5-tool-registry">Stage 5: Tool registry</h2>
+          <h3 id="tool-contract">Tool là API nội bộ có contract</h3>
+          <pre><code class="language-python"># app/tools.py
+from __future__ import annotations
+
+import inspect
+from collections.abc import Awaitable, Callable
+from typing import Any
+from pydantic import BaseModel, Field, ValidationError
+
+
+class ToolSpec(BaseModel):
+    name: str
+    description: str
+    input_model: type[BaseModel]
+    handler: Callable[[BaseModel], Awaitable[str]]
+    side_effect: bool = False
+    requires_approval: bool = False
+
+    def to_json_schema(self) -&gt; dict[str, Any]:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": self.input_model.model_json_schema(),
+            },
+        }
+
+
+class ToolRegistry:
+    def __init__(self) -&gt; None:
+        self._tools: dict[str, ToolSpec] = {}
+
+    def register(self, spec: ToolSpec) -&gt; None:
+        if spec.name in self._tools:
+            raise ValueError(f"Duplicate tool: {spec.name}")
+        if not inspect.iscoroutinefunction(spec.handler):
+            raise TypeError("Tool handler must be async")
+        self._tools[spec.name] = spec
+
+    def schemas(self) -&gt; list[dict[str, Any]]:
+        return [tool.to_json_schema() for tool in self._tools.values()]
+
+    async def call(self, name: str, arguments: dict[str, Any]) -&gt; str:
+        spec = self._tools.get(name)
+        if spec is None:
+            raise KeyError(f"Unknown tool: {name}")
+        try:
+            parsed = spec.input_model.model_validate(arguments)
+        except ValidationError as exc:
+            raise ValueError(f"Invalid arguments for {name}: {exc}") from exc
+        return await spec.handler(parsed)</code></pre>
+
+          <h3 id="invoice-tool">Ví dụ tool tra cứu invoice</h3>
+          <pre><code class="language-python"># app/tools.py
+class GetInvoiceArgs(BaseModel):
+    invoice_id: str = Field(min_length=3, max_length=64)
+
+
+async def get_invoice(args: GetInvoiceArgs) -&gt; str:
+    fake_db = {
+        "INV-001": {
+            "status": "issued",
+            "amount": 1_250_000,
+            "tax_code": "0312345678",
+        }
+    }
+    invoice = fake_db.get(args.invoice_id)
+    if invoice is None:
+        return "Invoice not found"
+    return (
+        f"invoice_id={args.invoice_id}; "
+        f"status={invoice['status']}; "
+        f"amount={invoice['amount']}; "
+        f"tax_code={invoice['tax_code']}"
+    )
+
+
+def build_registry() -&gt; ToolRegistry:
+    registry = ToolRegistry()
+    registry.register(
+        ToolSpec(
+            name="get_invoice",
+            description="Lookup invoice status, amount and tax code by invoice id.",
+            input_model=GetInvoiceArgs,
+            handler=get_invoice,
+        )
+    )
+    return registry</code></pre>
+
+          <h3 id="tool-design-rules">Quy tắc thiết kế tool</h3>
+          <ul>
+            <li>Tool name dùng động từ rõ: <code>get_invoice</code>, <code>search_policy</code>, <code>create_refund_draft</code>.</li>
+            <li>Input schema nhỏ, kiểu dữ liệu rõ, không nhận blob tự do nếu không cần.</li>
+            <li>Output ngắn, có cấu trúc, không trả nguyên tài liệu dài vào context.</li>
+            <li>Tool có side effect phải idempotent hoặc có approval gate.</li>
+            <li>Không để model tự quyết quyền truy cập. Harness phải kiểm permission trước khi dispatch.</li>
+          </ul>
+
+          <h2 id="stage-6-agent-loop">Stage 6: Agent loop</h2>
+          <h3 id="minimal-loop">Loop tối thiểu</h3>
+          <pre><code class="language-python"># app/harness.py
+from app.models import (
+    AgentState,
+    FinishReason,
+    HarnessConfig,
+    Message,
+    RunBudget,
+    ToolResult,
+)
+from app.tools import ToolRegistry
+
+
+class AgentHarness:
+    def __init__(
+        self,
+        model: ModelClient,
+        tools: ToolRegistry,
+        config: HarnessConfig | None = None,
+    ) -&gt; None:
+        self.model = model
+        self.tools = tools
+        self.config = config or HarnessConfig()
+
+    async def run(self, run_id: str, user_input: str) -&gt; AgentState:
+        state = AgentState(run_id=run_id)
+        state.messages.extend([
+            Message(role="system", content=self._system_prompt()),
+            Message(role="user", content=user_input),
+        ])
+        budget = RunBudget(
+            turns_left=self.config.max_turns,
+            tool_calls_left=self.config.max_tool_calls,
+        )
+
+        while True:
+            budget.consume_turn()
+            state.turn += 1
+            response = await self.model.complete(
+                messages=self._trim_context(state.messages),
+                tools=self.tools.schemas(),
+            )
+
+            if response.finish_reason == FinishReason.FINAL:
+                state.messages.append(Message(role="assistant", content=response.content))
+                return state
+
+            if response.finish_reason == FinishReason.TOOL_CALL:
+                await self._handle_tool_calls(state, response.tool_calls, budget)
+                continue
+
+            state.messages.append(
+                Message(role="assistant", content=f"Run stopped: {response.finish_reason}")
+            )
+            return state
+
+    async def _handle_tool_calls(self, state, tool_calls, budget) -&gt; None:
+        for call in tool_calls:
+            budget.consume_tool_call()
+            try:
+                content = await self.tools.call(call.name, call.arguments)
+                result = ToolResult(
+                    call_id=call.call_id,
+                    name=call.name,
+                    ok=True,
+                    content=content,
+                )
+            except Exception as exc:
+                result = ToolResult(
+                    call_id=call.call_id,
+                    name=call.name,
+                    ok=False,
+                    content=str(exc),
+                )
+
+            state.tool_results.append(result)
+            state.messages.append(
+                Message(
+                    role="tool",
+                    name=result.name,
+                    content=result.content,
+                )
+            )
+
+    def _system_prompt(self) -&gt; str:
+        return (
+            "You are an invoice operations assistant. "
+            "Use tools when facts are needed. "
+            "Never invent invoice status or amounts. "
+            "If evidence is insufficient, say what is missing."
+        )
+
+    def _trim_context(self, messages: list[Message]) -&gt; list[Message]:
+        joined = []
+        total = 0
+        for msg in reversed(messages):
+            total += len(msg.content)
+            if total &gt; self.config.max_context_chars:
+                break
+            joined.append(msg)
+        return list(reversed(joined))</code></pre>
+
+          <h3 id="loop-invariants">Invariants cần giữ</h3>
+          <ul>
+            <li>Mỗi tool call phải tạo đúng một tool result, kể cả khi lỗi.</li>
+            <li>Mỗi run có giới hạn turn và tool call.</li>
+            <li>Final answer chỉ được trả sau khi guardrail output pass.</li>
+            <li>Tool side effect không chạy nếu approval chưa có.</li>
+            <li>Trace ghi cả success lẫn failure, không chỉ ghi final output.</li>
+          </ul>
+
+          <h2 id="stage-7-context-memory">Stage 7: Context và memory</h2>
+          <h3 id="context-assembler">Context assembler</h3>
+          <p>
+            Context assembler là thành phần quan trọng nhất sau tool loop. Nó chọn dữ liệu nào được
+            đưa vào model ở từng turn. Cùng một model nhưng context assembler khác nhau có thể tạo
+            ra chất lượng agent rất khác nhau.
+          </p>
+
+          <pre><code class="language-python"># app/memory.py
+from pydantic import BaseModel
+
+
+class MemoryItem(BaseModel):
+    key: str
+    value: str
+    scope: str = "user"
+    importance: int = 1
+
+
+class InMemoryStore:
+    def __init__(self) -&gt; None:
+        self._items: dict[str, MemoryItem] = {}
+
+    def put(self, item: MemoryItem) -&gt; None:
+        self._items[item.key] = item
+
+    def search(self, query: str, limit: int = 5) -&gt; list[MemoryItem]:
+        terms = set(query.lower().split())
+        scored = []
+        for item in self._items.values():
+            text = f"{item.key} {item.value}".lower()
+            score = sum(1 for term in terms if term in text) + item.importance
+            scored.append((score, item))
+        scored.sort(key=lambda pair: pair[0], reverse=True)
+        return [item for score, item in scored[:limit] if score &gt; 0]</code></pre>
+
+          <h3 id="memory-types">Ba loại memory</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Loại</th>
+                  <th>Dùng cho</th>
+                  <th>Lưu ở đâu?</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Working memory</td>
+                  <td>Message history và intermediate state trong một run.</td>
+                  <td><code>AgentState</code>, checkpoint.</td>
+                </tr>
+                <tr>
+                  <td>Session memory</td>
+                  <td>Liên tục qua nhiều turn của cùng user/thread.</td>
+                  <td>SQLite/Postgres checkpointer.</td>
+                </tr>
+                <tr>
+                  <td>Long-term memory</td>
+                  <td>Preference, facts, domain notes, skill docs.</td>
+                  <td>Postgres, vector DB, object storage.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="context-budget">Budget context thực dụng</h3>
+          <ul>
+            <li>System prompt và policy: luôn giữ.</li>
+            <li>Current user request: luôn giữ.</li>
+            <li>Tool results mới nhất: giữ nếu trực tiếp liên quan.</li>
+            <li>Evidence retrieved: giới hạn top-k và cắt theo section.</li>
+            <li>History cũ: summarize hoặc bỏ nếu không liên quan.</li>
+            <li>Debug trace: không đưa vào model trừ khi đang chạy repair flow.</li>
+          </ul>
+
+          <h2 id="stage-8-guardrails-recovery">Stage 8: Guardrails và recovery</h2>
+          <h3 id="input-guardrail">Input guardrail</h3>
+          <pre><code class="language-python"># app/guardrails.py
+from pydantic import BaseModel
+
+
+class GuardrailDecision(BaseModel):
+    allowed: bool
+    reason: str = ""
+    redacted_input: str | None = None
+
+
+class InputGuardrail:
+    blocked_terms = {"api_key", "private_key", "password="}
+
+    def check(self, user_input: str) -&gt; GuardrailDecision:
+        lowered = user_input.lower()
+        for term in self.blocked_terms:
+            if term in lowered:
+                return GuardrailDecision(
+                    allowed=False,
+                    reason=f"Sensitive token-like content detected: {term}",
+                )
+        return GuardrailDecision(allowed=True)</code></pre>
+
+          <h3 id="output-contract">Output contract bằng Pydantic</h3>
+          <pre><code class="language-python"># app/models.py
+class Evidence(BaseModel):
+    source: str
+    quote_or_fact: str
+
+
+class FinalAnswer(BaseModel):
+    answer: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    evidence: list[Evidence] = Field(default_factory=list)
+    missing_information: list[str] = Field(default_factory=list)
+
+
+def validate_final_answer(data: dict) -&gt; FinalAnswer:
+    answer = FinalAnswer.model_validate(data)
+    if answer.confidence &gt;= 0.7 and not answer.evidence:
+        raise ValueError("High-confidence answer must include evidence")
+    return answer</code></pre>
+
+          <h3 id="recovery-policy">Recovery policy</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Lỗi</th>
+                  <th>Phân loại</th>
+                  <th>Harness xử lý</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Model timeout</td>
+                  <td>Transient</td>
+                  <td>Retry exponential backoff, đổi model fallback nếu hết retry.</td>
+                </tr>
+                <tr>
+                  <td>Tool validation error</td>
+                  <td>Model/tool contract</td>
+                  <td>Đưa lỗi ngắn về model một lần, sau đó stop nếu lặp lại.</td>
+                </tr>
+                <tr>
+                  <td>Permission denied</td>
+                  <td>Policy</td>
+                  <td>Không retry, yêu cầu approval hoặc trả lý do bị chặn.</td>
+                </tr>
+                <tr>
+                  <td>Evidence missing</td>
+                  <td>Grounding</td>
+                  <td>Yêu cầu retrieval/tool call bổ sung hoặc trả missing info.</td>
+                </tr>
+                <tr>
+                  <td>Eval regression</td>
+                  <td>Release gate</td>
+                  <td>Không deploy config mới, mở failure report.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="stage-9-tracing">Stage 9: Tracing</h2>
+          <h3 id="trace-writer">Trace writer tối thiểu</h3>
+          <pre><code class="language-python"># app/tracing.py
+from __future__ import annotations
+
+import json
+import time
+from pathlib import Path
+from typing import Any
+
+
+class JsonlTraceWriter:
+    def __init__(self, path: str = "traces/runs.jsonl") -&gt; None:
+        self.path = Path(path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+
+    def event(self, run_id: str, event_type: str, payload: dict[str, Any]) -&gt; None:
+        row = {
+            "ts": time.time(),
+            "run_id": run_id,
+            "event_type": event_type,
+            "payload": payload,
+        }
+        with self.path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")</code></pre>
+
+          <h3 id="trace-events">Các event nên ghi</h3>
+          <ul>
+            <li><code>run_started</code>: request, user id hash, prompt version, config.</li>
+            <li><code>model_started</code> và <code>model_finished</code>: latency, usage, finish reason.</li>
+            <li><code>tool_started</code> và <code>tool_finished</code>: tool name, arguments redacted, status.</li>
+            <li><code>guardrail_decision</code>: policy, allowed, reason.</li>
+            <li><code>eval_score</code>: metric, score, explanation.</li>
+            <li><code>run_finished</code>: final status, cost, latency, error class.</li>
+          </ul>
+
+          <p>
+            Trace JSONL là đủ cho local. Production nên dùng OpenTelemetry hoặc nền tảng tracing/eval
+            chuyên dụng để xem span, latency, token usage và replay theo run id.
+          </p>
+
+          <h2 id="stage-10-evals">Stage 10: Evals</h2>
+          <h3 id="eval-dataset">Dataset JSONL</h3>
+          <pre><code class="language-json">{"id":"case_001","input":"Kiểm tra trạng thái hóa đơn INV-001","expected_facts":["status=issued","amount=1250000"],"must_call_tools":["get_invoice"]}
+{"id":"case_002","input":"Hóa đơn INV-404 đã phát hành chưa?","expected_facts":["Invoice not found"],"must_call_tools":["get_invoice"]}
+{"id":"case_003","input":"Tạo lệnh hủy hóa đơn INV-001 ngay","expected_policy":"requires_approval"}</code></pre>
+
+          <h3 id="pytest-eval">Eval bằng pytest</h3>
+          <pre><code class="language-python"># tests/test_evals.py
+import json
+from pathlib import Path
+
+import pytest
+
+
+def load_cases():
+    path = Path("eval_datasets/invoice_cases.jsonl")
+    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("case", load_cases())
+async def test_invoice_eval(case, harness_factory):
+    harness = harness_factory(case)
+    state = await harness.run(run_id=case["id"], user_input=case["input"])
+    transcript = "\n".join(message.content for message in state.messages)
+
+    for fact in case.get("expected_facts", []):
+        assert fact in transcript
+
+    called_tools = [result.name for result in state.tool_results]
+    for tool_name in case.get("must_call_tools", []):
+        assert tool_name in called_tools</code></pre>
+
+          <h3 id="eval-metrics">Metric nên đo</h3>
+          <ul>
+            <li><strong>Task success:</strong> agent có giải đúng việc người dùng cần không?</li>
+            <li><strong>Groundedness:</strong> kết luận có dựa vào tool/evidence không?</li>
+            <li><strong>Tool correctness:</strong> gọi đúng tool, đúng args, đúng thứ tự không?</li>
+            <li><strong>Policy safety:</strong> có chặn hành động rủi ro và dữ liệu nhạy cảm không?</li>
+            <li><strong>Efficiency:</strong> số turn, số tool call, token, latency và cost.</li>
+            <li><strong>Recoverability:</strong> khi tool lỗi, agent có dừng/khôi phục đúng không?</li>
+          </ul>
+
+          <h2 id="stage-11-rag-harness">Stage 11: RAG harness</h2>
+          <h3 id="rag-pipeline">Pipeline RAG trong harness</h3>
+          <ol>
+            <li>Normalize câu hỏi và trích intent.</li>
+            <li>Chọn retriever phù hợp: keyword, vector, SQL hoặc hybrid.</li>
+            <li>Retrieve top-k nhỏ, lọc quyền truy cập theo user/context.</li>
+            <li>Rerank hoặc dedupe chunks.</li>
+            <li>Cắt context theo budget, giữ metadata nguồn.</li>
+            <li>Ép final answer chứa evidence hoặc missing information.</li>
+          </ol>
+
+          <pre><code class="language-python"># app/prompts.py
+def build_rag_context(chunks: list[dict], max_chars: int = 8_000) -&gt; str:
+    parts: list[str] = []
+    total = 0
+    for idx, chunk in enumerate(chunks, start=1):
+        text = chunk["text"].strip()
+        source = chunk.get("source", "unknown")
+        block = f"[{idx}] source={source}\n{text}\n"
+        if total + len(block) &gt; max_chars:
+            break
+        parts.append(block)
+        total += len(block)
+    return "\n".join(parts)</code></pre>
+
+          <h3 id="rag-anti-patterns">RAG anti-patterns</h3>
+          <ul>
+            <li>Đưa top-20 chunks vào prompt vì sợ thiếu context.</li>
+            <li>Không lưu source id nên final answer không audit được.</li>
+            <li>Retriever bỏ qua permission của user.</li>
+            <li>Không có eval riêng cho retrieval, chỉ eval final answer.</li>
+            <li>Không phân biệt "không tìm thấy" với "model không biết".</li>
+          </ul>
+
+          <h2 id="stage-12-multi-agent">Stage 12: Multi-agent orchestration</h2>
+          <h3 id="when-multi-agent">Khi nào cần nhiều agent?</h3>
+          <p>
+            Multi-agent hữu ích khi task có nhiều vai trò tách biệt: researcher, planner, executor,
+            reviewer, hoặc khi cần chạy song song trong context riêng. Không nên dùng multi-agent chỉ
+            để làm hệ thống trông phức tạp hơn. Mỗi agent thêm vào là thêm chi phí, latency và failure mode.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Pattern</th>
+                  <th>Dùng khi</th>
+                  <th>Rủi ro</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Manager-worker</td>
+                  <td>Main agent chia việc cho subagents.</td>
+                  <td>Manager tổng hợp sai hoặc bỏ sót evidence.</td>
+                </tr>
+                <tr>
+                  <td>Planner-executor</td>
+                  <td>Cần kế hoạch ổn định trước khi hành động.</td>
+                  <td>Plan đẹp nhưng executor không kiểm tool feedback.</td>
+                </tr>
+                <tr>
+                  <td>Actor-reviewer</td>
+                  <td>Cần review độc lập trước khi trả output.</td>
+                  <td>Reviewer cũng có thể hallucinate nếu thiếu evidence.</td>
+                </tr>
+                <tr>
+                  <td>Specialist handoff</td>
+                  <td>Routing sang domain chuyên biệt.</td>
+                  <td>Handoff sai intent hoặc mất context quan trọng.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="simple-orchestrator">Orchestrator đơn giản</h3>
+          <pre><code class="language-python"># app/harness.py
+class Orchestrator:
+    def __init__(self, planner: AgentHarness, executor: AgentHarness, reviewer: AgentHarness):
+        self.planner = planner
+        self.executor = executor
+        self.reviewer = reviewer
+
+    async def run(self, run_id: str, user_input: str):
+        plan_state = await self.planner.run(f"{run_id}:plan", user_input)
+        plan = plan_state.messages[-1].content
+
+        exec_state = await self.executor.run(
+            f"{run_id}:exec",
+            f"Execute this plan with tools:\n{plan}",
+        )
+        draft = exec_state.messages[-1].content
+
+        review_state = await self.reviewer.run(
+            f"{run_id}:review",
+            f"Review this answer for evidence and policy issues:\n{draft}",
+        )
+        return {
+            "plan": plan_state,
+            "execution": exec_state,
+            "review": review_state,
+        }</code></pre>
+
+          <h2 id="stage-13-framework-mapping">Stage 13: Framework mapping</h2>
+          <h3 id="framework-table">Tự xây hay dùng framework?</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Lựa chọn</th>
+                  <th>Phù hợp khi</th>
+                  <th>Ghi chú</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Tự xây Python loop</td>
+                  <td>Flow hẹp, cần kiểm soát contract, muốn test vendor-neutral.</td>
+                  <td>Tốt để học và cho production nhỏ có yêu cầu rõ.</td>
+                </tr>
+                <tr>
+                  <td>OpenAI Agents SDK</td>
+                  <td>Dùng OpenAI stack, cần tool loop, guardrails, sessions, tracing.</td>
+                  <td>Python-first, ít primitive, có runtime agent sẵn.</td>
+                </tr>
+                <tr>
+                  <td>LangChain agent</td>
+                  <td>Cần nhiều integration, middleware, tool abstraction.</td>
+                  <td>Agent = model gọi tool trong loop, harness cấu hình qua middleware.</td>
+                </tr>
+                <tr>
+                  <td>LangGraph</td>
+                  <td>Workflow dài, có state graph, persistence, human-in-the-loop.</td>
+                  <td>Phù hợp khi agent cần resume, checkpoint và state rõ.</td>
+                </tr>
+                <tr>
+                  <td>Pydantic AI</td>
+                  <td>Muốn agent schema-first, dependency injection và typed output.</td>
+                  <td>Hợp với team Python đã dùng Pydantic/FastAPI.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="langgraph-port">Port sang LangGraph ở mức ý tưởng</h3>
+          <pre><code class="language-python"># LangGraph sketch, không thay thế lõi tự xây ở các stage trước
+from langgraph.graph import StateGraph, START, END
+from typing_extensions import TypedDict
+
+
+class InvoiceState(TypedDict):
+    messages: list[dict]
+    invoice_id: str | None
+    evidence: list[str]
+    final_answer: str | None
+
+
+def route_intent(state: InvoiceState):
+    return {"invoice_id": "INV-001"}
+
+
+def lookup_invoice(state: InvoiceState):
+    return {"evidence": ["status=issued", "amount=1250000"]}
+
+
+def answer(state: InvoiceState):
+    return {"final_answer": "INV-001 đã phát hành, số tiền 1.250.000 VND."}
+
+
+builder = StateGraph(InvoiceState)
+builder.add_node("route_intent", route_intent)
+builder.add_node("lookup_invoice", lookup_invoice)
+builder.add_node("answer", answer)
+builder.add_edge(START, "route_intent")
+builder.add_edge("route_intent", "lookup_invoice")
+builder.add_edge("lookup_invoice", "answer")
+builder.add_edge("answer", END)
+graph = builder.compile()</code></pre>
+
+          <p>
+            Mapping quan trọng: <code>AgentState</code> tự xây tương ứng với graph state,
+            tool dispatcher tương ứng với node/tool node, trace writer tương ứng với observability,
+            checkpointer tương ứng với persistence.
+          </p>
+
+          <h2 id="stage-14-production-api">Stage 14: Production API</h2>
+          <h3 id="fastapi-wrapper">FastAPI wrapper</h3>
+          <pre><code class="language-python"># app/main.py
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+
+from app.harness import AgentHarness
+from app.models import HarnessConfig
+from app.tools import build_registry
+
+
+class AgentRequest(BaseModel):
+    run_id: str = Field(min_length=6, max_length=128)
+    input: str = Field(min_length=1, max_length=8_000)
+
+
+class AgentResponse(BaseModel):
+    run_id: str
+    answer: str
+    tool_calls: int
+
+
+def build_harness() -&gt; AgentHarness:
+    model = ...  # inject real model client here
+    return AgentHarness(
+        model=model,
+        tools=build_registry(),
+        config=HarnessConfig(),
+    )
+
+
+app = FastAPI(title="Outer Harness API")
+harness = build_harness()
+
+
+@app.post("/agent/run", response_model=AgentResponse)
+async def run_agent(request: AgentRequest):
+    try:
+        state = await harness.run(run_id=request.run_id, user_input=request.input)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    answer = state.messages[-1].content if state.messages else ""
+    return AgentResponse(
+        run_id=state.run_id,
+        answer=answer,
+        tool_calls=len(state.tool_results),
+    )</code></pre>
+
+          <h3 id="production-checklist">Production checklist</h3>
+          <ul>
+            <li>Auth và tenant boundary rõ ràng trước mọi retrieval/tool call.</li>
+            <li>Rate limit theo user, tenant và model provider.</li>
+            <li>Timeout riêng cho model, tool, toàn bộ run và streaming connection.</li>
+            <li>Secret không đi vào prompt, trace hoặc eval dataset.</li>
+            <li>Redaction cho tool arguments và tool results nhạy cảm.</li>
+            <li>Prompt/tool/config version được lưu trong trace.</li>
+            <li>Eval suite chạy trong CI trước khi đổi prompt, model hoặc tool schema.</li>
+            <li>Human approval cho action ghi dữ liệu, gửi email, thanh toán, xóa file hoặc gọi API chi phí cao.</li>
+          </ul>
+
+          <h2 id="capstone">Capstone: Invoice Operations Copilot</h2>
+          <h3 id="capstone-scope">Phạm vi dự án</h3>
+          <p>
+            Dự án cuối khóa là một copilot cho nghiệp vụ hóa đơn. Người dùng hỏi trạng thái hóa đơn,
+            đối chiếu thông tin, tìm chính sách xử lý lỗi, tạo draft hành động và nhận câu trả lời có
+            evidence. Agent không được tự ý phát hành/hủy/sửa hóa đơn nếu thiếu approval.
+          </p>
+
+          <h3 id="capstone-requirements">Yêu cầu chức năng</h3>
+          <ul>
+            <li>Tool <code>get_invoice(invoice_id)</code> trả status, amount, tax code.</li>
+            <li>Tool <code>search_policy(query)</code> trả policy chunks có source id.</li>
+            <li>Tool <code>create_action_draft(invoice_id, action)</code> yêu cầu approval.</li>
+            <li>Final answer có schema <code>FinalAnswer</code> với confidence và evidence.</li>
+            <li>Trace JSONL ghi mọi model step, tool call, guardrail decision và eval score.</li>
+            <li>Eval dataset tối thiểu 30 case: lookup, missing invoice, policy question, prohibited action, tool failure.</li>
+          </ul>
+
+          <h3 id="capstone-rubric">Rubric chấm điểm</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tiêu chí</th>
+                  <th>Đạt</th>
+                  <th>Tốt</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Correctness</td>
+                  <td>Trả đúng fact ở 80% eval case.</td>
+                  <td>Trả đúng fact ở 95% eval case, không bịa khi thiếu dữ liệu.</td>
+                </tr>
+                <tr>
+                  <td>Tool use</td>
+                  <td>Gọi đúng tool cho lookup cơ bản.</td>
+                  <td>Gọi tool tối thiểu cần thiết, args valid, xử lý tool error tốt.</td>
+                </tr>
+                <tr>
+                  <td>Safety</td>
+                  <td>Chặn action ghi dữ liệu thiếu approval.</td>
+                  <td>Redact dữ liệu nhạy cảm, trace không lộ secret, policy gate rõ.</td>
+                </tr>
+                <tr>
+                  <td>Observability</td>
+                  <td>Có trace JSONL theo run id.</td>
+                  <td>Có span/event đầy đủ, replay được failure và so sánh config.</td>
+                </tr>
+                <tr>
+                  <td>Production shape</td>
+                  <td>Có FastAPI endpoint chạy được.</td>
+                  <td>Có timeout, rate limit hook, health check, config version và CI eval.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="outer-loop-improvement">Outer loop improvement</h2>
+          <p>
+            Sau khi có harness chạy được, outer loop là cách cải thiện có hệ thống. Mỗi vòng gồm:
+            chạy eval, đọc trace, phân loại lỗi, tạo candidate config, chạy lại cùng dataset,
+            so sánh metric rồi chỉ promote khi thắng trên cả chất lượng lẫn chi phí.
+          </p>
+
+          <pre><code class="language-python"># app/evals.py
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class CandidateConfig:
+    name: str
+    prompt_version: str
+    max_turns: int
+    retriever_top_k: int
+
+
+async def compare_candidates(cases, candidates, harness_factory):
+    report = []
+    for candidate in candidates:
+        passed = 0
+        total_tool_calls = 0
+        for case in cases:
+            harness = harness_factory(candidate)
+            state = await harness.run(case["id"], case["input"])
+            transcript = "\n".join(message.content for message in state.messages)
+            ok = all(fact in transcript for fact in case.get("expected_facts", []))
+            passed += int(ok)
+            total_tool_calls += len(state.tool_results)
+        report.append({
+            "candidate": candidate.name,
+            "accuracy": passed / len(cases),
+            "avg_tool_calls": total_tool_calls / len(cases),
+        })
+    return sorted(report, key=lambda row: row["accuracy"], reverse=True)</code></pre>
+
+          <h3 id="failure-taxonomy">Failure taxonomy</h3>
+          <ul>
+            <li><code>retrieval_miss</code>: evidence đúng không được retrieve.</li>
+            <li><code>context_noise</code>: evidence đúng có trong context nhưng bị nhiễu che lấp.</li>
+            <li><code>tool_arg_error</code>: model gọi tool với args sai schema hoặc sai entity.</li>
+            <li><code>premature_final</code>: model trả lời trước khi gọi tool cần thiết.</li>
+            <li><code>policy_gap</code>: prompt nói không làm, nhưng harness không enforce.</li>
+            <li><code>recovery_gap</code>: tool/model lỗi nhưng loop retry hoặc fallback sai.</li>
+            <li><code>eval_gap</code>: case test không bắt được lỗi đã xảy ra trong production.</li>
+          </ul>
+
+          <h2 id="ke-hoach-14-ngay">Kế hoạch học 14 ngày</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ngày</th>
+                  <th>Nội dung</th>
+                  <th>Deliverable</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>Mental model, failure modes, trace-first design.</td>
+                  <td>Diagram thành phần harness.</td>
+                </tr>
+                <tr>
+                  <td>2</td>
+                  <td>Core schemas và fake model.</td>
+                  <td>Test model adapter không gọi API thật.</td>
+                </tr>
+                <tr>
+                  <td>3</td>
+                  <td>Agent loop tối thiểu.</td>
+                  <td>Loop gọi tool và trả final answer.</td>
+                </tr>
+                <tr>
+                  <td>4</td>
+                  <td>Tool registry, validation, timeout.</td>
+                  <td>Tool <code>get_invoice</code> có schema.</td>
+                </tr>
+                <tr>
+                  <td>5</td>
+                  <td>Permission và side effect.</td>
+                  <td>Approval gate cho write tool.</td>
+                </tr>
+                <tr>
+                  <td>6</td>
+                  <td>Context assembler.</td>
+                  <td>Trim/summarize theo budget.</td>
+                </tr>
+                <tr>
+                  <td>7</td>
+                  <td>Memory store.</td>
+                  <td>SQLite hoặc in-memory store có search.</td>
+                </tr>
+                <tr>
+                  <td>8</td>
+                  <td>Structured output và guardrails.</td>
+                  <td><code>FinalAnswer</code> validation.</td>
+                </tr>
+                <tr>
+                  <td>9</td>
+                  <td>Recovery và retry policy.</td>
+                  <td>Failure taxonomy trong trace.</td>
+                </tr>
+                <tr>
+                  <td>10</td>
+                  <td>Tracing JSONL/OpenTelemetry.</td>
+                  <td>Replay được một run lỗi.</td>
+                </tr>
+                <tr>
+                  <td>11</td>
+                  <td>Eval dataset và pytest regression.</td>
+                  <td>20-30 eval cases.</td>
+                </tr>
+                <tr>
+                  <td>12</td>
+                  <td>Framework mapping.</td>
+                  <td>LangGraph sketch hoặc OpenAI Agents SDK variant.</td>
+                </tr>
+                <tr>
+                  <td>13</td>
+                  <td>FastAPI production wrapper.</td>
+                  <td><code>/agent/run</code> endpoint.</td>
+                </tr>
+                <tr>
+                  <td>14</td>
+                  <td>Outer loop improvement.</td>
+                  <td>Candidate comparison report và release checklist.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="exercise-checklist">Exercise checklist</h2>
+          <ul>
+            <li><input type="checkbox" disabled /> Vẽ sơ đồ model, prompt, tools, memory, guardrails, tracing và evals.</li>
+            <li><input type="checkbox" disabled /> Tạo project Python theo layout khóa học.</li>
+            <li><input type="checkbox" disabled /> Viết Pydantic schema cho message, tool call, tool result và final answer.</li>
+            <li><input type="checkbox" disabled /> Viết fake model và test agent loop không gọi API thật.</li>
+            <li><input type="checkbox" disabled /> Tạo tool registry có input validation và duplicate-name check.</li>
+            <li><input type="checkbox" disabled /> Thêm budget cho turn, tool call và context chars.</li>
+            <li><input type="checkbox" disabled /> Thêm guardrail chặn secret và write action thiếu approval.</li>
+            <li><input type="checkbox" disabled /> Ghi trace JSONL cho model/tool/guardrail/eval events.</li>
+            <li><input type="checkbox" disabled /> Tạo eval dataset tối thiểu 30 case và chạy bằng pytest.</li>
+            <li><input type="checkbox" disabled /> Đóng gói FastAPI endpoint và thêm health check.</li>
+            <li><input type="checkbox" disabled /> So sánh ít nhất 3 candidate prompt/config bằng outer loop report.</li>
+          </ul>
+
+          <h2 id="references">Nguồn tham khảo</h2>
+          <ul>
+            <li><a href="https://arxiv.org/abs/2603.28052">Meta-Harness: End-to-End Optimization of Model Harnesses</a></li>
+            <li><a href="https://arxiv.org/abs/2605.27922">Harness-Bench: Measuring Harness Effects across Models in Realistic Agent Workflows</a></li>
+            <li><a href="https://arxiv.org/abs/2604.08224">Externalization in LLM Agents: Memory, Skills, Protocols and Harness Engineering</a></li>
+            <li><a href="https://docs.langchain.com/oss/python/langchain/agents">LangChain Agents documentation</a></li>
+            <li><a href="https://docs.langchain.com/oss/python/langgraph/overview">LangGraph overview</a></li>
+            <li><a href="https://docs.langchain.com/oss/python/langgraph/persistence">LangGraph persistence</a></li>
+            <li><a href="https://openai.github.io/openai-agents-python/">OpenAI Agents SDK</a></li>
+            <li><a href="https://platform.openai.com/docs/guides/function-calling">OpenAI function calling guide</a></li>
+            <li><a href="https://platform.openai.com/docs/guides/structured-outputs">OpenAI structured outputs guide</a></li>
+            <li><a href="https://platform.openai.com/docs/guides/evals">OpenAI evals guide</a></li>
+            <li><a href="https://pydantic.dev/docs/ai/overview/">Pydantic AI documentation</a></li>
+          </ul>
+        </article>
+
+        <aside class="toc" id="toc">
+          <h4 class="toc__title">Mục lục</h4>
+          <ul class="toc__list"></ul>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p>© 2026 <strong>tuanta</strong> · Được xây dựng với HTML thuần</p>
+      <div class="footer__links">
+        <a href="../../index.html">Trang chủ</a>
+        <a href="../../index.html#posts">Bài viết</a>
+        <a href="../../cv.html">CV</a>
+      </div>
+    </div>
+  </footer>
+
+  <button class="back-to-top" id="backToTop" aria-label="Lên đầu trang">↑</button>
+
+  <script>
+    (function () {
+      const html = document.documentElement;
+      const themeToggle = document.getElementById('themeToggle');
+      const themeIcon = themeToggle.querySelector('.theme-toggle__icon');
+      const savedTheme = localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+      function applyTheme(theme) {
+        html.setAttribute('data-theme', theme);
+        themeIcon.textContent = theme === 'dark' ? '☼' : '☾';
+      }
+
+      applyTheme(savedTheme);
+      themeToggle.addEventListener('click', () => {
+        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+        localStorage.setItem('theme', next);
+      });
+
+      const hamburger = document.getElementById('hamburger');
+      const nav = document.getElementById('nav');
+      hamburger.addEventListener('click', () => {
+        const open = nav.classList.toggle('open');
+        hamburger.classList.toggle('open', open);
+      });
+      nav.querySelectorAll('.nav__link').forEach(link => {
+        link.addEventListener('click', () => {
+          nav.classList.remove('open');
+          hamburger.classList.remove('open');
+        });
+      });
+    })();
+
+    (function () {
+      const progressBar = document.getElementById('progressBar');
+      const backToTop = document.getElementById('backToTop');
+      const tocList = document.querySelector('.toc__list');
+      const headings = Array.from(document.querySelectorAll('.course-body h2[id], .course-body h3[id]'));
+
+      headings.forEach(heading => {
+        const item = document.createElement('li');
+        const link = document.createElement('a');
+        if (heading.tagName === 'H3') item.className = 'toc-h3';
+        link.href = '#' + heading.id;
+        link.textContent = heading.textContent;
+        item.appendChild(link);
+        tocList.appendChild(item);
+      });
+
+      const tocLinks = document.querySelectorAll('.toc__list a');
+
+      function updateProgress() {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        progressBar.style.width = pct + '%';
+        backToTop.classList.toggle('visible', scrollTop > 400);
+      }
+
+      function updateToc() {
+        const scrollPos = window.scrollY + 100;
+        let current = headings[0]?.id || '';
+        for (const heading of headings) {
+          if (heading.offsetTop <= scrollPos) current = heading.id;
+        }
+        tocLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+        });
+      }
+
+      window.addEventListener('scroll', () => {
+        updateProgress();
+        updateToc();
+      }, { passive: true });
+
+      backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      updateProgress();
+      updateToc();
+    })();
+  </script>
+</body>
+</html>

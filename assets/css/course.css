@@ -49,6 +49,26 @@ body.course-kafka {
   --course-violet-rgb:    251, 146, 60;
 }
 
+body.course-outer-harness {
+  --course-accent:        #be123c;   /* rose-700 */
+  --course-accent-rgb:    190, 18, 60;
+  --course-accent-light:  #ffe4e6;   /* rose-100 */
+  --course-accent-soft:   #fff1f2;   /* rose-50 */
+  --course-accent-hover:  #9f1239;   /* rose-800 */
+  --course-violet:        #0891b2;   /* cyan-600 */
+  --course-violet-rgb:    8, 145, 178;
+}
+
+[data-theme="dark"] body.course-outer-harness {
+  --course-accent:        #fb7185;   /* rose-400 */
+  --course-accent-rgb:    251, 113, 133;
+  --course-accent-light:  #4c0519;   /* rose-950 */
+  --course-accent-soft:   #2b0a13;
+  --course-accent-hover:  #fda4af;   /* rose-300 */
+  --course-violet:        #22d3ee;   /* cyan-400 */
+  --course-violet-rgb:    34, 211, 238;
+}
+
 /* Override site accent on course pages */
 .course-hero,
 .course-content {

@@ -437,6 +437,13 @@ img.logo__icon {
   background: linear-gradient(135deg, #0f766e, #f97316);
   box-shadow: 0 8px 24px rgba(15, 118, 110, .22);
 }
+.course-card--outer-harness .course-card__icon {
+  background: linear-gradient(135deg, #be123c, #0891b2);
+  box-shadow: 0 8px 24px rgba(190, 18, 60, .22);
+  color: #fff;
+  font-size: 1.65rem;
+  font-weight: 800;
+}
 .course-card__content { flex: 1; }
 .course-card__title {
   font-size: 1.25rem;
