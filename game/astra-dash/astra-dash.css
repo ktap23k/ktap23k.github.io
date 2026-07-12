@@ -34,6 +34,7 @@ body {
   width: 100vw;
   height: 100dvh;
   background: #08111f;
+  contain: strict;
 }
 
 .nav-pill,
@@ -57,12 +58,11 @@ body {
   padding: 0 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(8, 14, 26, 0.64);
+  background: rgba(8, 14, 26, 0.88);
   color: var(--ink);
   text-decoration: none;
   font-weight: 800;
   letter-spacing: 0;
-  backdrop-filter: blur(16px);
   box-shadow: var(--shadow);
 }
 
@@ -73,12 +73,11 @@ body {
   height: 44px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(8, 14, 26, 0.7);
+  background: rgba(8, 14, 26, 0.9);
   color: var(--ink);
   font-size: 1.05rem;
   font-weight: 800;
   cursor: pointer;
-  backdrop-filter: blur(16px);
 }
 
 .icon-btn.is-muted {
@@ -115,8 +114,7 @@ body {
   padding: 8px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(8, 14, 26, 0.58);
-  backdrop-filter: blur(18px);
+  background: rgba(8, 14, 26, 0.88);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
 }
 
@@ -217,18 +215,16 @@ body {
   background:
     linear-gradient(120deg, rgba(7, 16, 29, 0.78), rgba(7, 16, 29, 0.36)),
     linear-gradient(180deg, rgba(7, 16, 29, 0.16), rgba(7, 16, 29, 0.82));
-  backdrop-filter: blur(8px);
 }
 
 .hero-panel,
 .modal-panel {
-  width: min(460px, calc(100vw - 40px));
+  width: min(460px, calc(100vw - 48px));
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--panel);
+  background: rgba(10, 16, 29, 0.94);
   box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   animation: panelIn 0.46s cubic-bezier(0.2, 0.9, 0.2, 1) both;
-  backdrop-filter: blur(22px);
 }
 
 .hero-panel {
@@ -325,6 +321,14 @@ h2 {
   transform: translateY(-1px);
 }
 
+.primary-btn:active,
+.ghost-btn:active,
+.icon-btn:active,
+.nav-pill:active,
+.touch-btn:active {
+  transform: translateY(1px) scale(0.97);
+}
+
 .ghost-btn {
   margin-top: 10px;
   border: 1px solid var(--line);
@@ -389,12 +393,11 @@ h2 {
   height: 56px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(8, 14, 26, 0.62);
+  background: rgba(8, 14, 26, 0.88);
   color: var(--ink);
   font-size: 1.35rem;
   font-weight: 900;
   pointer-events: auto;
-  backdrop-filter: blur(16px);
 }
 
 .touch-btn--jump {

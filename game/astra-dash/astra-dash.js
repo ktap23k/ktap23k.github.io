@@ -1,6 +1,6 @@
 (function() {
   const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
   const storageKey = 'astra_dash_highscore';
 
   const ui = {
@@ -35,7 +35,10 @@
     w: 0,
     h: 0,
     dpr: 1,
-    ground: 0
+    ground: 0,
+    fx: 1,
+    stars: [],
+    paint: {}
   };
 
   const game = {
@@ -61,8 +64,8 @@
   const player = {
     x: 0,
     y: 0,
-    w: 46,
-    h: 82,
+    w: 52,
+    h: 104,
     vy: 0,
     hearts: 3,
     energy: 42,
@@ -75,6 +78,10 @@
   };
 
   let displayedHearts = -1;
+  const displayedHud = { score: -1, combo: -1, energy: -1 };
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const modestDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+    || (navigator.deviceMemory && navigator.deviceMemory <= 4);
 
   const audio = {
     ctx: null,
@@ -199,7 +206,9 @@
   }
 
   function resize() {
-    view.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    view.fx = prefersReducedMotion ? 0.55 : modestDevice || coarsePointer ? 0.72 : 1;
+    view.dpr = Math.min(window.devicePixelRatio || 1, view.fx < 1 ? 1.35 : 1.75);
     view.w = window.innerWidth;
     view.h = window.innerHeight;
     view.ground = Math.max(300, view.h * 0.76);
@@ -208,6 +217,24 @@
     canvas.style.width = view.w + 'px';
     canvas.style.height = view.h + 'px';
     ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
+
+    const sky = ctx.createLinearGradient(0, 0, 0, view.h);
+    sky.addColorStop(0, '#09152e');
+    sky.addColorStop(0.46, '#172d4a');
+    sky.addColorStop(0.76, '#253a4c');
+    sky.addColorStop(1, '#101827');
+    const ground = ctx.createLinearGradient(0, view.ground - 22, 0, view.h);
+    ground.addColorStop(0, '#315346');
+    ground.addColorStop(0.24, '#203830');
+    ground.addColorStop(1, '#0d1725');
+    view.paint = { sky, ground };
+    const starCount = Math.round(Math.min(72, Math.max(34, view.w / 18)) * view.fx);
+    view.stars = Array.from({ length: starCount }, (_, i) => ({
+      x: (i * 173) % (view.w + 180),
+      y: 28 + ((i * 47) % Math.max(160, view.ground - 150)),
+      r: 0.65 + (i % 4) * 0.32,
+      phase: i * 0.71
+    }));
 
     if (game.state === 'start') {
       player.x = view.w * 0.28;
@@ -240,6 +267,10 @@
     game.crystals = [];
     game.powers = [];
     game.particles = [];
+    displayedHud.score = -1;
+    displayedHud.combo = -1;
+    displayedHud.energy = -1;
+    displayedHearts = -1;
 
     player.x = Math.max(118, view.w * 0.22);
     player.y = view.ground;
@@ -289,12 +320,23 @@
   }
 
   function updateHUD() {
-    ui.score.textContent = Math.floor(game.score);
-    ui.combo.textContent = 'x' + game.combo;
-    ui.hearts.textContent = player.hearts;
-    ui.energy.style.width = Math.round(player.energy) + '%';
+    const score = Math.floor(game.score);
+    const energy = Math.round(player.energy);
+    if (displayedHud.score !== score) {
+      displayedHud.score = score;
+      ui.score.textContent = score;
+    }
+    if (displayedHud.combo !== game.combo) {
+      displayedHud.combo = game.combo;
+      ui.combo.textContent = 'x' + game.combo;
+    }
+    if (displayedHud.energy !== energy) {
+      displayedHud.energy = energy;
+      ui.energy.style.width = energy + '%';
+    }
     if (displayedHearts === player.hearts) return;
     displayedHearts = player.hearts;
+    ui.hearts.textContent = player.hearts;
     ui.heartIcons.innerHTML = '';
     for (let i = 0; i < 5; i++) {
       const heart = document.createElement('span');
@@ -315,8 +357,9 @@
     const tall = Math.random() > 0.55;
     const h = tall ? 84 + Math.random() * 30 : 54 + Math.random() * 22;
     const w = tall ? 42 : 68;
+    const lastCrystalX = game.crystals.reduce((last, c) => Math.max(last, c.x), view.w + 10);
     game.obstacles.push({
-      x: view.w + 80,
+      x: Math.max(view.w + 80, lastCrystalX + 96),
       y: view.ground - h,
       w,
       h,
@@ -327,17 +370,26 @@
   }
 
   function spawnCrystalGroup() {
-    const baseX = view.w + 90;
-    const arc = Math.random() > 0.5;
-    const count = arc ? 6 : 5;
+    const lastObstacle = game.obstacles.reduce((latest, obstacle) => {
+      if (obstacle.x > view.w - 40 && (!latest || obstacle.x > latest.x)) return obstacle;
+      return latest;
+    }, null);
+    const followsObstacle = lastObstacle && lastObstacle.x < view.w + 330 && Math.random() > 0.42;
+    const baseX = followsObstacle
+      ? lastObstacle.x - 30
+      : Math.max(view.w + 90, game.obstacles.reduce((x, o) => Math.max(x, o.x + o.w + 82), view.w + 90));
+    const arc = followsObstacle || Math.random() > 0.46;
+    const count = arc ? 7 : 6;
     for (let i = 0; i < count; i++) {
+      const progress = i / (count - 1);
+      const obstacleClearance = followsObstacle ? lastObstacle.h + 36 : 0;
       const y = arc
-        ? view.ground - 142 - Math.sin((i / (count - 1)) * Math.PI) * 88
-        : view.ground - 120 - Math.random() * 34;
+        ? view.ground - Math.max(82 + Math.sin(progress * Math.PI) * 96, obstacleClearance)
+        : view.ground - 88 - Math.sin(progress * Math.PI * 2) * 18;
       game.crystals.push({
-        x: baseX + i * 52,
+        x: baseX + i * 48,
         y,
-        r: 13,
+        r: 12,
         phase: Math.random() * Math.PI * 2
       });
     }
@@ -346,14 +398,16 @@
   function spawnPower() {
     game.powers.push({
       x: view.w + 130,
-      y: view.ground - 178 - Math.random() * 74,
+      y: view.ground - 112 - Math.random() * 48,
       r: 18,
       phase: Math.random() * Math.PI * 2
     });
   }
 
   function addParticles(x, y, color, count, spread) {
-    for (let i = 0; i < count; i++) {
+    const particleLimit = Math.round(190 * view.fx);
+    const amount = Math.min(Math.round(count * view.fx), particleLimit - game.particles.length);
+    for (let i = 0; i < amount; i++) {
       const a = Math.random() * Math.PI * 2;
       const s = (50 + Math.random() * 230) * spread;
       game.particles.push({
@@ -436,7 +490,7 @@
     game.score += dt * (8 + game.combo * 1.4);
     game.comboClock = Math.max(0, game.comboClock - dt);
     if (game.comboClock <= 0) game.combo = Math.max(1, game.combo - 1);
-    game.shake = Math.max(0, game.shake - dt * 18);
+    game.shake = Math.max(0, game.shake - dt * 30);
 
     game.spawnObstacle -= dt;
     game.spawnCrystal -= dt;
@@ -510,7 +564,7 @@
         player.hurt = 0.38;
         player.energy = Math.min(100, player.energy + 18);
         game.combo = 1;
-        game.shake = 10;
+        game.shake = 7;
         playSfx('hit');
         addParticles(player.x, player.y - 46, '#ff5b93', 34, 0.8);
         if (player.hearts <= 0) {
@@ -550,23 +604,18 @@
   }
 
   function drawBackground(t) {
-    const sky = ctx.createLinearGradient(0, 0, 0, view.h);
-    sky.addColorStop(0, '#101a36');
-    sky.addColorStop(0.38, '#1b3150');
-    sky.addColorStop(0.72, '#29364a');
-    sky.addColorStop(1, '#111827');
-    ctx.fillStyle = sky;
+    ctx.fillStyle = view.paint.sky;
     ctx.fillRect(0, 0, view.w, view.h);
 
     ctx.save();
     ctx.globalAlpha = 0.65;
-    for (let i = 0; i < 74; i++) {
-      const x = (i * 173 - (game.distance * 0.06)) % (view.w + 180) - 90;
-      const y = 30 + ((i * 47) % Math.max(180, view.ground - 160));
-      const r = 0.7 + (i % 4) * 0.35;
+    for (let i = 0; i < view.stars.length; i++) {
+      const star = view.stars[i];
+      const x = (star.x - game.distance * 0.06 + view.w + 180) % (view.w + 180) - 90;
+      const r = star.r;
       ctx.fillStyle = i % 5 === 0 ? '#ffd166' : '#dff7ff';
       ctx.beginPath();
-      ctx.arc(x, y, r * (1 + Math.sin(t * 2 + i) * 0.25), 0, Math.PI * 2);
+      ctx.arc(x, star.y, r * (1 + Math.sin(t * 2 + star.phase) * 0.2), 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
@@ -594,11 +643,7 @@
   }
 
   function drawGardenRail(t) {
-    const groundGradient = ctx.createLinearGradient(0, view.ground - 22, 0, view.h);
-    groundGradient.addColorStop(0, '#35513d');
-    groundGradient.addColorStop(0.24, '#22352e');
-    groundGradient.addColorStop(1, '#111827');
-    ctx.fillStyle = groundGradient;
+    ctx.fillStyle = view.paint.ground;
     ctx.fillRect(0, view.ground, view.w, view.h - view.ground);
 
     ctx.strokeStyle = 'rgba(255, 209, 102, 0.38)';
@@ -608,7 +653,8 @@
     ctx.lineTo(view.w, view.ground + 8);
     ctx.stroke();
 
-    for (let i = 0; i < 44; i++) {
+    const sproutCount = Math.round(40 * view.fx);
+    for (let i = 0; i < sproutCount; i++) {
       const x = (i * 48 - game.distance * 0.95) % (view.w + 80) - 40;
       const y = view.ground + 18 + (i % 3) * 12;
       ctx.strokeStyle = i % 2 ? '#66f2a3' : '#45d6ff';
@@ -622,6 +668,20 @@
     }
   }
 
+  function drawLimb(points, innerColor, outerWidth, innerWidth) {
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#101a30';
+    ctx.lineWidth = outerWidth;
+    ctx.beginPath();
+    ctx.moveTo(points[0], points[1]);
+    for (let i = 2; i < points.length; i += 2) ctx.lineTo(points[i], points[i + 1]);
+    ctx.stroke();
+    ctx.strokeStyle = innerColor;
+    ctx.lineWidth = innerWidth;
+    ctx.stroke();
+  }
+
   function drawPlayer(t) {
     const dashActive = player.dash > 0;
     const blink = player.invincible > 0 && Math.floor(t * 18) % 2 === 0;
@@ -629,181 +689,161 @@
 
     const x = player.x;
     const y = player.y;
-    const run = player.run;
-    const bob = Math.sin(run * 2) * (player.grounded ? 3.2 : 1.2);
-    const stride = Math.sin(run);
-    const counter = Math.cos(run);
-    const airTilt = player.grounded ? 0 : Math.max(-0.16, Math.min(0.18, player.vy / 3600));
-    const hurtJolt = player.hurt > 0 ? Math.sin(t * 90) * player.hurt * 8 : 0;
+    const cycle = player.run;
+    const stride = Math.sin(cycle);
+    const stepLift = Math.cos(cycle);
+    const bob = player.grounded ? -Math.abs(Math.sin(cycle * 2)) * 2.2 : 0;
+    const airTilt = player.grounded ? 0 : Math.max(-0.18, Math.min(0.16, player.vy / 3200));
+    const hurtJolt = player.hurt > 0 ? Math.sin(t * 82) * player.hurt * 7 : 0;
+    const squash = player.landPulse * 0.075;
+
+    ctx.save();
+    ctx.translate(x, y + 3);
+    ctx.fillStyle = 'rgba(2, 8, 18, 0.34)';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 34 + Math.abs(stride) * 4, 7 - squash * 20, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
     ctx.save();
     ctx.translate(x + hurtJolt, y + bob);
-    ctx.rotate((dashActive ? -0.08 : 0.02) + airTilt);
+    ctx.rotate((dashActive ? -0.12 : 0.025) + airTilt);
+    ctx.scale(1 + squash, 1 - squash);
 
     if (player.landPulse > 0) {
       ctx.save();
-      ctx.globalAlpha = player.landPulse * 0.42;
+      ctx.globalAlpha = player.landPulse * 0.34;
       ctx.strokeStyle = '#66f2a3';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.ellipse(0, 4, 42 + (1 - player.landPulse) * 34, 8 + (1 - player.landPulse) * 8, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 3, 36 + (1 - player.landPulse) * 44, 7 + (1 - player.landPulse) * 8, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
 
     if (dashActive) {
-      ctx.shadowColor = '#45d6ff';
-      ctx.shadowBlur = 28;
-      for (let i = 0; i < 4; i++) {
-        ctx.globalAlpha = 0.22 - i * 0.035;
-        ctx.fillStyle = i % 2 ? 'rgba(255, 209, 102, 0.22)' : 'rgba(69, 214, 255, 0.28)';
+      const trails = view.fx < 1 ? 2 : 3;
+      for (let i = 0; i < trails; i++) {
+        ctx.globalAlpha = 0.19 - i * 0.04;
+        ctx.fillStyle = i % 2 ? '#ffd166' : '#45d6ff';
         ctx.beginPath();
-        ctx.ellipse(-40 - i * 18, -44 + i * 2, 72 - i * 8, 24 - i * 2, -0.1, 0, Math.PI * 2);
+        ctx.moveTo(-14, -73 + i * 16);
+        ctx.lineTo(-102 - i * 21, -61 + i * 12);
+        ctx.lineTo(-22, -42 + i * 9);
+        ctx.closePath();
         ctx.fill();
       }
       ctx.globalAlpha = 1;
     }
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
-    ctx.beginPath();
-    ctx.ellipse(0, 5, 38 + Math.abs(stride) * 3, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
+    const backFootX = 6 - stride * 26;
+    const backFootY = -3 - Math.max(0, -stepLift) * 9;
+    drawLimb([4, -42, -1 - stride * 11, -24, backFootX, backFootY], '#46567d', 12, 7);
+    drawLimb([backFootX - 2, backFootY, backFootX + 12, backFootY], dashActive ? '#45d6ff' : '#9ca9c9', 10, 5);
 
-    ctx.strokeStyle = '#0e1b2e';
-    ctx.lineWidth = 9;
-    ctx.lineCap = 'round';
+    ctx.fillStyle = '#5f53d9';
     ctx.beginPath();
-    ctx.moveTo(-12, -22);
-    ctx.lineTo(-16 - stride * 7, -4);
-    ctx.moveTo(15, -22);
-    ctx.lineTo(17 + stride * 7, -4);
-    ctx.stroke();
-
-    ctx.strokeStyle = dashActive ? '#45d6ff' : '#ffd166';
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(-16 - stride * 7, -4);
-    ctx.lineTo(-32 - stride * 9, -2 + counter * 2);
-    ctx.moveTo(17 + stride * 7, -4);
-    ctx.lineTo(31 + stride * 9, -2 - counter * 2);
-    ctx.stroke();
-
-    const cape = ctx.createLinearGradient(-28, -64, -74, -12);
-    cape.addColorStop(0, '#ff5b93');
-    cape.addColorStop(0.55, '#a78bfa');
-    cape.addColorStop(1, '#2b4fd7');
-    ctx.fillStyle = cape;
-    ctx.beginPath();
-    ctx.moveTo(-16, -66);
-    ctx.quadraticCurveTo(-66 - stride * 10 - (dashActive ? 24 : 0), -44 + counter * 5, -56, -7);
-    ctx.quadraticCurveTo(-28, -14 + stride * 3, -7, -47);
+    ctx.moveTo(-15, -72);
+    ctx.quadraticCurveTo(-46 - Math.abs(stride) * 12 - (dashActive ? 24 : 0), -72 + stepLift * 5, -72, -42 + stride * 5);
+    ctx.quadraticCurveTo(-49, -45, -12, -53);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#a78bfa';
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    const body = ctx.createLinearGradient(0, -74, 0, -14);
-    body.addColorStop(0, '#f8fbff');
-    body.addColorStop(0.44, '#8ee9ff');
-    body.addColorStop(1, '#246fa5');
-    ctx.fillStyle = body;
-    ctx.shadowColor = dashActive ? '#45d6ff' : 'rgba(102, 242, 163, 0.55)';
-    ctx.shadowBlur = dashActive ? 18 : 8;
+    drawLimb([-8, -65, -23 + stride * 13, -49, -30 + stride * 22, -34], '#394a72', 11, 6);
+
+    ctx.fillStyle = '#17243d';
     ctx.beginPath();
-    ctx.roundRect(-24, -70, 48, 56, 18);
+    ctx.roundRect(-26, -72, 17, 35, 7);
     ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = player.hurt > 0 ? '#ff5b93' : 'rgba(255, 255, 255, 0.68)';
-    ctx.lineWidth = 2;
+
+    ctx.fillStyle = player.hurt > 0 ? '#ff719f' : '#ecf8f7';
+    ctx.beginPath();
+    ctx.moveTo(-15, -72);
+    ctx.quadraticCurveTo(4, -79, 19, -67);
+    ctx.lineTo(16, -37);
+    ctx.quadraticCurveTo(2, -31, -12, -40);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#101a30';
+    ctx.lineWidth = 3;
     ctx.stroke();
 
-    ctx.fillStyle = '#10233a';
+    ctx.fillStyle = '#45d6ff';
     ctx.beginPath();
-    ctx.moveTo(-16, -58);
-    ctx.lineTo(0, -23);
-    ctx.lineTo(16, -58);
+    ctx.moveTo(-10, -66);
+    ctx.lineTo(14, -62);
+    ctx.lineTo(11, -51);
+    ctx.lineTo(-11, -55);
     ctx.closePath();
     ctx.fill();
 
     ctx.fillStyle = '#ffd166';
     ctx.beginPath();
-    ctx.arc(0, -43, 6, 0, Math.PI * 2);
+    ctx.arc(6, -55, 4.5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 209, 102, 0.5)';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.arc(0, -43, 9 + Math.sin(t * 8) * 2, 0, Math.PI * 2);
-    ctx.stroke();
 
-    ctx.strokeStyle = '#f8fbff';
-    ctx.lineWidth = 7;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(-18, -58);
-    ctx.lineTo(-34 - stride * 6, -36 + counter * 2);
-    ctx.moveTo(18, -58);
-    ctx.lineTo(34 + stride * 6, -34 - counter * 2);
-    ctx.stroke();
+    const frontFootX = 8 + stride * 27;
+    const frontFootY = -3 - Math.max(0, stepLift) * 9;
+    drawLimb([8, -40, 10 + stride * 12, -23, frontFootX, frontFootY], '#26385d', 13, 8);
+    drawLimb([frontFootX - 2, frontFootY, frontFootX + 13, frontFootY], dashActive ? '#45d6ff' : '#ffd166', 11, 6);
 
+    drawLimb([13, -65, 23 - stride * 14, -49, 30 - stride * 22, -37], '#ecf8f7', 12, 7);
     ctx.fillStyle = '#ffd166';
     ctx.beginPath();
-    ctx.arc(-34 - stride * 6, -36 + counter * 2, 4, 0, Math.PI * 2);
-    ctx.arc(34 + stride * 6, -34 - counter * 2, 4, 0, Math.PI * 2);
+    ctx.arc(31 - stride * 22, -36, 4.5, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = '#ffe0c7';
+    ctx.fillStyle = '#f2b38e';
     ctx.beginPath();
-    ctx.arc(0, -86, 23, 0, Math.PI * 2);
+    ctx.arc(3, -89, 19, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = 'rgba(255, 143, 112, 0.28)';
     ctx.beginPath();
-    ctx.arc(-11, -80, 5, 0, Math.PI * 2);
-    ctx.arc(13, -80, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    const hair = ctx.createLinearGradient(-22, -112, 24, -77);
-    hair.addColorStop(0, '#27385f');
-    hair.addColorStop(0.52, '#6d5dfc');
-    hair.addColorStop(1, '#d8b4fe');
-    ctx.fillStyle = hair;
-    ctx.beginPath();
-    ctx.moveTo(-24, -91);
-    ctx.quadraticCurveTo(-18, -120, 14, -113);
-    ctx.quadraticCurveTo(33, -108, 31, -88);
-    ctx.quadraticCurveTo(24 + stride * 2, -72, 8, -77);
-    ctx.quadraticCurveTo(2, -88, -24, -91);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.beginPath();
-    ctx.moveTo(-10, -111);
-    ctx.quadraticCurveTo(-2, -104, -1, -88);
-    ctx.quadraticCurveTo(-7, -98, -17, -94);
+    ctx.moveTo(17, -92);
+    ctx.lineTo(26, -87);
+    ctx.lineTo(16, -83);
+    ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = '#122033';
+    ctx.fillStyle = '#332f67';
     ctx.beginPath();
-    ctx.roundRect(-16, -91, 32, 10, 5);
-    ctx.fill();
-    const visor = ctx.createLinearGradient(-15, -91, 15, -81);
-    visor.addColorStop(0, '#45d6ff');
-    visor.addColorStop(1, '#66f2a3');
-    ctx.fillStyle = visor;
-    ctx.beginPath();
-    ctx.roundRect(-13, -89, 26, 6, 4);
+    ctx.arc(-1, -94, 20, Math.PI * 0.95, Math.PI * 2.02);
+    ctx.quadraticCurveTo(5, -116, 20, -103);
+    ctx.quadraticCurveTo(24, -96, 18, -91);
+    ctx.quadraticCurveTo(10, -101, 1, -99);
+    ctx.closePath();
     ctx.fill();
 
-    ctx.strokeStyle = '#ff8f70';
-    ctx.lineWidth = 2;
+    ctx.fillStyle = '#a78bfa';
     ctx.beginPath();
-    ctx.arc(1, -78, 7, 0.12 * Math.PI, 0.88 * Math.PI);
+    ctx.moveTo(-14, -100);
+    ctx.quadraticCurveTo(-32 - Math.abs(stride) * 5, -98, -28, -84 + stepLift * 2);
+    ctx.quadraticCurveTo(-15, -90, -4, -99);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#112039';
+    ctx.beginPath();
+    ctx.roundRect(5, -96, 17, 9, 4.5);
+    ctx.fill();
+    ctx.fillStyle = '#66f2e0';
+    ctx.beginPath();
+    ctx.roundRect(9, -94, 12, 5, 2.5);
+    ctx.fill();
+
+    ctx.strokeStyle = '#8b4f54';
+    ctx.lineWidth = 1.7;
+    ctx.beginPath();
+    ctx.arc(16, -82, 5, 0.18 * Math.PI, 0.75 * Math.PI);
     ctx.stroke();
 
     if (player.hurt > 0) {
-      ctx.globalAlpha = Math.min(0.5, player.hurt * 1.5);
+      ctx.globalAlpha = Math.min(0.42, player.hurt * 1.4);
       ctx.fillStyle = '#ff5b93';
       ctx.beginPath();
-      ctx.roundRect(-26, -72, 52, 60, 18);
+      ctx.roundRect(-29, -111, 59, 109, 23);
       ctx.fill();
       ctx.globalAlpha = 1;
     }
@@ -814,8 +854,6 @@
   function drawObstacle(o) {
     ctx.save();
     ctx.translate(o.x + o.w / 2, o.y + o.h / 2);
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = '#ff5b93';
     if (o.type === 'spire') {
       const grad = ctx.createLinearGradient(0, -o.h / 2, 0, o.h / 2);
       grad.addColorStop(0, '#ff5b93');
@@ -852,8 +890,16 @@
     ctx.save();
     ctx.translate(c.x, c.y + bob);
     ctx.rotate(c.phase * 0.4);
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = '#ffd166';
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath();
+    ctx.moveTo(0, -22);
+    ctx.lineTo(18, 0);
+    ctx.lineTo(0, 24);
+    ctx.lineTo(-18, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
     ctx.fillStyle = '#ffd166';
     ctx.beginPath();
     ctx.moveTo(0, -16);
@@ -876,8 +922,12 @@
     ctx.save();
     ctx.translate(p.x, p.y + Math.sin(p.phase) * 6);
     ctx.rotate(p.phase * 0.32);
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = '#66f2a3';
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = '#66f2a3';
+    ctx.beginPath();
+    ctx.roundRect(-22, -22, 44, 44, 11);
+    ctx.fill();
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = '#66f2a3';
     ctx.lineWidth = 4;
     ctx.beginPath();
@@ -893,9 +943,7 @@
     for (const p of game.particles) {
       ctx.globalAlpha = Math.max(0, p.life / p.max);
       ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillRect(p.x - p.size * 0.5, p.y - p.size * 0.5, p.size, p.size);
     }
     ctx.globalAlpha = 1;
   }
@@ -903,9 +951,7 @@
   function render(t) {
     ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
     ctx.clearRect(0, 0, view.w, view.h);
-    if (game.shake > 0) {
-      ctx.translate((Math.random() - 0.5) * game.shake, (Math.random() - 0.5) * game.shake);
-    }
+    if (game.shake > 0) ctx.translate(Math.sin(t * 94) * game.shake, Math.cos(t * 81) * game.shake * 0.55);
     drawBackground(t);
     game.crystals.forEach(drawCrystal);
     game.powers.forEach(drawPower);
@@ -915,13 +961,19 @@
   }
 
   function loop(now) {
-    const dt = Math.min(0.033, (now - game.last) / 1000 || 0);
+    const dt = Math.min(0.05, (now - game.last) / 1000 || 0);
     game.last = now;
 
     if (game.state === 'playing') {
-      updatePlayer(dt);
-      updateWorld(dt);
-      checkCollisions();
+      let remaining = dt;
+      const maxStep = 1 / 120;
+      while (remaining > 0 && game.state === 'playing') {
+        const step = Math.min(maxStep, remaining);
+        updatePlayer(step);
+        updateWorld(step);
+        checkCollisions();
+        remaining -= step;
+      }
       updateHUD();
       updateMusic();
     } else if (game.state === 'start') {
