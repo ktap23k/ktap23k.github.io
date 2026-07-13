@@ -42,7 +42,7 @@
     <div class="hero-panel">
       <div class="hero-badge">New Run</div>
       <h1>Astra Bloom Dash</h1>
-      <p>Rượt qua thành phố pha lê, gom mảnh sao và giữ chuỗi combo sáng lâu nhất.</p>
+      <p>Gom mảnh sao theo đường chạy: nhảy qua gai bằng ↑/W, cúi dưới drone bằng ↓/S và lướt bằng Shift/K.</p>
       <button id="startBtn" class="primary-btn">Bắt đầu</button>
       <div class="best-line">Kỷ lục <span id="bestStart">0</span></div>
     </div>
@@ -74,11 +74,12 @@
     </div>
   </section>
 
-  <div class="touch-pad" aria-hidden="true">
-    <button class="touch-btn" data-action="left">←</button>
-    <button class="touch-btn touch-btn--jump" data-action="jump">↑</button>
-    <button class="touch-btn" data-action="right">→</button>
-    <button class="touch-btn touch-btn--dash" data-action="dash">✦</button>
+  <div class="touch-pad" role="group" aria-label="Điều khiển cảm ứng">
+    <button class="touch-btn" data-action="left" aria-label="Di chuyển sang trái">←</button>
+    <button class="touch-btn" data-action="right" aria-label="Di chuyển sang phải">→</button>
+    <button class="touch-btn touch-btn--duck" data-action="down" aria-label="Cúi xuống">↓</button>
+    <button class="touch-btn touch-btn--jump" data-action="jump" aria-label="Nhảy">↑</button>
+    <button class="touch-btn touch-btn--dash" data-action="dash" aria-label="Lướt">✦</button>
   </div>
 
   <script src="astra-dash.js"></script>

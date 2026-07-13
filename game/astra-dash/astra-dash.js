@@ -27,6 +27,7 @@
   const input = {
     left: false,
     right: false,
+    down: false,
     jumpQueued: false,
     dashQueued: false
   };
@@ -53,7 +54,6 @@
     comboClock: 0,
     shake: 0,
     spawnObstacle: 0,
-    spawnCrystal: 0,
     spawnPower: 9,
     obstacles: [],
     crystals: [],
@@ -64,8 +64,8 @@
   const player = {
     x: 0,
     y: 0,
-    w: 52,
-    h: 104,
+    w: 58,
+    h: 92,
     vy: 0,
     hearts: 3,
     energy: 42,
@@ -74,7 +74,17 @@
     run: 0,
     hurt: 0,
     landPulse: 0,
+    jumpBuffer: 0,
+    coyote: 0.08,
+    crouching: false,
     grounded: true
+  };
+
+  const mechanics = {
+    gravity: 2200,
+    jumpVelocity: 820,
+    standingHeight: 88,
+    crouchingHeight: 54
   };
 
   let displayedHearts = -1;
@@ -206,6 +216,7 @@
   }
 
   function resize() {
+    const previousGround = view.ground;
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
     view.fx = prefersReducedMotion ? 0.55 : modestDevice || coarsePointer ? 0.72 : 1;
     view.dpr = Math.min(window.devicePixelRatio || 1, view.fx < 1 ? 1.35 : 1.75);
@@ -236,7 +247,15 @@
       phase: i * 0.71
     }));
 
-    if (game.state === 'start') {
+    if (previousGround && game.state !== 'start') {
+      const groundShift = view.ground - previousGround;
+      player.y += groundShift;
+      if (player.grounded) player.y = view.ground;
+      game.obstacles.forEach((obstacle) => { obstacle.y += groundShift; });
+      game.crystals.forEach((crystal) => { crystal.y += groundShift; });
+      game.powers.forEach((power) => { power.y += groundShift; });
+      game.particles.forEach((particle) => { particle.y += groundShift; });
+    } else if (game.state === 'start') {
       player.x = view.w * 0.28;
       player.y = view.ground;
     }
@@ -261,7 +280,6 @@
     game.comboClock = 0;
     game.shake = 0;
     game.spawnObstacle = 0.7;
-    game.spawnCrystal = 0.25;
     game.spawnPower = 8;
     game.obstacles = [];
     game.crystals = [];
@@ -282,7 +300,15 @@
     player.run = 0;
     player.hurt = 0;
     player.landPulse = 0;
+    player.jumpBuffer = 0;
+    player.coyote = 0.08;
+    player.crouching = false;
     player.grounded = true;
+    input.left = false;
+    input.right = false;
+    input.down = false;
+    input.jumpQueued = false;
+    input.dashQueued = false;
     if (audio.ctx) {
       audio.note = 0;
       audio.nextNoteTime = audio.ctx.currentTime + 0.04;
@@ -353,52 +379,73 @@
     input.dashQueued = true;
   }
 
-  function spawnObstacle() {
-    const tall = Math.random() > 0.55;
-    const h = tall ? 84 + Math.random() * 30 : 54 + Math.random() * 22;
-    const w = tall ? 42 : 68;
-    const lastCrystalX = game.crystals.reduce((last, c) => Math.max(last, c.x), view.w + 10);
-    game.obstacles.push({
-      x: Math.max(view.w + 80, lastCrystalX + 96),
-      y: view.ground - h,
-      w,
-      h,
-      type: tall ? 'spire' : 'sentinel',
-      hit: false,
-      spin: Math.random() * Math.PI * 2
-    });
-  }
-
-  function spawnCrystalGroup() {
-    const lastObstacle = game.obstacles.reduce((latest, obstacle) => {
-      if (obstacle.x > view.w - 40 && (!latest || obstacle.x > latest.x)) return obstacle;
-      return latest;
-    }, null);
-    const followsObstacle = lastObstacle && lastObstacle.x < view.w + 330 && Math.random() > 0.42;
-    const baseX = followsObstacle
-      ? lastObstacle.x - 30
-      : Math.max(view.w + 90, game.obstacles.reduce((x, o) => Math.max(x, o.x + o.w + 82), view.w + 90));
-    const arc = followsObstacle || Math.random() > 0.46;
-    const count = arc ? 7 : 6;
+  function addCrystalTrail(startX, pattern) {
+    const count = pattern === 'jump' ? 8 : 6;
+    const spacing = pattern === 'jump'
+      ? game.speed * 0.095
+      : pattern === 'duck' ? game.speed * 0.08 : 40;
     for (let i = 0; i < count; i++) {
       const progress = i / (count - 1);
-      const obstacleClearance = followsObstacle ? lastObstacle.h + 36 : 0;
-      const y = arc
-        ? view.ground - Math.max(82 + Math.sin(progress * Math.PI) * 96, obstacleClearance)
-        : view.ground - 88 - Math.sin(progress * Math.PI * 2) * 18;
+      let height = 60;
+      if (pattern === 'jump') {
+        const flightTime = i * 0.095;
+        height = 46 + mechanics.jumpVelocity * flightTime - mechanics.gravity * flightTime * flightTime * 0.5;
+      }
+      if (pattern === 'duck') height = 32 + Math.sin(progress * Math.PI) * 4;
+      if (pattern === 'run') height = 58 + Math.sin(progress * Math.PI * 2) * 10;
       game.crystals.push({
-        x: baseX + i * 48,
-        y,
+        x: startX + i * spacing,
+        y: view.ground - height,
         r: 12,
         phase: Math.random() * Math.PI * 2
       });
     }
   }
 
+  function spawnEncounter() {
+    const obstacleX = view.w + 130;
+    const roll = Math.random();
+    const canSpawnDrone = game.time > 4.5;
+
+    if (canSpawnDrone && roll > 0.68) {
+      const h = 52;
+      game.obstacles.push({
+        x: obstacleX,
+        y: view.ground - 128,
+        w: 88,
+        h,
+        type: 'drone',
+        hint: game.time < 12,
+        spin: Math.random() * Math.PI * 2
+      });
+      addCrystalTrail(obstacleX - game.speed * 0.2, 'duck');
+      return;
+    }
+
+    if (roll < 0.18) {
+      addCrystalTrail(obstacleX - 70, 'run');
+      return;
+    }
+
+    const tall = Math.random() > 0.58;
+    const h = tall ? 76 + Math.random() * 8 : 58 + Math.random() * 10;
+    game.obstacles.push({
+      x: obstacleX,
+      y: view.ground - h,
+      w: tall ? 42 : 56,
+      h,
+      type: tall ? 'spire' : 'sentinel',
+      hint: game.time < 12,
+      spin: Math.random() * Math.PI * 2
+    });
+    addCrystalTrail(obstacleX - game.speed * 0.22, 'jump');
+  }
+
   function spawnPower() {
+    const lastObstacleX = game.obstacles.reduce((x, o) => Math.max(x, o.x + o.w), view.w + 40);
     game.powers.push({
-      x: view.w + 130,
-      y: view.ground - 112 - Math.random() * 48,
+      x: Math.max(view.w + 130, lastObstacleX + 120),
+      y: view.ground - 82 - Math.random() * 36,
       r: 18,
       phase: Math.random() * Math.PI * 2
     });
@@ -428,11 +475,12 @@
   }
 
   function playerBox() {
+    const height = player.crouching ? mechanics.crouchingHeight : mechanics.standingHeight;
     return {
       x: player.x - player.w * 0.38,
-      y: player.y - player.h,
-      w: player.w * 0.76,
-      h: player.h * 0.9
+      y: player.y - height,
+      w: player.w * 0.82,
+      h: height - 7
     };
   }
 
@@ -441,12 +489,18 @@
     const dashActive = player.dash > 0;
     const moveSpeed = dashActive ? 520 : 310;
     const wasGrounded = player.grounded;
+    if (input.jumpQueued) player.jumpBuffer = 0.12;
+    input.jumpQueued = false;
+    player.coyote = player.grounded ? 0.08 : Math.max(0, player.coyote - dt);
     player.x += move * moveSpeed * dt;
     player.x = Math.max(86, Math.min(view.w * 0.48, player.x));
+    player.crouching = input.down && player.grounded && !dashActive;
 
-    if (input.jumpQueued && player.grounded) {
-      player.vy = -880;
+    if (player.jumpBuffer > 0 && player.coyote > 0 && !player.crouching) {
+      player.vy = -mechanics.jumpVelocity;
       player.grounded = false;
+      player.coyote = 0;
+      player.jumpBuffer = 0;
       playSfx('jump');
       addParticles(player.x - 10, player.y - 8, '#ffd166', 12, 0.55);
     }
@@ -459,15 +513,16 @@
       addParticles(player.x - 18, player.y - 42, '#45d6ff', 24, 0.7);
     }
 
-    input.jumpQueued = false;
     input.dashQueued = false;
 
-    player.vy += 2350 * dt;
+    player.vy += mechanics.gravity * dt;
+    if (input.down && !player.grounded && player.vy > 0) player.vy += mechanics.gravity * 0.8 * dt;
     player.y += player.vy * dt;
     if (player.y >= view.ground) {
       player.y = view.ground;
       player.vy = 0;
       player.grounded = true;
+      player.crouching = input.down;
       if (!wasGrounded) {
         player.landPulse = 1;
         playSfx('land');
@@ -479,6 +534,7 @@
     player.invincible = Math.max(0, player.invincible - dt);
     player.hurt = Math.max(0, player.hurt - dt);
     player.landPulse = Math.max(0, player.landPulse - dt * 3.8);
+    player.jumpBuffer = Math.max(0, player.jumpBuffer - dt);
     player.energy = Math.min(100, player.energy + (dashActive ? 3 : 7) * dt);
     player.run += dt * (dashActive ? 17 : 11);
   }
@@ -487,22 +543,18 @@
     game.time += dt;
     game.speed = Math.min(760, 430 + game.time * 8);
     game.distance += game.speed * dt;
-    game.score += dt * (8 + game.combo * 1.4);
+    game.score += dt * 8;
     game.comboClock = Math.max(0, game.comboClock - dt);
-    if (game.comboClock <= 0) game.combo = Math.max(1, game.combo - 1);
+    if (game.comboClock <= 0 && game.combo > 1) game.combo = 1;
     game.shake = Math.max(0, game.shake - dt * 30);
 
     game.spawnObstacle -= dt;
-    game.spawnCrystal -= dt;
     game.spawnPower -= dt;
 
     if (game.spawnObstacle <= 0) {
-      spawnObstacle();
-      game.spawnObstacle = Math.max(0.72, 1.45 - game.time * 0.012) + Math.random() * 0.42;
-    }
-    if (game.spawnCrystal <= 0) {
-      spawnCrystalGroup();
-      game.spawnCrystal = 1.05 + Math.random() * 0.72;
+      spawnEncounter();
+      const encounterGap = 640 + Math.random() * 150;
+      game.spawnObstacle = encounterGap / game.speed;
     }
     if (game.spawnPower <= 0) {
       spawnPower();
@@ -550,7 +602,7 @@
 
       if (dashActive) {
         o.remove = true;
-        game.score += 70 * game.combo;
+        game.score += 60 + game.combo * 8;
         game.combo = Math.min(12, game.combo + 1);
         game.comboClock = 2.3;
         playSfx('break');
@@ -575,13 +627,14 @@
     }
 
     for (const c of game.crystals) {
+      const playerCenterY = player.y - (player.crouching ? 28 : 46);
       const dx = c.x - player.x;
-      const dy = c.y - (player.y - 48);
+      const dy = c.y - playerCenterY;
       if (dx * dx + dy * dy < 42 * 42) {
         c.remove = true;
+        game.score += 20 + game.combo * 4;
         game.combo = Math.min(12, game.combo + 1);
         game.comboClock = 2.5;
-        game.score += 25 * game.combo;
         player.energy = Math.min(100, player.energy + 8);
         playSfx('collect');
         addParticles(c.x, c.y, '#ffd166', 16, 0.6);
@@ -668,20 +721,6 @@
     }
   }
 
-  function drawLimb(points, innerColor, outerWidth, innerWidth) {
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#101a30';
-    ctx.lineWidth = outerWidth;
-    ctx.beginPath();
-    ctx.moveTo(points[0], points[1]);
-    for (let i = 2; i < points.length; i += 2) ctx.lineTo(points[i], points[i + 1]);
-    ctx.stroke();
-    ctx.strokeStyle = innerColor;
-    ctx.lineWidth = innerWidth;
-    ctx.stroke();
-  }
-
   function drawPlayer(t) {
     const dashActive = player.dash > 0;
     const blink = player.invincible > 0 && Math.floor(t * 18) % 2 === 0;
@@ -690,25 +729,26 @@
     const x = player.x;
     const y = player.y;
     const cycle = player.run;
-    const stride = Math.sin(cycle);
-    const stepLift = Math.cos(cycle);
-    const bob = player.grounded ? -Math.abs(Math.sin(cycle * 2)) * 2.2 : 0;
+    const stride = Math.sin(cycle) > 0 ? 1 : -1;
+    const bob = player.grounded && !player.crouching ? -Math.abs(Math.sin(cycle * 2)) * 2 : 0;
     const airTilt = player.grounded ? 0 : Math.max(-0.18, Math.min(0.16, player.vy / 3200));
     const hurtJolt = player.hurt > 0 ? Math.sin(t * 82) * player.hurt * 7 : 0;
     const squash = player.landPulse * 0.075;
+    const dinoColor = player.hurt > 0 ? '#ff719f' : '#66e6a7';
+    const dinoLight = player.hurt > 0 ? '#ffc0d4' : '#b9f6d5';
+    const outline = '#102238';
 
     ctx.save();
     ctx.translate(x, y + 3);
     ctx.fillStyle = 'rgba(2, 8, 18, 0.34)';
     ctx.beginPath();
-    ctx.ellipse(0, 0, 34 + Math.abs(stride) * 4, 7 - squash * 20, 0, 0, Math.PI * 2);
+    ctx.ellipse(-1, 0, player.crouching ? 48 : 38, 7 - squash * 20, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
     ctx.save();
     ctx.translate(x + hurtJolt, y + bob);
-    ctx.rotate((dashActive ? -0.12 : 0.025) + airTilt);
-    ctx.scale(1 + squash, 1 - squash);
+    ctx.rotate((dashActive ? -0.1 : 0.015) + airTilt);
 
     if (player.landPulse > 0) {
       ctx.save();
@@ -727,126 +767,90 @@
         ctx.globalAlpha = 0.19 - i * 0.04;
         ctx.fillStyle = i % 2 ? '#ffd166' : '#45d6ff';
         ctx.beginPath();
-        ctx.moveTo(-14, -73 + i * 16);
-        ctx.lineTo(-102 - i * 21, -61 + i * 12);
-        ctx.lineTo(-22, -42 + i * 9);
+        ctx.moveTo(-24, -69 + i * 15);
+        ctx.lineTo(-112 - i * 20, -58 + i * 11);
+        ctx.lineTo(-30, -37 + i * 8);
         ctx.closePath();
         ctx.fill();
       }
       ctx.globalAlpha = 1;
     }
 
-    const backFootX = 6 - stride * 26;
-    const backFootY = -3 - Math.max(0, -stepLift) * 9;
-    drawLimb([4, -42, -1 - stride * 11, -24, backFootX, backFootY], '#46567d', 12, 7);
-    drawLimb([backFootX - 2, backFootY, backFootX + 12, backFootY], dashActive ? '#45d6ff' : '#9ca9c9', 10, 5);
+    ctx.scale(2.02 * (1 + squash) * (player.crouching ? 1.1 : 1), 2.02 * (1 - squash) * (player.crouching ? 0.64 : 1));
+    ctx.imageSmoothingEnabled = false;
 
-    ctx.fillStyle = '#5f53d9';
+    const pixelBlock = (px, py, w, h, color) => {
+      ctx.fillStyle = outline;
+      ctx.fillRect(px - 1, py - 1, w + 2, h + 2);
+      ctx.fillStyle = color;
+      ctx.fillRect(px, py, w, h);
+    };
+
+    const backLift = !player.grounded ? 4 : stride > 0 ? 3 : 0;
+    const frontLift = !player.grounded ? 6 : stride < 0 ? 3 : 0;
+    pixelBlock(-9, -15 - backLift, 7, 13, '#45b982');
+    pixelBlock(-11 + (stride > 0 ? -3 : 0), -4 - backLift, 12, 4, dashActive ? '#45d6ff' : dinoLight);
+    pixelBlock(4, -16 - frontLift, 7, 14, dinoColor);
+    pixelBlock(3 + (stride < 0 ? 3 : 0), -4 - frontLift, 13, 4, dashActive ? '#45d6ff' : '#ffd166');
+
+    ctx.fillStyle = dinoColor;
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'miter';
     ctx.beginPath();
-    ctx.moveTo(-15, -72);
-    ctx.quadraticCurveTo(-46 - Math.abs(stride) * 12 - (dashActive ? 24 : 0), -72 + stepLift * 5, -72, -42 + stride * 5);
-    ctx.quadraticCurveTo(-49, -45, -12, -53);
+    ctx.moveTo(-29, -27);
+    ctx.lineTo(-19, -27);
+    ctx.lineTo(-19, -31);
+    ctx.lineTo(-11, -31);
+    ctx.lineTo(-11, -35);
+    ctx.lineTo(3, -35);
+    ctx.lineTo(12, -30);
+    ctx.lineTo(15, -21);
+    ctx.lineTo(9, -12);
+    ctx.lineTo(-5, -11);
+    ctx.lineTo(-14, -15);
+    ctx.lineTo(-21, -21);
+    ctx.lineTo(-29, -21);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = '#a78bfa';
-    ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    drawLimb([-8, -65, -23 + stride * 13, -49, -30 + stride * 22, -34], '#394a72', 11, 6);
-
-    ctx.fillStyle = '#17243d';
+    pixelBlock(3, -38, 13, 20, dinoColor);
+    ctx.fillStyle = dinoColor;
+    ctx.strokeStyle = outline;
     ctx.beginPath();
-    ctx.roundRect(-26, -72, 17, 35, 7);
-    ctx.fill();
-
-    ctx.fillStyle = player.hurt > 0 ? '#ff719f' : '#ecf8f7';
-    ctx.beginPath();
-    ctx.moveTo(-15, -72);
-    ctx.quadraticCurveTo(4, -79, 19, -67);
-    ctx.lineTo(16, -37);
-    ctx.quadraticCurveTo(2, -31, -12, -40);
+    ctx.moveTo(7, -46);
+    ctx.lineTo(30, -46);
+    ctx.lineTo(30, -31);
+    ctx.lineTo(18, -31);
+    ctx.lineTo(18, -27);
+    ctx.lineTo(8, -27);
+    ctx.lineTo(8, -33);
+    ctx.lineTo(4, -33);
+    ctx.lineTo(4, -42);
+    ctx.lineTo(7, -42);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = '#101a30';
-    ctx.lineWidth = 3;
     ctx.stroke();
 
+    ctx.fillStyle = dinoLight;
+    ctx.fillRect(9, -43, 8, 3);
+    ctx.fillStyle = outline;
+    ctx.fillRect(22, -41, 4, 4);
+    ctx.fillStyle = '#f8fbff';
+    ctx.fillRect(22, -41, 2, 2);
+    ctx.fillStyle = outline;
+    ctx.fillRect(21, -33, 11, 3);
+    ctx.fillStyle = '#ff8f70';
+    ctx.fillRect(25, -30, 4, 2);
+
+    pixelBlock(9, -24, 4, 9, dinoLight);
+    pixelBlock(12, -17, 9, 3, dinoLight);
     ctx.fillStyle = '#45d6ff';
-    ctx.beginPath();
-    ctx.moveTo(-10, -66);
-    ctx.lineTo(14, -62);
-    ctx.lineTo(11, -51);
-    ctx.lineTo(-11, -55);
-    ctx.closePath();
-    ctx.fill();
-
+    ctx.fillRect(-7, -31, 4, 4);
+    ctx.fillRect(-14, -28, 3, 3);
     ctx.fillStyle = '#ffd166';
-    ctx.beginPath();
-    ctx.arc(6, -55, 4.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    const frontFootX = 8 + stride * 27;
-    const frontFootY = -3 - Math.max(0, stepLift) * 9;
-    drawLimb([8, -40, 10 + stride * 12, -23, frontFootX, frontFootY], '#26385d', 13, 8);
-    drawLimb([frontFootX - 2, frontFootY, frontFootX + 13, frontFootY], dashActive ? '#45d6ff' : '#ffd166', 11, 6);
-
-    drawLimb([13, -65, 23 - stride * 14, -49, 30 - stride * 22, -37], '#ecf8f7', 12, 7);
-    ctx.fillStyle = '#ffd166';
-    ctx.beginPath();
-    ctx.arc(31 - stride * 22, -36, 4.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#f2b38e';
-    ctx.beginPath();
-    ctx.arc(3, -89, 19, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(17, -92);
-    ctx.lineTo(26, -87);
-    ctx.lineTo(16, -83);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#332f67';
-    ctx.beginPath();
-    ctx.arc(-1, -94, 20, Math.PI * 0.95, Math.PI * 2.02);
-    ctx.quadraticCurveTo(5, -116, 20, -103);
-    ctx.quadraticCurveTo(24, -96, 18, -91);
-    ctx.quadraticCurveTo(10, -101, 1, -99);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#a78bfa';
-    ctx.beginPath();
-    ctx.moveTo(-14, -100);
-    ctx.quadraticCurveTo(-32 - Math.abs(stride) * 5, -98, -28, -84 + stepLift * 2);
-    ctx.quadraticCurveTo(-15, -90, -4, -99);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#112039';
-    ctx.beginPath();
-    ctx.roundRect(5, -96, 17, 9, 4.5);
-    ctx.fill();
-    ctx.fillStyle = '#66f2e0';
-    ctx.beginPath();
-    ctx.roundRect(9, -94, 12, 5, 2.5);
-    ctx.fill();
-
-    ctx.strokeStyle = '#8b4f54';
-    ctx.lineWidth = 1.7;
-    ctx.beginPath();
-    ctx.arc(16, -82, 5, 0.18 * Math.PI, 0.75 * Math.PI);
-    ctx.stroke();
-
-    if (player.hurt > 0) {
-      ctx.globalAlpha = Math.min(0.42, player.hurt * 1.4);
-      ctx.fillStyle = '#ff5b93';
-      ctx.beginPath();
-      ctx.roundRect(-29, -111, 59, 109, 23);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
+    ctx.fillRect(-2, -36, 4, 3);
 
     ctx.restore();
   }
@@ -854,7 +858,67 @@
   function drawObstacle(o) {
     ctx.save();
     ctx.translate(o.x + o.w / 2, o.y + o.h / 2);
-    if (o.type === 'spire') {
+    if (o.hint && o.x < view.w + 30 && o.x > player.x + 80) {
+      const label = o.type === 'drone' ? '↓  CÚI' : '↑  NHẢY';
+      ctx.fillStyle = 'rgba(8, 14, 26, 0.86)';
+      ctx.beginPath();
+      ctx.roundRect(-42, -o.h / 2 - 38, 84, 25, 6);
+      ctx.fill();
+      ctx.strokeStyle = o.type === 'drone' ? '#66f2a3' : '#45d6ff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#f8fbff';
+      ctx.font = '800 11px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, 0, -o.h / 2 - 25.5);
+    }
+    if (o.type === 'drone') {
+      const pulse = 1 + Math.sin(o.spin * 2) * 0.08;
+      ctx.fillStyle = 'rgba(255, 91, 147, 0.16)';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, o.w * 0.62 * pulse, o.h * 0.72 * pulse, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#45d6ff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-31, -18);
+      ctx.lineTo(-40, -27);
+      ctx.moveTo(31, -18);
+      ctx.lineTo(40, -27);
+      ctx.stroke();
+      ctx.fillStyle = '#a7f3d0';
+      ctx.fillRect(-47, -30, 18, 4);
+      ctx.fillRect(29, -30, 18, 4);
+
+      ctx.fillStyle = '#17243d';
+      ctx.beginPath();
+      ctx.roundRect(-42, -20, 84, 40, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#ff5b93';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.fillStyle = '#26385d';
+      ctx.fillRect(-34, -12, 68, 8);
+      ctx.fillStyle = '#ffd166';
+      ctx.fillRect(-25, 3, 8, 8);
+      ctx.fillRect(17, 3, 8, 8);
+      ctx.fillStyle = '#ff719f';
+      ctx.beginPath();
+      ctx.arc(0, -2, 8 + Math.sin(o.spin * 2) * 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#f8fbff';
+      ctx.fillRect(-2, -5, 4, 4);
+
+      ctx.fillStyle = 'rgba(255, 209, 102, 0.7)';
+      ctx.beginPath();
+      ctx.moveTo(-9, 24);
+      ctx.lineTo(9, 24);
+      ctx.lineTo(0, 34);
+      ctx.closePath();
+      ctx.fill();
+    } else if (o.type === 'spire') {
       const grad = ctx.createLinearGradient(0, -o.h / 2, 0, o.h / 2);
       grad.addColorStop(0, '#ff5b93');
       grad.addColorStop(1, '#552556');
@@ -1006,6 +1070,10 @@
       }
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = true;
       if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = true;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        e.preventDefault();
+        if (game.state === 'playing') input.down = true;
+      }
       if (e.code === 'Escape' || e.code === 'KeyP') {
         if (game.state === 'playing') pauseGame();
         else if (game.state === 'pause') resumeGame();
@@ -1016,6 +1084,7 @@
     window.addEventListener('keyup', (e) => {
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = false;
       if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = false;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = false;
     });
 
     canvas.addEventListener('pointerdown', () => {
@@ -1028,6 +1097,7 @@
         e.preventDefault();
         if (action === 'left') input.left = true;
         if (action === 'right') input.right = true;
+        if (action === 'down' && game.state === 'playing') input.down = true;
         if (action === 'jump' && game.state === 'playing') queueJump();
         if (action === 'dash' && game.state === 'playing') queueDash();
       };
@@ -1035,6 +1105,7 @@
         e.preventDefault();
         if (action === 'left') input.left = false;
         if (action === 'right') input.right = false;
+        if (action === 'down') input.down = false;
       };
       btn.addEventListener('pointerdown', down);
       btn.addEventListener('pointerup', up);
@@ -1045,6 +1116,7 @@
     window.addEventListener('blur', () => {
       input.left = false;
       input.right = false;
+      input.down = false;
       if (game.state === 'playing') pauseGame();
     });
     window.addEventListener('resize', resize);
