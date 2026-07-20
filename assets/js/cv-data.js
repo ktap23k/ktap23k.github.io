@@ -100,7 +100,8 @@ window.CV_DATA = {
       skillGroups: [
         {
           title: 'Languages',
-          items: ['Python', 'Go', 'JavaScript', 'Java', 'C/C++', 'SQL'],
+          items: ['Python', 'Node.js', 'Go', 'JavaScript', 'Java', 'C/C++', 'SQL'],
+          highlightedItems: ['Python', 'Node.js'],
         },
         {
           title: 'Frameworks',
@@ -361,7 +362,8 @@ window.CV_DATA = {
       skillGroups: [
         {
           title: 'Ngôn ngữ',
-          items: ['Python', 'Go', 'JavaScript', 'Java', 'C/C++', 'SQL'],
+          items: ['Python', 'Node.js', 'Go', 'JavaScript', 'Java', 'C/C++', 'SQL'],
+          highlightedItems: ['Python', 'Node.js'],
         },
         {
           title: 'Framework',

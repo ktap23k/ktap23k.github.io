@@ -171,6 +171,11 @@
     color: #111827;
   }
 
+  .cv-print-skill__item--highlighted {
+    font-weight: 700;
+    color: #92400e;
+  }
+
   .cv-print-entry {
     margin-top: 2.7mm;
     break-inside: avoid;

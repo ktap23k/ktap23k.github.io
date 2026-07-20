@@ -287,11 +287,23 @@
 
     const skills = copy.skillGroups
       .map(function mapPrintSkill(group) {
+        const highlightedItems = group.highlightedItems || [];
+        const items = group.items
+          .map(function mapPrintSkillItem(item, index) {
+            const itemClass = highlightedItems.includes(item)
+              ? 'cv-print-skill__item cv-print-skill__item--highlighted'
+              : 'cv-print-skill__item';
+            const separator = index === 0 ? '' : ', ';
+
+            return separator + '<span class="' + itemClass + '">' + escapeHtml(item) + '</span>';
+          })
+          .join('');
+
         return (
           '<p class="cv-print-skill"><span class="cv-print-skill__label">' +
           escapeHtml(group.title) +
           ':</span> ' +
-          escapeHtml(group.items.join(', ')) +
+          items +
           '</p>'
         );
       })
@@ -418,14 +430,6 @@
       '  <div class="cv-print-skill-list">' + skills + '</div>',
       '</section>',
       '<section class="cv-print-section">',
-      '  <h2 class="cv-print-section__title">' + escapeHtml(sections.experienceTitle) + '</h2>',
-      experience,
-      '</section>',
-      '<section class="cv-print-section">',
-      '  <h2 class="cv-print-section__title">' + escapeHtml(sections.projectsTitle) + '</h2>',
-      projectEntries,
-      '</section>',
-      '<section class="cv-print-section">',
       '  <h2 class="cv-print-section__title">' + escapeHtml(sections.education) + '</h2>',
       education,
       '</section>',
@@ -441,6 +445,14 @@
       '      <ul class="cv-print-additional__list">' + interests + '</ul>',
       '    </div>',
       '  </div>',
+      '</section>',
+      '<section class="cv-print-section">',
+      '  <h2 class="cv-print-section__title">' + escapeHtml(sections.experienceTitle) + '</h2>',
+      experience,
+      '</section>',
+      '<section class="cv-print-section">',
+      '  <h2 class="cv-print-section__title">' + escapeHtml(sections.projectsTitle) + '</h2>',
+      projectEntries,
       '</section>',
     ].join('');
   }
@@ -480,9 +492,14 @@
   function renderSkillGroups(groups) {
     return groups
       .map(function mapGroup(group) {
+        const highlightedItems = group.highlightedItems || [];
         const pills = group.items
           .map(function mapItem(item) {
-            return '<span class="cv-pill">' + escapeHtml(item) + '</span>';
+            const pillClass = highlightedItems.includes(item)
+              ? 'cv-pill cv-pill--highlighted'
+              : 'cv-pill';
+
+            return '<span class="' + pillClass + '">' + escapeHtml(item) + '</span>';
           })
           .join('');
 

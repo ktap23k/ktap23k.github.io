@@ -31,18 +31,18 @@
       ...buildSummary(copy.summary),
       buildSectionTitle(sections.skills),
       ...buildSkills(copy.skillGroups),
-      buildSectionTitle(sections.experienceTitle),
-      ...copy.experience.map(function mapExperience(item) {
-        return buildExperience(item, printLabels);
-      }),
-      buildSectionTitle(sections.projectsTitle, { pageBreak: 'before' }),
-      ...projects.map(function mapProject(item) {
-        return buildProject(item, printLabels);
-      }),
       buildSectionTitle(sections.education),
       ...copy.education.map(buildEducation),
       buildSectionTitle(sections.additional),
       buildAdditional(copy, miniGroups),
+      buildSectionTitle(sections.experienceTitle),
+      ...copy.experience.map(function mapExperience(item) {
+        return buildExperience(item, printLabels);
+      }),
+      buildSectionTitle(sections.projectsTitle),
+      ...projects.map(function mapProject(item) {
+        return buildProject(item, printLabels);
+      }),
     ];
 
     return {
@@ -246,11 +246,25 @@
 
   function buildSkills(groups) {
     return groups.map(function mapSkillGroup(group) {
+      const highlightedItems = group.highlightedItems || [];
+      const skillText = [
+        { text: group.title + ': ', bold: true, color: COLORS.ink },
+      ];
+
+      group.items.forEach(function appendSkill(item, index) {
+        if (index > 0) {
+          skillText.push({ text: ', ' });
+        }
+
+        skillText.push({
+          text: item,
+          bold: highlightedItems.includes(item),
+          color: highlightedItems.includes(item) ? COLORS.accent : COLORS.text,
+        });
+      });
+
       return {
-        text: [
-          { text: group.title + ': ', bold: true, color: COLORS.ink },
-          { text: group.items.join(', ') },
-        ],
+        text: skillText,
         margin: [0, 0, 0, 2],
       };
     });
