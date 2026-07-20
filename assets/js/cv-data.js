@@ -45,6 +45,9 @@ window.CV_DATA = {
           interests: 'Interests',
         },
         projectLink: 'View project',
+        print: {
+          technologies: 'Technologies',
+        },
       },
       profile: {
         name: 'Trần Anh Tuấn',
@@ -105,7 +108,7 @@ window.CV_DATA = {
         },
         {
           title: 'Data & Storage',
-          items: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'SQL Server', 'pgvector'],
+          items: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'SQL Server', 'pgvector', 'FAISS', 'Qdrant'],
         },
         {
           title: 'Cloud & DevOps',
@@ -211,6 +214,16 @@ window.CV_DATA = {
           featured: true,
         },
         {
+          name: 'Payment Gateway',
+          period: 'Payment platform',
+          company: 'Payment infrastructure',
+          description:
+            'Developed a payment gateway backend with FastAPI, Apache Pulsar, and PostgreSQL, supporting asynchronous payment processing, transaction workflows, and service-to-service integration.',
+          facts: ['Payment processing', 'Event-driven architecture', 'Async workflows'],
+          tags: ['FastAPI', 'Apache Pulsar', 'PostgreSQL', 'Microservices'],
+          featured: true,
+        },
+        {
           name: 'LLM Knowledge Assistant',
           period: 'AI platform project',
           company: 'Internal workflow / AI product',
@@ -293,6 +306,9 @@ window.CV_DATA = {
           interests: 'Sở thích',
         },
         projectLink: 'Xem dự án',
+        print: {
+          technologies: 'Công nghệ',
+        },
       },
       profile: {
         name: 'Trần Anh Tuấn',
@@ -353,7 +369,7 @@ window.CV_DATA = {
         },
         {
           title: 'Dữ liệu & Lưu trữ',
-          items: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'SQL Server', 'pgvector'],
+          items: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'SQL Server', 'pgvector', 'FAISS', 'Qdrant'],
         },
         {
           title: 'Cloud & DevOps',
@@ -456,6 +472,16 @@ window.CV_DATA = {
             'Phát triển các service cho nền tảng tuyển dụng, bao gồm xác thực, luồng ứng viên và tích hợp vận hành bằng FastAPI, Authentik, Nuxt, PostgreSQL, Kubernetes, Lambda và Flutter.',
           facts: ['Backend / Platform', 'Team 20–30', 'Web + mobile', 'Microservices'],
           tags: ['FastAPI', 'Authentik', 'Nuxt', 'PostgreSQL', 'Kubernetes', 'Microservices', 'Flutter', 'Lambda'],
+          featured: true,
+        },
+        {
+          name: 'Payment Gateway',
+          period: 'Nền tảng thanh toán',
+          company: 'Hạ tầng thanh toán',
+          description:
+            'Phát triển backend cổng thanh toán với FastAPI, Apache Pulsar và PostgreSQL, hỗ trợ xử lý thanh toán bất đồng bộ, luồng giao dịch và tích hợp giữa các dịch vụ.',
+          facts: ['Xử lý thanh toán', 'Kiến trúc hướng sự kiện', 'Luồng bất đồng bộ'],
+          tags: ['FastAPI', 'Apache Pulsar', 'PostgreSQL', 'Microservices'],
           featured: true,
         },
         {

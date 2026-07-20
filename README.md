@@ -40,12 +40,14 @@ ktap23k.github.io/
 │   └── *.html
 ├── assets/
 │   ├── css/
-│   │   └── style.css          # Toàn bộ stylesheet
+│   │   ├── style.css          # Stylesheet dùng chung
+│   │   └── cv-print.css       # Layout CV A4 dành riêng cho PDF
 │   ├── js/
 │   │   ├── script.js          # Logic trang chủ
 │   │   ├── shared.js          # Header/footer/TOC/dark mode dùng chung cho posts
 │   │   ├── antigravity.js     # Hiệu ứng particle
 │   │   ├── cv.js              # Logic trang CV
+│   │   ├── cv-pdf.js          # Document definition cho PDF A4
 │   │   └── cv-data.js         # Dữ liệu CV song ngữ
 │   └── images/                # Hình ảnh (để dành)
 ├── tools/
@@ -61,7 +63,7 @@ ktap23k.github.io/
 
 - **Frontend:** HTML5, CSS3, Vanilla JavaScript (ES6+)
 - **Font:** Inter, Merriweather (Google Fonts)
-- **PDF Export:** html2pdf.js
+- **PDF Export:** pdfmake với layout A4/ATS riêng, browser print làm fallback
 - **Build:** Node.js (chỉ dùng để sinh `manifest.json`)
 - **Hosting:** GitHub Pages
 

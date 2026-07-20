@@ -1,0 +1,314 @@
+/*
+ * The downloadable CV intentionally uses a dedicated, ATS-friendly print
+ * layout. Keeping it separate from the visual web CV prevents responsive
+ * columns, cards, gradients, and canvas snapshots from breaking across A4
+ * pages.
+ */
+
+.cv-print-root {
+  display: none;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 12mm 14mm 13mm;
+}
+
+@media print {
+  html,
+  body {
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+    background: #fff !important;
+  }
+
+  body {
+    color: #172033;
+    font-family: Arial, "Helvetica Neue", sans-serif;
+    font-size: 8.5pt;
+    line-height: 1.36;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .header,
+  .cv-page,
+  .footer {
+    display: none !important;
+  }
+
+  .cv-print-root {
+    display: block !important;
+    color: #172033;
+  }
+
+  .cv-print-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.5mm 8mm;
+    align-items: end;
+    padding-bottom: 3.2mm;
+    margin-bottom: 3.5mm;
+    border-bottom: 1.4pt solid #b45309;
+  }
+
+  .cv-print-name {
+    font-size: 21pt;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #111827;
+  }
+
+  .cv-print-role {
+    margin-top: 1.4mm;
+    font-size: 10pt;
+    line-height: 1.2;
+    font-weight: 700;
+    color: #92400e;
+  }
+
+  .cv-print-location {
+    align-self: center;
+    font-size: 8.2pt;
+    font-weight: 700;
+    color: #4b5563;
+    text-align: right;
+  }
+
+  .cv-print-contact {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1mm 4mm;
+    font-size: 7.8pt;
+    line-height: 1.35;
+    color: #374151;
+  }
+
+  .cv-print-contact__item {
+    white-space: nowrap;
+  }
+
+  .cv-print-contact__item + .cv-print-contact__item::before {
+    content: "•";
+    display: inline-block;
+    margin-right: 4mm;
+    color: #b45309;
+  }
+
+  .cv-print-contact a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .cv-print-section {
+    margin-top: 3.6mm;
+  }
+
+  .cv-print-section__title {
+    display: flex;
+    gap: 3mm;
+    align-items: center;
+    margin-bottom: 2mm;
+    font-size: 9.6pt;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #111827;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .cv-print-section__title::after {
+    content: "";
+    height: 0.7pt;
+    flex: 1;
+    background: #d1d5db;
+  }
+
+  .cv-print-summary {
+    font-size: 8.4pt;
+    color: #283548;
+  }
+
+  .cv-print-summary + .cv-print-summary {
+    margin-top: 1.5mm;
+  }
+
+  .cv-print-highlights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6mm 4mm;
+    margin-top: 1.8mm;
+    color: #374151;
+    font-size: 8pt;
+    font-weight: 700;
+  }
+
+  .cv-print-highlight::before {
+    content: "•";
+    margin-right: 1.5mm;
+    color: #b45309;
+  }
+
+  .cv-print-skill-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1mm 7mm;
+  }
+
+  .cv-print-skill {
+    color: #283548;
+    font-size: 8.1pt;
+  }
+
+  .cv-print-skill__label,
+  .cv-print-inline-label {
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .cv-print-entry {
+    margin-top: 2.7mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .cv-print-entry:first-of-type {
+    margin-top: 0;
+  }
+
+  .cv-print-entry__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.5mm 6mm;
+    align-items: baseline;
+  }
+
+  .cv-print-entry__title {
+    font-size: 9pt;
+    line-height: 1.25;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .cv-print-entry__period {
+    font-size: 7.8pt;
+    line-height: 1.25;
+    font-weight: 700;
+    color: #4b5563;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .cv-print-entry__company {
+    margin-top: 0.35mm;
+    font-size: 8.1pt;
+    line-height: 1.3;
+    font-weight: 700;
+    color: #92400e;
+  }
+
+  .cv-print-entry__bullets {
+    margin-top: 0.8mm;
+    padding-left: 4mm;
+  }
+
+  .cv-print-entry__bullets li {
+    padding-left: 0.5mm;
+    color: #283548;
+  }
+
+  .cv-print-entry__bullets li + li {
+    margin-top: 0.55mm;
+  }
+
+  .cv-print-entry__bullets li::marker {
+    color: #b45309;
+  }
+
+  .cv-print-entry__meta {
+    margin-top: 0.8mm;
+    font-size: 7.5pt;
+    line-height: 1.35;
+    color: #4b5563;
+  }
+
+  .cv-print-project {
+    padding-left: 3mm;
+    border-left: 1.4pt solid #d6a277;
+  }
+
+  .cv-print-project__facts {
+    margin-top: 0.55mm;
+    font-size: 7.6pt;
+    font-weight: 700;
+    color: #6b4c33;
+  }
+
+  .cv-print-project__description {
+    margin-top: 0.8mm;
+    color: #283548;
+  }
+
+  .cv-print-education {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5mm 6mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .cv-print-education + .cv-print-education {
+    margin-top: 2mm;
+  }
+
+  .cv-print-education__degree {
+    font-size: 8.8pt;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .cv-print-education__period {
+    font-size: 7.8pt;
+    font-weight: 700;
+    color: #4b5563;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .cv-print-education__school,
+  .cv-print-education__details {
+    grid-column: 1 / -1;
+  }
+
+  .cv-print-education__school {
+    font-weight: 700;
+    color: #92400e;
+  }
+
+  .cv-print-education__details {
+    margin-top: 0.5mm;
+    color: #283548;
+  }
+
+  .cv-print-additional {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2mm 8mm;
+  }
+
+  .cv-print-additional__group {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .cv-print-additional__list {
+    margin-top: 0.8mm;
+    padding-left: 4mm;
+    color: #283548;
+  }
+}

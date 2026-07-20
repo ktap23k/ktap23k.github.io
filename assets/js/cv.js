@@ -4,6 +4,7 @@
   const metaDescription = document.querySelector('meta[name="description"]');
   const nav = document.getElementById('nav');
   const sheet = document.getElementById('cvSheet');
+  const printRoot = document.getElementById('cvPrintRoot');
   const langSelect = document.getElementById('cvLangSelect');
   const languageLabel = document.getElementById('cvLanguageLabel');
   const downloadButton = document.getElementById('cvDownloadBtn');
@@ -136,6 +137,7 @@
 
     updateChromeText(copy);
     renderSheet(copy);
+    renderPrintSheet(copy);
   }
 
   function syncLanguageOptions(copy) {
@@ -166,6 +168,12 @@
 
   function renderSheet(copy) {
     sheet.innerHTML = buildSheetHtml(copy);
+  }
+
+  function renderPrintSheet(copy) {
+    if (printRoot) {
+      printRoot.innerHTML = buildPrintSheetHtml(copy);
+    }
   }
 
   function buildSheetHtml(copy) {
@@ -231,6 +239,209 @@
       '    </section>',
       '  </section>',
       '</div>',
+    ].join('');
+  }
+
+  function buildPrintSheetHtml(copy) {
+    const profile = copy.profile;
+    const sections = copy.ui.sections;
+    const miniGroups = copy.ui.miniGroups;
+    const printLabels = copy.ui.print || {};
+    const projects = copy.projects
+      .slice()
+      .sort(function sortProjects(a, b) {
+        return Number(Boolean(b.featured)) - Number(Boolean(a.featured));
+      });
+
+    const contacts = copy.contact
+      .map(function mapPrintContact(item) {
+        const value = item.href
+          ? '<a href="' +
+            escapeAttribute(item.href) +
+            '">' +
+            escapeHtml(item.value) +
+            '</a>'
+          : escapeHtml(item.value);
+
+        return (
+          '<span class="cv-print-contact__item"><strong>' +
+          escapeHtml(item.label) +
+          ':</strong> ' +
+          value +
+          '</span>'
+        );
+      })
+      .join('');
+
+    const summary = copy.summary.paragraphs
+      .map(function mapPrintSummary(paragraph) {
+        return '<p class="cv-print-summary">' + escapeHtml(paragraph) + '</p>';
+      })
+      .join('');
+
+    const highlights = copy.summary.highlights
+      .map(function mapPrintHighlight(highlight) {
+        return '<span class="cv-print-highlight">' + escapeHtml(highlight) + '</span>';
+      })
+      .join('');
+
+    const skills = copy.skillGroups
+      .map(function mapPrintSkill(group) {
+        return (
+          '<p class="cv-print-skill"><span class="cv-print-skill__label">' +
+          escapeHtml(group.title) +
+          ':</span> ' +
+          escapeHtml(group.items.join(', ')) +
+          '</p>'
+        );
+      })
+      .join('');
+
+    const experience = copy.experience
+      .map(function mapPrintExperience(item) {
+        const bullets = item.bullets
+          .map(function mapPrintBullet(bullet) {
+            return '<li>' + escapeHtml(bullet) + '</li>';
+          })
+          .join('');
+
+        return (
+          '<article class="cv-print-entry">' +
+          '<div class="cv-print-entry__header">' +
+          '<h3 class="cv-print-entry__title">' +
+          escapeHtml(item.role) +
+          '</h3>' +
+          '<p class="cv-print-entry__period">' +
+          escapeHtml(item.period) +
+          '</p>' +
+          '</div>' +
+          '<p class="cv-print-entry__company">' +
+          escapeHtml(item.company) +
+          '</p>' +
+          '<ul class="cv-print-entry__bullets">' +
+          bullets +
+          '</ul>' +
+          '<p class="cv-print-entry__meta"><span class="cv-print-inline-label">' +
+          escapeHtml(printLabels.technologies || 'Technologies') +
+          ':</span> ' +
+          escapeHtml(item.tags.join(' · ')) +
+          '</p>' +
+          '</article>'
+        );
+      })
+      .join('');
+
+    const projectEntries = projects
+      .map(function mapPrintProject(item) {
+        const facts = (item.facts || []).length
+          ? '<p class="cv-print-project__facts">' +
+            escapeHtml(item.facts.join(' · ')) +
+            '</p>'
+          : '';
+
+        return (
+          '<article class="cv-print-entry cv-print-project">' +
+          '<div class="cv-print-entry__header">' +
+          '<h3 class="cv-print-entry__title">' +
+          escapeHtml(item.name) +
+          '</h3>' +
+          '<p class="cv-print-entry__period">' +
+          escapeHtml(item.period) +
+          '</p>' +
+          '</div>' +
+          '<p class="cv-print-entry__company">' +
+          escapeHtml(item.company) +
+          '</p>' +
+          facts +
+          '<p class="cv-print-project__description">' +
+          escapeHtml(item.description) +
+          '</p>' +
+          '<p class="cv-print-entry__meta"><span class="cv-print-inline-label">' +
+          escapeHtml(printLabels.technologies || 'Technologies') +
+          ':</span> ' +
+          escapeHtml(item.tags.join(' · ')) +
+          '</p>' +
+          '</article>'
+        );
+      })
+      .join('');
+
+    const education = copy.education
+      .map(function mapPrintEducation(item) {
+        return (
+          '<article class="cv-print-education">' +
+          '<h3 class="cv-print-education__degree">' +
+          escapeHtml(item.degree) +
+          '</h3>' +
+          '<p class="cv-print-education__period">' +
+          escapeHtml(item.period) +
+          '</p>' +
+          '<p class="cv-print-education__school">' +
+          escapeHtml(item.school) +
+          '</p>' +
+          '<p class="cv-print-education__details">' +
+          escapeHtml(item.details.join(' • ')) +
+          '</p>' +
+          '</article>'
+        );
+      })
+      .join('');
+
+    const workflow = copy.additional.workflow
+      .map(function mapPrintWorkflow(item) {
+        return '<li>' + escapeHtml(item) + '</li>';
+      })
+      .join('');
+
+    const interests = copy.interests
+      .map(function mapPrintInterest(item) {
+        return '<li>' + escapeHtml(item.text) + '</li>';
+      })
+      .join('');
+
+    return [
+      '<header class="cv-print-header">',
+      '  <div>',
+      '    <h1 class="cv-print-name">' + escapeHtml(profile.name) + '</h1>',
+      '    <p class="cv-print-role">' + escapeHtml(profile.title) + '</p>',
+      '  </div>',
+      '  <p class="cv-print-location">' + escapeHtml(profile.location) + '</p>',
+      '  <div class="cv-print-contact">' + contacts + '</div>',
+      '</header>',
+      '<section class="cv-print-section">',
+      '  <h2 class="cv-print-section__title">' + escapeHtml(sections.summaryTitle) + '</h2>',
+      summary,
+      '  <div class="cv-print-highlights">' + highlights + '</div>',
+      '</section>',
+      '<section class="cv-print-section">',
+      '  <h2 class="cv-print-section__title">' + escapeHtml(sections.skills) + '</h2>',
+      '  <div class="cv-print-skill-list">' + skills + '</div>',
+      '</section>',
+      '<section class="cv-print-section">',
+      '  <h2 class="cv-print-section__title">' + escapeHtml(sections.experienceTitle) + '</h2>',
+      experience,
+      '</section>',
+      '<section class="cv-print-section">',
+      '  <h2 class="cv-print-section__title">' + escapeHtml(sections.projectsTitle) + '</h2>',
+      projectEntries,
+      '</section>',
+      '<section class="cv-print-section">',
+      '  <h2 class="cv-print-section__title">' + escapeHtml(sections.education) + '</h2>',
+      education,
+      '</section>',
+      '<section class="cv-print-section">',
+      '  <h2 class="cv-print-section__title">' + escapeHtml(sections.additional) + '</h2>',
+      '  <div class="cv-print-additional">',
+      '    <div class="cv-print-additional__group">',
+      '      <p class="cv-print-inline-label">' + escapeHtml(miniGroups.workflow) + '</p>',
+      '      <ul class="cv-print-additional__list">' + workflow + '</ul>',
+      '    </div>',
+      '    <div class="cv-print-additional__group">',
+      '      <p class="cv-print-inline-label">' + escapeHtml(miniGroups.interests) + '</p>',
+      '      <ul class="cv-print-additional__list">' + interests + '</ul>',
+      '    </div>',
+      '  </div>',
+      '</section>',
     ].join('');
   }
 
@@ -478,61 +689,55 @@
     return '<div class="cv-project-grid">' + cards + '</div>';
   }
 
-  async function downloadCvPdf() {
+  function downloadCvPdf() {
     const copy = languages[currentLang];
-    const exportTarget = document.getElementById('cvSheet');
 
-    if (!copy || !downloadButton || !exportTarget) {
+    if (!copy || !downloadButton || !printRoot) {
       return;
     }
 
     isDownloading = true;
     updateChromeText(copy);
     downloadButton.disabled = true;
-    document.body.classList.add('cv-exporting');
 
     try {
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
+      if (
+        window.pdfMake &&
+        typeof window.pdfMake.createPdf === 'function' &&
+        window.CV_PDF &&
+        typeof window.CV_PDF.buildDocument === 'function'
+      ) {
+        const definition = window.CV_PDF.buildDocument(copy);
+        const resetTimer = window.setTimeout(finishDownload, 30000);
+
+        window.pdfMake.createPdf(definition).download(
+          copy.fileName,
+          function handlePdfDownload() {
+            window.clearTimeout(resetTimer);
+            finishDownload();
+          },
+          {
+            fontLayoutCache: false,
+          }
+        );
+        return;
       }
 
-      await new Promise(function waitFrame(resolve) {
-        window.requestAnimationFrame(resolve);
-      });
-
-      if (window.html2pdf) {
-        await window.html2pdf()
-          .set({
-            margin: 0,
-            filename: copy.fileName,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: {
-              scale: 2,
-              useCORS: true,
-              backgroundColor: '#ffffff',
-            },
-            jsPDF: {
-              unit: 'mm',
-              format: 'a4',
-              orientation: 'portrait',
-            },
-            pagebreak: {
-              mode: ['css', 'legacy'],
-              avoid: ['.cv-entry', '.cv-project-card', '.cv-sidebar-section'],
-            },
-          })
-          .from(exportTarget)
-          .save();
-      } else {
-        window.print();
-      }
-    } catch (error) {
-      console.error('Failed to export CV PDF:', error);
       window.print();
-    } finally {
+    } catch (error) {
+      console.error('Failed to download the CV PDF:', error);
+      window.print();
+    }
+
+    finishDownload();
+
+    function finishDownload() {
+      if (!isDownloading) {
+        return;
+      }
+
       isDownloading = false;
       downloadButton.disabled = false;
-      document.body.classList.remove('cv-exporting');
       updateChromeText(languages[currentLang]);
     }
   }
