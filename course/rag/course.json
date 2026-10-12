@@ -1,0 +1,64 @@
+{
+  "id": "rag",
+  "title": "RAG từ cơ bản đến nâng cao",
+  "level": "Cơ bản → Nâng cao",
+  "description": "Xây hệ thống hỏi đáp trên tài liệu của riêng bạn: từ embedding, chunking, hybrid search, reranking đến đánh giá, GraphRAG, Agentic RAG và vận hành production.",
+  "modules": [
+    {
+      "id": "01-nen-tang",
+      "title": "Nền tảng RAG",
+      "summary": "Vì sao LLM cần tra cứu, kiến trúc tổng thể và tự tay dựng RAG đầu tiên.",
+      "lessons": [
+        { "slug": "rag-la-gi", "title": "RAG là gì và vì sao cần?", "minutes": 12 },
+        { "slug": "kien-truc", "title": "Kiến trúc tổng quan của một hệ thống RAG", "minutes": 12 },
+        { "slug": "embedding", "title": "Embedding và tìm kiếm ngữ nghĩa", "minutes": 15 },
+        { "slug": "lab-rag-dau-tien", "title": "Lab: dựng RAG đầu tiên trong 60 dòng Python", "minutes": 20 }
+      ]
+    },
+    {
+      "id": "02-indexing",
+      "title": "Indexing: từ tài liệu đến vector",
+      "summary": "Nạp và làm sạch dữ liệu, chia chunk đúng cách, chọn và vận hành vector database.",
+      "lessons": [
+        { "slug": "nap-du-lieu", "title": "Nạp và làm sạch dữ liệu", "minutes": 14 },
+        { "slug": "chunking", "title": "Chiến lược chunking", "minutes": 16 },
+        { "slug": "chunk-co-ngu-canh", "title": "Chunk có ngữ cảnh: parent-child, contextual retrieval, late chunking", "minutes": 15 },
+        { "slug": "vector-database", "title": "Vector database và chỉ mục ANN", "minutes": 16 }
+      ]
+    },
+    {
+      "id": "03-retrieval",
+      "title": "Retrieval nâng cao",
+      "summary": "Kết hợp tìm kiếm từ khoá và ngữ nghĩa, xếp hạng lại, biến đổi truy vấn và định tuyến.",
+      "lessons": [
+        { "slug": "hybrid-search", "title": "Hybrid search: BM25 + vector + RRF", "minutes": 15 },
+        { "slug": "reranking", "title": "Reranking: xếp hạng lại để chọn đúng context", "minutes": 14 },
+        { "slug": "bien-doi-truy-van", "title": "Biến đổi truy vấn: rewrite, multi-query, HyDE", "minutes": 15 },
+        { "slug": "routing-metadata", "title": "Định tuyến truy vấn và lọc metadata", "minutes": 13 }
+      ]
+    },
+    {
+      "id": "04-generation-eval",
+      "title": "Generation và đánh giá",
+      "summary": "Prompt có trích dẫn, quản lý context window, đo lường và cải tiến có hệ thống.",
+      "lessons": [
+        { "slug": "prompt-cho-rag", "title": "Prompt cho RAG: grounding và trích dẫn nguồn", "minutes": 14 },
+        { "slug": "quan-ly-context", "title": "Quản lý context window và chi phí", "minutes": 13 },
+        { "slug": "do-luong", "title": "Đo lường chất lượng RAG", "minutes": 16 },
+        { "slug": "lab-eval", "title": "Lab: xây bộ đánh giá và vòng lặp cải tiến", "minutes": 20 }
+      ]
+    },
+    {
+      "id": "05-nang-cao",
+      "title": "Kiến trúc nâng cao và production",
+      "summary": "GraphRAG, Agentic RAG, tài liệu đa phương thức, vận hành an toàn và dự án cuối khoá.",
+      "lessons": [
+        { "slug": "graphrag", "title": "GraphRAG: khi câu hỏi cần nhìn toàn cảnh", "minutes": 15 },
+        { "slug": "agentic-rag", "title": "Agentic RAG: để LLM tự quyết định tra cứu", "minutes": 16 },
+        { "slug": "multimodal", "title": "RAG đa phương thức: bảng, hình và PDF scan", "minutes": 13 },
+        { "slug": "production", "title": "Đưa RAG lên production: hiệu năng, bảo mật, vận hành", "minutes": 18 },
+        { "slug": "capstone", "title": "Dự án cuối khoá: trợ lý hỏi đáp tài liệu nội bộ", "minutes": 20 }
+      ]
+    }
+  ]
+}

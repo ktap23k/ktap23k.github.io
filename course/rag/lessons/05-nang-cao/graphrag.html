@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GraphRAG: khi câu hỏi cần nhìn toàn cảnh — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Knowledge graph cho RAG: GraphRAG của Microsoft, local và global search, LightRAG, LazyGraphRAG và bằng chứng năm 2026 về khi nào GraphRAG đáng chi phí." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">GraphRAG: khi câu hỏi cần nhìn toàn cảnh</h1>
+      <p class="lesson-lead">"Ba chủ đề nổi bật nhất trong 500 biên bản họp năm nay là gì?" — không có chunk nào chứa câu trả lời này. Vector search tìm <em>đoạn giống câu hỏi</em>; câu hỏi toàn cảnh cần <em>cấu trúc</em> của cả kho tài liệu.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Nhận diện câu hỏi toàn cảnh và câu hỏi nhiều bước mà vector RAG xử lý kém.</li>
+          <li>Hiểu pipeline GraphRAG: trích thực thể, cộng đồng, local/global search.</li>
+          <li>Đánh giá chi phí và chọn giữa GraphRAG, LightRAG, LazyGraphRAG hay vector RAG.</li>
+        </ul>
+      </section>
+
+      <h2 id="gioi-han">Giới hạn của vector RAG</h2>
+      <ul>
+        <li><strong>Câu hỏi toàn cảnh</strong> (query-focused summarization): "Các rủi ro chính được nhắc trong toàn bộ báo cáo?" — cần tổng hợp hàng trăm tài liệu, không phải tìm 5 đoạn.</li>
+        <li><strong>Câu hỏi đa bước qua quan hệ</strong>: "Những dự án nào do người từng làm cùng chị Lan ở team Payment phụ trách?" — cần đi theo chuỗi quan hệ người → team → dự án.</li>
+      </ul>
+
+      <h2 id="pipeline">Pipeline GraphRAG của Microsoft</h2>
+      <p>Edge và cộng sự (2024) đề xuất dùng LLM dựng một <strong>đồ thị tri thức</strong> từ văn bản rồi tóm tắt nó theo nhiều tầng:</p>
+      <ol class="flow">
+        <li>Chia text unit</li>
+        <li>LLM trích thực thể &amp; quan hệ</li>
+        <li>Phân cộng đồng<small>thuật toán Leiden, nhiều tầng</small></li>
+        <li>LLM viết báo cáo cho mỗi cộng đồng</li>
+      </ol>
+      <p>Khi truy vấn có hai chế độ chính:</p>
+      <ul>
+        <li><strong>Global search</strong>: map-reduce trên các báo cáo cộng đồng — mỗi báo cáo cho ra câu trả lời một phần kèm điểm hữu ích, rồi tổng hợp lại. Dành cho câu hỏi toàn cảnh.</li>
+        <li><strong>Local search</strong>: bắt đầu từ thực thể nhắc trong câu hỏi, mở rộng sang láng giềng, quan hệ, đoạn văn gốc và báo cáo cộng đồng liên quan. Dành cho câu hỏi về một thực thể cụ thể.</li>
+      </ul>
+      <p>Microsoft sau đó bổ sung DRIFT search, kết hợp hai chế độ trên.</p>
+
+      <h2 id="code">Phác thảo: dựng đồ thị và lấy ngữ cảnh cục bộ</h2>
+      <pre><code>import json
+import networkx as nx
+
+EXTRACT_PROMPT = """Trích các thực thể (người, tổ chức, dự án, sản phẩm, chính sách) và quan hệ
+giữa chúng từ đoạn văn. Trả về JSON:
+{{"entities": [{{"name": "...", "type": "..."}}],
+  "relations": [{{"source": "...", "target": "...", "relation": "..."}}]}}
+
+Đoạn văn:
+{text}"""
+
+def norm(name: str) -> str:
+    return name.strip().lower()     # thực tế cần gộp thực thể trùng: "ACME", "Cty ACME"...
+
+def build_graph(chunks: dict[str, str]) -> nx.DiGraph:
+    graph = nx.DiGraph()
+    for chunk_id, text in chunks.items():
+        data = json.loads(call_llm(EXTRACT_PROMPT.format(text=text)))
+        for entity in data["entities"]:
+            graph.add_node(norm(entity["name"]), type=entity["type"])
+            graph.nodes[norm(entity["name"])].setdefault("chunks", set()).add(chunk_id)
+        for rel in data["relations"]:
+            graph.add_edge(norm(rel["source"]), norm(rel["target"]),
+                           relation=rel["relation"], chunk=chunk_id)
+    return graph
+
+def local_context(graph: nx.DiGraph, entities: list[str], hops: int = 1):
+    nodes = set()
+    for name in map(norm, entities):
+        if name in graph:
+            nodes |= set(nx.ego_graph(graph, name, radius=hops, undirected=True))
+    sub = graph.subgraph(nodes)
+    facts = [f"{u} —{d['relation']}→ {v}" for u, v, d in sub.edges(data=True)]
+    chunk_ids = {cid for n in nodes for cid in graph.nodes[n].get("chunks", ())}
+    return facts, chunk_ids         # đưa cả "facts" lẫn đoạn văn gốc vào prompt</code></pre>
+      <div class="callout callout--warn">
+        <span class="callout__title">Chất lượng đồ thị = chất lượng trích xuất</span>
+        <p>Thực thể trùng tên khác cách viết, quan hệ bị bỏ sót hay bịa ra đều đi thẳng vào câu trả lời. Gộp thực thể (entity resolution) và kiểm tra mẫu là phần tốn công nhất của GraphRAG.</p>
+      </div>
+
+      <h2 id="chi-phi">Chi phí và các biến thể nhẹ hơn</h2>
+      <p>GraphRAG đầy đủ gọi LLM trên mọi đoạn văn khi index, cộng thêm bước viết báo cáo cộng đồng — đắt hơn nhiều lần so với embedding, và phải chạy lại phần lớn khi dữ liệu đổi nhiều. Các biến thể ra đời để giảm chi phí đó:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Phương pháp</th><th>Ý tưởng</th></tr></thead>
+          <tbody>
+            <tr><td>GraphRAG (Microsoft)</td><td>Đồ thị + báo cáo cộng đồng nhiều tầng; mạnh cho câu hỏi toàn cảnh; index đắt.</td></tr>
+            <tr><td>LightRAG</td><td>Đồ thị gọn hơn, truy xuất hai mức (thực thể cụ thể và chủ đề khái quát), cập nhật tăng dần không cần dựng lại.</td></tr>
+            <tr><td>LazyGraphRAG</td><td>Hoãn việc dùng LLM tới lúc truy vấn; Microsoft công bố chi phí index tương đương vector RAG, khoảng 0,1% so với GraphRAG đầy đủ.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="bang-chung-2026">Có thật sự cần GraphRAG?</h2>
+      <p>Benchmark RAGSearch (Fan và cộng sự, 2026) so sánh dense RAG với các phương pháp GraphRAG trong bối cảnh <em>agentic search</em> (tìm kiếm nhiều vòng). Kết quả: agentic search cải thiện dense RAG đáng kể và thu hẹp khoảng cách với GraphRAG, nhất là khi có huấn luyện bằng RL; GraphRAG vẫn tốt hơn ở suy luận đa bước phức tạp và ổn định hơn — với điều kiện chi phí index được khấu hao. Tác giả kết luận dense RAG vẫn là lựa chọn thực dụng, cạnh tranh cho hỏi đáp thông thường nhờ chi phí dựng thấp.</p>
+      <div class="callout callout--tip">
+        <span class="callout__title">Quy tắc chọn</span>
+        <p>Bắt đầu với hybrid RAG + rerank. Thêm agentic search khi có câu hỏi nhiều bước. Chỉ đầu tư GraphRAG khi golden set cho thấy nhiều câu hỏi toàn cảnh hoặc chuỗi quan hệ phức tạp mà hai cách trên không giải quyết được — và dữ liệu đủ ổn định để khấu hao chi phí index.</p>
+      </div>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Vector RAG yếu với câu hỏi toàn cảnh và chuỗi quan hệ nhiều bước.</li>
+          <li>GraphRAG: LLM trích đồ thị, phân cộng đồng, tóm tắt; global search cho toàn cảnh, local search cho thực thể.</li>
+          <li>Chi phí index cao; LightRAG, LazyGraphRAG giảm chi phí theo những cách khác nhau.</li>
+          <li>Bằng chứng 2026: agentic search thu hẹp khoảng cách; GraphRAG vẫn mạnh ở đa bước phức tạp.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>"Chính sách làm việc từ xa cho phép mấy ngày mỗi tuần?" có cần GraphRAG không?</summary>
+        <p>Không. Đây là câu hỏi tra cứu một chi tiết — hybrid search + rerank xử lý tốt và rẻ hơn nhiều.</p>
+      </details>
+      <details class="quiz">
+        <summary>Vì sao global search dùng báo cáo cộng đồng thay vì đọc mọi chunk?</summary>
+        <p>Đọc mọi chunk cho mỗi câu hỏi quá đắt và vượt context window. Báo cáo cộng đồng là bản tóm tắt dựng sẵn khi index, cho phép map-reduce trên một số lượng tóm tắt vừa phải.</p>
+      </details>
+      <details class="quiz">
+        <summary>Dữ liệu thay đổi hằng giờ. GraphRAG đầy đủ có phù hợp không?</summary>
+        <p>Thường không: chi phí dựng lại đồ thị và báo cáo cộng đồng rất lớn. Cân nhắc LightRAG (cập nhật tăng dần), LazyGraphRAG hoặc agentic search trên vector RAG.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Edge et al. (2024). <a href="https://arxiv.org/abs/2404.16130">From Local to Global: A Graph RAG Approach to Query-Focused Summarization</a>.</li>
+        <li>Guo et al. (2024). <a href="https://arxiv.org/abs/2410.05779">LightRAG: Simple and Fast Retrieval-Augmented Generation</a>.</li>
+        <li>Microsoft Research (2024). <a href="https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost/">LazyGraphRAG: Setting a new standard for quality and cost</a>.</li>
+        <li>Fan et al. (2026). <a href="https://arxiv.org/abs/2604.09666">Do We Still Need GraphRAG? Benchmarking RAG and GraphRAG for Agentic Search Systems</a>.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

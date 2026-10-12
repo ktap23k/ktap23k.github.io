@@ -105,6 +105,24 @@ node tools/build.js
 
 ---
 
+## 🎓 Khoá học RAG (`course/rag/`)
+
+Khoá học tự chứa, không dùng chung `assets/css/course.css` với các khoá khác:
+
+```text
+course/rag/
+├── index.html          # Trang giới thiệu, giáo trình sinh từ course.json
+├── course.json         # Nguồn dữ liệu duy nhất: module, bài, thời lượng
+├── assets/             # css/ (nạp sau style.css của site) + js/ (ES modules)
+└── lessons/<module>/   # 5 module, 21 bài — mỗi file chỉ chứa nội dung bài
+```
+
+- Thêm bài: khai báo trong `course.json`, tạo file trong `lessons/<module>/` với `<h1 class="lesson-title">` trùng tiêu đề.
+- Quy ước: mỗi file ≤ 200 dòng, mỗi thư mục ≤ 7 mục. Kiểm tra bằng `node tools/check-rag-course.js`.
+- Tiến độ học lưu trong `localStorage` của trình duyệt người học.
+
+---
+
 ## 📝 Quy ước viết bài
 
 - Sử dụng ngôn ngữ **tiếng Việt** có dấu, rõ ràng.

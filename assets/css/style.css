@@ -444,6 +444,10 @@ img.logo__icon {
   font-size: 1.65rem;
   font-weight: 800;
 }
+.course-card--rag .course-card__icon {
+  background: linear-gradient(135deg, #e85d04, #ffb347);
+  box-shadow: 0 8px 24px rgba(232, 93, 4, .25);
+}
 .course-card__content { flex: 1; }
 .course-card__title {
   font-size: 1.25rem;

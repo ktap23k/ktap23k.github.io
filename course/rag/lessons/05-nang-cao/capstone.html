@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dự án cuối khoá: trợ lý hỏi đáp tài liệu nội bộ — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Đề bài, mốc thực hiện, cấu trúc repo gợi ý, tiêu chí chấm và checklist nộp bài cho dự án RAG cuối khoá." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Dự án cuối khoá: trợ lý hỏi đáp tài liệu nội bộ</h1>
+      <p class="lesson-lead">Ghép mọi thứ đã học thành một sản phẩm hoàn chỉnh, có số đo chứng minh chất lượng. Đây là dự án đủ tốt để đưa vào portfolio — hoặc triển khai thật cho team của bạn.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Xây một hệ thống RAG end-to-end từ dữ liệu thật.</li>
+          <li>Chứng minh chất lượng bằng bộ đánh giá và báo cáo thí nghiệm.</li>
+          <li>Tổ chức code sạch, dễ bảo trì.</li>
+        </ul>
+      </section>
+
+      <h2 id="de-bai">Đề bài</h2>
+      <p>Xây trợ lý trả lời câu hỏi dựa trên một kho tài liệu bạn chọn — sổ tay nhân sự, tài liệu kỹ thuật của dự án, quy trình vận hành, hoặc đơn giản là toàn bộ bài viết trên blog này. Kho nên có ít nhất 30 tài liệu, trong đó có vài file PDF hoặc có bảng.</p>
+      <h3 id="yeu-cau-chuc-nang">Yêu cầu chức năng</h3>
+      <ul>
+        <li>Nạp Markdown và PDF; chuẩn hoá Unicode tiếng Việt; metadata gồm nguồn, ngày cập nhật, nhóm được xem.</li>
+        <li>Chunking theo cấu trúc + gắn đường dẫn heading.</li>
+        <li>Hybrid search (BM25 + vector, RRF) và reranker.</li>
+        <li>Hội thoại nhiều lượt có bước viết lại câu hỏi.</li>
+        <li>Câu trả lời có trích dẫn được kiểm tra; từ chối khi không đủ căn cứ.</li>
+        <li>Lọc tài liệu theo nhóm người dùng (giả lập 2 nhóm có quyền khác nhau).</li>
+      </ul>
+      <h3 id="yeu-cau-phi-chuc-nang">Yêu cầu phi chức năng</h3>
+      <ul>
+        <li>Golden set ≥ 60 câu, đủ các loại: factoid, đa bước, không có đáp án, không dấu, hội thoại.</li>
+        <li>Báo cáo Recall@5, MRR, faithfulness, tỉ lệ từ chối đúng/nhầm, p95 độ trễ, chi phí ước tính cho 1.000 câu hỏi.</li>
+        <li>Test hồi quy retrieval chạy được bằng một lệnh.</li>
+      </ul>
+
+      <h2 id="moc-thuc-hien">Các mốc thực hiện</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mốc</th><th>Kết quả cần có</th><th>Ôn lại</th></tr></thead>
+          <tbody>
+            <tr><td>1. Baseline</td><td>RAG chạy được từ đầu đến cuối; 20 câu hỏi đầu tiên trong golden set</td><td>Module 1</td></tr>
+            <tr><td>2. Indexing</td><td>Parser, làm sạch, chunk theo cấu trúc, metadata, vector DB</td><td>Module 2</td></tr>
+            <tr><td>3. Đo lường</td><td>Golden set đủ 60 câu; script đánh giá; số đo baseline</td><td>Bài 4.3–4.4</td></tr>
+            <tr><td>4. Retrieval</td><td>Hybrid + rerank + viết lại truy vấn; mỗi bước có số đo trước/sau</td><td>Module 3</td></tr>
+            <tr><td>5. Hoàn thiện</td><td>Prompt có trích dẫn, phân quyền, truy vết, báo cáo cuối</td><td>Bài 4.1, 5.4</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout callout--tip">
+        <span class="callout__title">Làm mốc 3 sớm</span>
+        <p>Nhiều người để phần đánh giá đến cuối và không còn biết cải tiến nào có tác dụng. Có golden set từ sớm thì mọi mốc sau đều có số đo đi kèm.</p>
+      </div>
+
+      <h2 id="cau-truc-repo">Cấu trúc repo gợi ý</h2>
+      <p>Áp dụng chính quy ước của site này: mỗi file không quá 200 dòng, mỗi thư mục không quá 7 mục. Ràng buộc này buộc bạn tách module theo trách nhiệm:</p>
+      <pre><code>rag-assistant/
+├── app/
+│   ├── ingest/        loaders.py · clean.py · chunking.py · pipeline.py
+│   ├── retrieval/     embed.py · hybrid.py · rerank.py · query.py
+│   ├── generation/    prompts.py · answer.py · citations.py
+│   └── api.py         # HTTP/CLI: nhận câu hỏi + user, trả câu trả lời + nguồn
+├── eval/              golden.jsonl · metrics.py · judge.py · run.py · REPORT.md
+├── tests/             test_chunking.py · test_citations.py · test_retrieval_quality.py
+├── llm.py             # lớp bọc nhà cung cấp LLM (bài Lab 1)
+└── README.md</code></pre>
+
+      <h2 id="tieu-chi">Tiêu chí tự chấm</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tiêu chí</th><th>Trọng số</th><th>Đạt mức tốt khi</th></tr></thead>
+          <tbody>
+            <tr><td>Chất lượng retrieval</td><td>25%</td><td>Recall@5 cải thiện rõ so với baseline, có giải thích vì sao</td></tr>
+            <tr><td>Chất lượng câu trả lời</td><td>25%</td><td>Faithfulness cao; trích dẫn đúng; từ chối đúng lúc</td></tr>
+            <tr><td>Phương pháp đánh giá</td><td>20%</td><td>Golden set đa dạng; nhật ký thí nghiệm đổi một biến mỗi lần</td></tr>
+            <tr><td>An toàn và vận hành</td><td>15%</td><td>Phân quyền bằng code; truy vết; xử lý tài liệu bị xoá</td></tr>
+            <tr><td>Chất lượng code</td><td>15%</td><td>Module rõ trách nhiệm; test chạy được; README đủ để người khác chạy lại</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="mo-rong">Thử thách mở rộng</h2>
+      <ul>
+        <li>Thêm Contextual Retrieval và đo xem có đáng chi phí với dữ liệu của bạn không.</li>
+        <li>Agent tra cứu nhiều bước cho câu hỏi so sánh và đa bước, có giới hạn bước.</li>
+        <li>Xử lý một bộ slide hoặc PDF scan bằng VLM hoặc ColPali.</li>
+        <li>Giao diện web hiển thị nguồn và tô sáng đoạn được trích dẫn.</li>
+      </ul>
+
+      <section class="takeaways">
+        <h2>Checklist nộp bài</h2>
+        <ul>
+          <li>Repo chạy được theo README trên máy sạch.</li>
+          <li><code>eval/REPORT.md</code>: bảng thí nghiệm từ baseline đến bản cuối, kèm phân tích lỗi.</li>
+          <li>Ít nhất 5 ví dụ hội thoại (cả trường hợp từ chối và trường hợp bị chặn quyền).</li>
+          <li>Ghi rõ hạn chế còn lại và hướng cải tiến tiếp theo.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Câu hỏi tự vấn</h2>
+      <details class="quiz">
+        <summary>Nếu chỉ còn một ngày, nên ưu tiên cải tiến nào?</summary>
+        <p>Nhìn vào bảng chẩn đoán ở bài Đo lường: nếu Recall@50 thấp, sửa indexing/retrieval; nếu Recall@50 cao mà Recall@5 thấp, thêm reranker; nếu context đúng mà câu trả lời sai, sửa prompt. Sửa đúng tầng đang là nút thắt.</p>
+      </details>
+      <details class="quiz">
+        <summary>Làm sao chứng minh hệ thống không làm lộ tài liệu giữa các nhóm?</summary>
+        <p>Viết test tự động: với người dùng nhóm A, các câu hỏi nhắm vào tài liệu chỉ nhóm B được xem phải không trả về chunk nào của nhóm B (kiểm tra ở tầng retrieval, không chỉ ở câu trả lời).</p>
+      </details>
+
+      <h2 id="loi-ket">Lời kết</h2>
+      <p>RAG không phải một thuật toán mà là một hệ thống — và hệ thống tốt đến từ vòng lặp đo, hiểu lỗi, sửa đúng chỗ. Chúc bạn xây được trợ lý mà chính đồng nghiệp của mình muốn dùng hằng ngày. Có câu hỏi hay muốn chia sẻ dự án, hãy gửi cho mình qua <a href="../../../../index.html#contact">trang liên hệ</a>.</p>
+    </div>
+  </article>
+</main>
+</body>
+</html>

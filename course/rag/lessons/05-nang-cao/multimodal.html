@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG đa phương thức: bảng, hình và PDF scan — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Ba chiến lược cho tài liệu có bảng, biểu đồ và trang scan: chuyển thành văn bản, mô tả bằng model thị giác, và truy xuất trực tiếp bằng ảnh với ColPali." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">RAG đa phương thức: bảng, hình và PDF scan</h1>
+      <p class="lesson-lead">Tài liệu doanh nghiệp không chỉ có chữ: báo cáo đầy bảng biểu, slide toàn sơ đồ, hợp đồng cũ là ảnh scan. Nếu pipeline chỉ đọc lớp chữ, phần thông tin quý nhất thường bị bỏ qua.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Xử lý bảng biểu sao cho LLM đọc đúng quan hệ hàng–cột.</li>
+          <li>Đưa hình ảnh và biểu đồ vào RAG bằng model thị giác (VLM).</li>
+          <li>Hiểu truy xuất tài liệu dạng ảnh với ColPali và khi nào nên dùng.</li>
+        </ul>
+      </section>
+
+      <h2 id="ba-chien-luoc">Ba chiến lược</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Chiến lược</th><th>Cách làm</th><th>Hợp với</th></tr></thead>
+          <tbody>
+            <tr><td>A. Chuyển thành văn bản</td><td>OCR + phân tích bố cục; bảng → Markdown/HTML</td><td>Tài liệu chủ yếu là chữ và bảng</td></tr>
+            <tr><td>B. Mô tả bằng VLM</td><td>Model thị giác viết mô tả cho hình/biểu đồ; index mô tả, giữ link tới ảnh gốc</td><td>Biểu đồ, sơ đồ, ảnh chụp màn hình</td></tr>
+            <tr><td>C. Truy xuất bằng ảnh</td><td>Embed trực tiếp ảnh từng trang (ColPali); đưa ảnh trang tìm được cho VLM trả lời</td><td>Slide, báo cáo trình bày phức tạp, nhiều hình</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="bang-bieu">Chiến lược A: bảng biểu</h2>
+      <p>Bảng bị trích xuất thành chuỗi "Q1 Q2 Q3 120 135 150" là mất hết ý nghĩa. Các công cụ phân tích bố cục như Docling, Marker hoặc model OCR dựa trên thị giác giữ được cấu trúc bảng. Sau đó, chunk bảng sao cho mỗi chunk <strong>tự đứng được</strong>: có tên bảng và dòng tiêu đề.</p>
+      <pre><code>def table_chunks(title: str, header: list[str], rows: list[list[str]],
+                 size: int = 25) -> list[str]:
+    head = "| " + " | ".join(header) + " |\n" + "|---" * len(header) + "|"
+    chunks = []
+    for start in range(0, len(rows), size):
+        part = rows[start:start + size]
+        body = "\n".join("| " + " | ".join(row) + " |" for row in part)
+        chunks.append(f"{title} (hàng {start + 1}–{start + len(part)})\n\n{head}\n{body}")
+    return chunks</code></pre>
+      <div class="callout callout--tip">
+        <span class="callout__title">Câu hỏi tính toán → dữ liệu có cấu trúc</span>
+        <p>"Tổng doanh thu 4 quý" hay "chi nhánh nào tăng trưởng cao nhất" là phép tính. Trích bảng vào database rồi dùng text-to-SQL đáng tin hơn để LLM tự cộng các con số trong context.</p>
+      </div>
+
+      <h2 id="hinh-anh">Chiến lược B: mô tả hình bằng VLM</h2>
+      <pre><code>DESCRIBE_PROMPT = """Mô tả hình này để phục vụ tìm kiếm trong tài liệu nội bộ.
+- Loại hình (biểu đồ cột, sơ đồ kiến trúc, ảnh chụp màn hình...)
+- Tiêu đề, nhãn trục, chú thích, các con số quan trọng
+- Thông điệp chính mà hình truyền tải
+Viết bằng tiếng Việt, tối đa 120 từ. Không suy đoán thông tin không có trong hình."""</code></pre>
+      <p>Index đoạn mô tả kèm metadata <code>image_path</code> và văn bản xung quanh hình (caption, đoạn trước/sau). Khi đoạn mô tả được tìm thấy, có thể đưa <em>chính ảnh gốc</em> vào một model đa phương thức để trả lời — mô tả dùng để tìm, ảnh dùng để đọc chi tiết.</p>
+
+      <h2 id="colpali">Chiến lược C: ColPali — tìm bằng ảnh trang</h2>
+      <p>ColPali (Faysse và cộng sự, 2024) bỏ qua toàn bộ pipeline OCR: mỗi trang tài liệu được chụp thành ảnh, đưa qua một vision-language model để sinh <strong>nhiều vector</strong> — mỗi vùng ảnh (patch) một vector. Câu hỏi cũng thành nhiều vector token, và điểm được tính bằng late interaction (MaxSim) như ColBERT ở bài Reranking. Nhóm tác giả cũng giới thiệu benchmark ViDoRe cho tác vụ truy xuất tài liệu dạng ảnh.</p>
+      <ul>
+        <li><strong>Ưu</strong>: hiểu được bố cục, bảng, biểu đồ, font chữ đặc biệt; đơn giản hoá pipeline indexing.</li>
+        <li><strong>Nhược</strong>: lưu hàng trăm tới hơn một nghìn vector cho mỗi trang (tốn lưu trữ, cần database hỗ trợ multi-vector); bước trả lời cần VLM đọc ảnh; khó trích dẫn tới mức câu.</li>
+        <li>Các biến thể dựa trên backbone khác (như ColQwen) và kỹ thuật gộp/nén vector giúp giảm chi phí lưu trữ.</li>
+      </ul>
+      <div class="callout callout--note">
+        <span class="callout__title">PDF scan tiếng Việt</span>
+        <p>OCR truyền thống hay sai dấu tiếng Việt (ví dụ "nghỉ phép" thành "nghi phẻp", "Điều" thành "Đỉều"). Hãy đo tỉ lệ lỗi ký tự trên vài trang mẫu trước khi chọn công cụ; với tài liệu quan trọng, model OCR dựa trên VLM hoặc chiến lược C thường cho kết quả tốt hơn.</p>
+      </div>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Bảng: giữ cấu trúc bằng Markdown, mỗi chunk có tên bảng và tiêu đề cột; câu hỏi tính toán → SQL.</li>
+          <li>Hình: mô tả bằng VLM để tìm, đưa ảnh gốc cho model đa phương thức để đọc.</li>
+          <li>ColPali truy xuất trực tiếp trên ảnh trang, bỏ OCR, đổi lại tốn lưu trữ.</li>
+          <li>Kiểm tra chất lượng OCR tiếng Việt trên mẫu thật trước khi chọn công cụ.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Bảng 300 hàng được cắt thành nhiều chunk. Vì sao phải lặp lại dòng tiêu đề trong mỗi chunk?</summary>
+        <p>Không có tiêu đề, chunk chỉ là các hàng số vô nghĩa: cả embedding lẫn LLM không biết cột nào là gì. Mỗi chunk phải tự hiểu được khi đứng một mình.</p>
+      </details>
+      <details class="quiz">
+        <summary>Bộ slide 2.000 trang toàn sơ đồ và biểu đồ. Chiến lược nào đáng thử?</summary>
+        <p>Chiến lược C (ColPali hoặc biến thể) — hoặc B nếu hạ tầng chưa hỗ trợ multi-vector. Chiến lược A sẽ mất phần lớn thông tin nằm trong hình.</p>
+      </details>
+      <details class="quiz">
+        <summary>Điểm giống nhau giữa ColPali và ColBERT là gì?</summary>
+        <p>Cả hai dùng biểu diễn nhiều vector và late interaction (MaxSim): mỗi token câu hỏi tìm phần khớp nhất trong tài liệu — với ColBERT là token văn bản, với ColPali là vùng ảnh.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Faysse et al. (2024). <a href="https://arxiv.org/abs/2407.01449">ColPali: Efficient Document Retrieval with Vision Language Models</a>.</li>
+        <li><a href="https://github.com/docling-project/docling">Docling</a> và <a href="https://github.com/datalab-to/marker">Marker</a> — chuyển PDF sang Markdown giữ bảng.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

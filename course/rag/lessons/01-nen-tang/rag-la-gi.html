@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG là gì và vì sao cần? — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Giới hạn của LLM, ý tưởng cốt lõi của Retrieval-Augmented Generation và cách chọn giữa RAG, fine-tuning và long-context." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">RAG là gì và vì sao cần?</h1>
+      <p class="lesson-lead">LLM viết trôi chảy nhưng không biết gì về tài liệu nội bộ của bạn, và đôi khi bịa rất tự tin. RAG giải quyết chuyện đó bằng một ý tưởng đơn giản: tra cứu trước, trả lời sau.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Hiểu ba giới hạn cố hữu của LLM khiến RAG ra đời.</li>
+          <li>Nắm ý tưởng cốt lõi: <em>retrieve → augment → generate</em>.</li>
+          <li>Biết khi nào chọn RAG, fine-tuning, long-context — hoặc kết hợp.</li>
+        </ul>
+      </section>
+
+      <h2 id="gioi-han-cua-llm">Ba giới hạn của LLM</h2>
+      <p>Một LLM là một hàm dự đoán token tiếp theo, được huấn luyện trên một lượng văn bản khổng lồ. Mọi "kiến thức" của nó nằm trong trọng số (<em>parametric memory</em>). Điều đó dẫn tới ba vấn đề rất thực tế:</p>
+      <ol>
+        <li><strong>Kiến thức bị đóng băng.</strong> Model chỉ biết dữ liệu trước thời điểm cutoff. Chính sách công ty vừa đổi tuần trước? Model không biết.</li>
+        <li><strong>Không biết dữ liệu riêng tư.</strong> Wiki nội bộ, hợp đồng, ticket hỗ trợ, codebase của bạn chưa từng nằm trong dữ liệu huấn luyện.</li>
+        <li><strong>Hallucination.</strong> Khi không biết, model vẫn sinh ra câu trả lời nghe rất hợp lý. Nó được tối ưu để viết <em>trôi chảy</em>, không phải để <em>đúng sự thật</em>.</li>
+      </ol>
+      <p>Thêm một vấn đề cho doanh nghiệp: <strong>không truy được nguồn</strong>. Khi model trả lời "nhân viên được nghỉ 15 ngày phép", bạn không biết con số đó đến từ đâu để kiểm chứng.</p>
+
+      <h2 id="y-tuong-cot-loi">Ý tưởng cốt lõi của RAG</h2>
+      <p><strong>Retrieval-Augmented Generation</strong> (Lewis và cộng sự, 2020) tách "trí nhớ" ra khỏi model: kiến thức nằm trong một kho tài liệu bên ngoài, và mỗi lần trả lời, hệ thống tra cứu những đoạn liên quan rồi đưa vào prompt.</p>
+      <ol class="flow">
+        <li>Câu hỏi<small>"Nghỉ phép năm bao nhiêu ngày?"</small></li>
+        <li>Retrieve<small>tìm đoạn tài liệu liên quan</small></li>
+        <li>Augment<small>ghép đoạn đó vào prompt</small></li>
+        <li>Generate<small>LLM trả lời + dẫn nguồn</small></li>
+      </ol>
+      <p>Hãy hình dung sự khác biệt giữa thi <em>đóng sách</em> và thi <em>mở sách</em>. LLM thuần là thí sinh thi đóng sách: nhớ gì viết nấy. RAG cho thí sinh mang tài liệu vào phòng thi — nhưng chỉ được mang vài trang, nên việc <strong>chọn đúng trang</strong> (retrieval) quyết định phần lớn chất lượng.</p>
+      <div class="callout callout--tip">
+        <span class="callout__title">Ghi nhớ</span>
+        <p>Trong RAG, LLM đóng vai người <em>đọc hiểu và tổng hợp</em>, không phải kho kiến thức. Model trả lời sai thường là do retrieval đưa sai tài liệu, chứ không phải do model "kém".</p>
+      </div>
+
+      <h2 id="loi-ich">RAG mang lại gì?</h2>
+      <ul>
+        <li><strong>Cập nhật tức thì</strong>: sửa tài liệu → index lại → câu trả lời đổi theo, không cần huấn luyện lại.</li>
+        <li><strong>Dẫn nguồn được</strong>: mỗi câu trả lời kèm đoạn tài liệu gốc để người dùng kiểm chứng.</li>
+        <li><strong>Giảm hallucination</strong>: model được yêu cầu chỉ dựa vào context, và được phép nói "không tìm thấy".</li>
+        <li><strong>Phân quyền</strong>: lọc tài liệu theo quyền của người hỏi <em>trước khi</em> đưa vào prompt.</li>
+        <li><strong>Chi phí hợp lý</strong>: không cần GPU để huấn luyện; đổi sang model mới chỉ là đổi một dòng cấu hình.</li>
+      </ul>
+
+      <h2 id="so-sanh">RAG, fine-tuning hay long-context?</h2>
+      <p>Ba cách "dạy" LLM về dữ liệu của bạn giải quyết những bài toán khác nhau:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tiêu chí</th><th>RAG</th><th>Fine-tuning</th><th>Long-context</th></tr></thead>
+          <tbody>
+            <tr><td>Thêm kiến thức mới</td><td>Rất tốt</td><td>Kém, dễ bịa</td><td>Tốt nếu vừa context</td></tr>
+            <tr><td>Đổi văn phong, định dạng</td><td>Hạn chế</td><td>Rất tốt</td><td>Trung bình</td></tr>
+            <tr><td>Dữ liệu thay đổi thường xuyên</td><td>Rất tốt</td><td>Phải train lại</td><td>Tốt</td></tr>
+            <tr><td>Dẫn nguồn</td><td>Có sẵn</td><td>Không</td><td>Có thể</td></tr>
+            <tr><td>Quy mô kho tài liệu</td><td>Không giới hạn</td><td>—</td><td>Giới hạn bởi context window</td></tr>
+            <tr><td>Chi phí mỗi truy vấn</td><td>Thấp</td><td>Thấp</td><td>Cao (nhiều token)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Quy tắc thực dụng:</p>
+      <ul>
+        <li><strong>Kho tài liệu nhỏ</strong> (dưới khoảng 200.000 token ≈ 500 trang): cân nhắc đưa <em>toàn bộ</em> vào prompt và bật prompt caching — Anthropic đưa ra khuyến nghị này khi giới thiệu Contextual Retrieval. Đơn giản hơn RAG rất nhiều.</li>
+        <li><strong>Kho tài liệu lớn, thay đổi, cần phân quyền và dẫn nguồn</strong>: RAG.</li>
+        <li><strong>Cần model nói đúng giọng, đúng format, đúng thuật ngữ chuyên ngành</strong>: fine-tuning — và có thể kết hợp với RAG.</li>
+      </ul>
+      <div class="callout callout--note">
+        <span class="callout__title">Long-context có "giết" RAG?</span>
+        <p>Context window ngày càng lớn, nhưng nhồi cả triệu token vào mỗi request vẫn đắt, chậm, và chất lượng đọc hiểu giảm khi input quá dài. Xu hướng thực tế là kết hợp: RAG chọn lọc, long-context cho phép đưa vào nhiều đoạn dài hơn. Bài "Quản lý context window" ở Module 4 sẽ đi sâu vào điểm này.</p>
+      </div>
+
+      <h2 id="khi-nao-khong-dung">Khi nào <em>không</em> nên dùng RAG?</h2>
+      <ul>
+        <li>Câu hỏi cần <strong>tính toán trên dữ liệu có cấu trúc</strong> ("tổng doanh thu quý 3 theo vùng"): dùng text-to-SQL hoặc gọi API, không phải tìm đoạn văn.</li>
+        <li>Tác vụ không cần kiến thức bên ngoài (dịch, tóm tắt văn bản người dùng dán vào).</li>
+        <li>Kho tài liệu nhỏ và ổn định: đưa thẳng vào prompt.</li>
+      </ul>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>LLM có kiến thức đóng băng, không biết dữ liệu riêng và có thể bịa.</li>
+          <li>RAG = tra cứu tài liệu liên quan rồi đưa vào prompt để model trả lời có căn cứ.</li>
+          <li>Chất lượng RAG phụ thuộc phần lớn vào khâu retrieval.</li>
+          <li>Kho nhỏ → long-context; kho lớn, động → RAG; cần đổi hành vi → fine-tuning.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Chatbot trả lời sai chính sách mới ban hành tuần trước. Fine-tuning hay RAG phù hợp hơn? Vì sao?</summary>
+        <p>RAG. Chính sách là kiến thức thay đổi theo thời gian: cập nhật tài liệu và index lại là xong, kèm dẫn nguồn. Fine-tuning tốn kém, phải lặp lại mỗi lần chính sách đổi và không dẫn được nguồn.</p>
+      </details>
+      <details class="quiz">
+        <summary>Trong pipeline RAG, khâu nào thường quyết định chất lượng nhiều nhất?</summary>
+        <p>Retrieval. Nếu đoạn tài liệu đúng không có trong context, model giỏi đến đâu cũng không trả lời đúng được (hoặc phải đoán).</p>
+      </details>
+      <details class="quiz">
+        <summary>Bạn có bộ tài liệu hướng dẫn 80 trang, ít thay đổi. Giải pháp nào đơn giản nhất?</summary>
+        <p>Đưa toàn bộ vào prompt (khoảng vài chục nghìn token) kết hợp prompt caching. Chỉ nên xây RAG khi kho tài liệu lớn dần hoặc cần phân quyền.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Lewis et al. (2020). <a href="https://arxiv.org/abs/2005.11401">Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</a>.</li>
+        <li>Anthropic (2024). <a href="https://www.anthropic.com/news/contextual-retrieval">Introducing Contextual Retrieval</a>.</li>
+        <li>Bài blog: <a href="../../../../posts/fine-tuning-vs-rag.html">Fine-tuning vs RAG — khi nào nên chọn cái nào?</a></li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

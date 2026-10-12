@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab: xây bộ đánh giá và vòng lặp cải tiến — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Xây golden set, tính Recall@k, MRR, nDCG, chấm faithfulness bằng LLM, chạy hồi quy trong CI và phân tích lỗi để cải tiến có hệ thống." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Lab: xây bộ đánh giá và vòng lặp cải tiến</h1>
+      <p class="lesson-lead">Bài Lab quan trọng nhất của khoá học. Sau bài này, mọi thay đổi trong pipeline — đổi chunk size, thêm reranker, sửa prompt — đều đi kèm một con số trả lời câu hỏi "có tốt hơn không?".</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Xây golden set đa dạng từ câu hỏi thật và câu hỏi sinh tự động.</li>
+          <li>Viết script đánh giá retrieval và faithfulness.</li>
+          <li>Thiết lập vòng lặp: đo → phân tích lỗi → sửa một thứ → đo lại.</li>
+        </ul>
+      </section>
+
+      <h2 id="golden-set">1. Golden set</h2>
+      <p>Mỗi dòng trong <code>golden.jsonl</code> là một câu hỏi kèm đáp án và id các chunk chứa thông tin cần thiết:</p>
+      <pre><code>{"id": "q017", "type": "factoid", "question": "Nhân viên thử việc có được nghỉ phép năm không?",
+ "answer": "Có, được tính theo số tháng làm việc thực tế.", "relevant_ids": ["hr/nghi-phep.md#2"]}
+{"id": "q031", "type": "unanswerable", "question": "Công ty có hỗ trợ gửi xe ô tô không?",
+ "answer": null, "relevant_ids": []}</code></pre>
+      <p>Bắt đầu với 50–100 câu, phủ đủ các loại: <strong>factoid</strong> (một chi tiết), <strong>multi_hop</strong> (cần hai tài liệu), <strong>unanswerable</strong> (không có trong tài liệu), <strong>no_diacritics</strong> (gõ không dấu), <strong>conversational</strong> (phụ thuộc câu trước). Nguồn câu hỏi tốt nhất là log câu hỏi thật của người dùng.</p>
+      <h3 id="cau-hoi-tong-hop">Sinh câu hỏi tự động</h3>
+      <pre><code>GEN_PROMPT = """Đọc đoạn tài liệu sau và viết 2 câu hỏi mà một nhân viên thực sự có thể hỏi,
+được trả lời bởi đoạn này. Dùng từ ngữ đời thường, KHÁC cách diễn đạt trong tài liệu.
+Trả về JSON: [{{"question": "...", "answer": "..."}}]
+
+Tài liệu ({chunk_id}):
+{text}"""</code></pre>
+      <div class="callout callout--warn">
+        <span class="callout__title">Câu hỏi sinh tự động dễ "dễ quá"</span>
+        <p>LLM có xu hướng chép lại từ ngữ của tài liệu, làm câu hỏi khớp từ khoá một cách giả tạo và thổi phồng điểm. Luôn đọc lại, loại câu kém, và trộn với câu hỏi thật.</p>
+      </div>
+
+      <h2 id="danh-gia-retrieval">2. Đánh giá retrieval</h2>
+      <pre><code># eval_retrieval.py
+import json
+import math
+
+def recall_at_k(retrieved: list[str], relevant: set[str], k: int) -> float:
+    return len(set(retrieved[:k]) &amp; relevant) / len(relevant)
+
+def reciprocal_rank(retrieved: list[str], relevant: set[str]) -> float:
+    return next((1 / rank for rank, cid in enumerate(retrieved, 1) if cid in relevant), 0.0)
+
+def ndcg_at_k(retrieved: list[str], relevant: set[str], k: int) -> float:
+    dcg = sum(1 / math.log2(i + 2) for i, cid in enumerate(retrieved[:k]) if cid in relevant)
+    ideal = sum(1 / math.log2(i + 2) for i in range(min(len(relevant), k)))
+    return dcg / ideal
+
+def evaluate(search, golden_path: str, k: int = 5) -> dict[str, float]:
+    """search(question, k) trả về danh sách chunk_id theo thứ hạng."""
+    with open(golden_path, encoding="utf-8") as f:
+        items = [json.loads(line) for line in f if line.strip()]
+    rows = []
+    for item in items:
+        relevant = set(item["relevant_ids"])
+        if not relevant:                       # câu không có đáp án: đánh giá ở bước generation
+            continue
+        retrieved = search(item["question"], k=50)
+        rows.append((recall_at_k(retrieved, relevant, k), reciprocal_rank(retrieved, relevant),
+                     ndcg_at_k(retrieved, relevant, k), recall_at_k(retrieved, relevant, 50)))
+    names = [f"recall@{k}", "mrr", f"ndcg@{k}", "recall@50"]
+    return {name: round(sum(col) / len(rows), 3) for name, col in zip(names, zip(*rows))}</code></pre>
+
+      <h2 id="danh-gia-faithfulness">3. Chấm faithfulness bằng LLM</h2>
+      <pre><code>JUDGE_PROMPT = """Bạn là giám khảo nghiêm khắc. Tách CÂU TRẢ LỜI thành các khẳng định riêng lẻ.
+Với mỗi khẳng định, xét xem NGỮ CẢNH có hỗ trợ trực tiếp không.
+Trả về JSON: {{"claims": [{{"claim": "...", "supported": true}}]}}
+
+NGỮ CẢNH:
+{context}
+
+CÂU TRẢ LỜI:
+{answer}"""
+
+def faithfulness(context: str, answer: str) -> float | None:
+    claims = json.loads(call_llm(JUDGE_PROMPT.format(context=context, answer=answer)))["claims"]
+    if not claims:                             # ví dụ câu từ chối: không có khẳng định nào
+        return None
+    return sum(c["supported"] for c in claims) / len(claims)</code></pre>
+      <p>Với câu <code>unanswerable</code>, chỉ cần kiểm tra câu trả lời có chứa câu từ chối chuẩn hay không. Ghi riêng hai tỉ lệ: từ chối đúng (trên câu không có đáp án) và từ chối nhầm (trên câu có đáp án).</p>
+
+      <h2 id="ci">4. Kiểm thử hồi quy trong CI</h2>
+      <pre><code># test_rag_quality.py — chạy bằng pytest khi đổi prompt, model, chunking...
+from eval_retrieval import evaluate
+from app.search import search_ids
+
+def test_retrieval_does_not_regress():
+    metrics = evaluate(search_ids, "eval/golden.jsonl", k=5)
+    assert metrics["recall@5"] &gt;= 0.80, metrics
+    assert metrics["mrr"] &gt;= 0.60, metrics</code></pre>
+      <p>Ngưỡng lấy từ lần đo tốt nhất hiện tại trừ một khoảng nhỏ cho dao động. Phần retrieval không gọi LLM nên chạy nhanh, rẻ, tất định — rất hợp để chặn trong CI. Phần chấm bằng LLM có thể chạy hằng đêm.</p>
+
+      <h2 id="vong-lap">5. Vòng lặp cải tiến</h2>
+      <ol class="flow">
+        <li>Đo baseline</li>
+        <li>Đọc 20 câu sai</li>
+        <li>Phân loại lỗi</li>
+        <li>Sửa <em>một</em> thứ</li>
+        <li>Đo lại, ghi nhật ký</li>
+      </ol>
+      <p>Ghi mỗi thí nghiệm vào một bảng nhật ký: cấu hình, Recall@5, MRR, faithfulness, p95 latency, chi phí/1.000 câu. Ví dụ <em>minh hoạ</em> về hình dạng của nhật ký (không phải số liệu đo thật):</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Thí nghiệm</th><th>Recall@5</th><th>MRR</th><th>p95</th><th>Kết luận</th></tr></thead>
+          <tbody>
+            <tr><td>Baseline: vector, chunk 800 ký tự</td><td>0,62</td><td>0,48</td><td>0,9 s</td><td>—</td></tr>
+            <tr><td>+ chunk theo heading</td><td>0,68</td><td>0,53</td><td>0,9 s</td><td>Giữ</td></tr>
+            <tr><td>+ hybrid BM25 (RRF)</td><td>0,77</td><td>0,59</td><td>1,0 s</td><td>Giữ</td></tr>
+            <tr><td>+ reranker top-50 → 5</td><td>0,84</td><td>0,71</td><td>1,3 s</td><td>Giữ</td></tr>
+            <tr><td>+ HyDE</td><td>0,83</td><td>0,70</td><td>2,1 s</td><td>Bỏ: không cải thiện, chậm hơn</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Golden set 50–100 câu đa dạng, ưu tiên câu hỏi thật; câu sinh tự động phải được duyệt.</li>
+          <li>Metric retrieval rẻ và tất định → chặn hồi quy trong CI.</li>
+          <li>Faithfulness chấm bằng LLM theo từng khẳng định; theo dõi riêng tỉ lệ từ chối.</li>
+          <li>Mỗi lần chỉ đổi một thứ, ghi nhật ký thí nghiệm, giữ lại thứ cải thiện số đo.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Vì sao script tính thêm Recall@50 bên cạnh Recall@5?</summary>
+        <p>Để phân biệt "không tìm thấy" (Recall@50 thấp → sửa retrieval) với "tìm thấy nhưng xếp hạng kém" (Recall@50 cao, Recall@5 thấp → thêm/chỉnh reranker).</p>
+      </details>
+      <details class="quiz">
+        <summary>Đổi đồng thời chunk size và embedding model, Recall tăng 5%. Vấn đề là gì?</summary>
+        <p>Không biết thay đổi nào tạo ra cải thiện (có thể một cái tốt, một cái xấu). Chỉ đổi một biến mỗi thí nghiệm.</p>
+      </details>
+      <details class="quiz">
+        <summary>Golden set toàn câu hỏi sinh tự động cho Recall@5 = 0,97 nhưng người dùng thật phàn nàn nhiều. Vì sao?</summary>
+        <p>Câu hỏi sinh tự động thường dùng lại từ ngữ của tài liệu nên khớp dễ; câu hỏi thật ngắn, mơ hồ, sai chính tả, không dấu. Cần bổ sung câu hỏi từ log thật.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Hamel Husain. <a href="https://hamel.dev/blog/posts/evals/">Your AI Product Needs Evals</a>.</li>
+        <li>Saad-Falcon et al. (2023). <a href="https://arxiv.org/abs/2311.09476">ARES: An Automated Evaluation Framework for RAG Systems</a>.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

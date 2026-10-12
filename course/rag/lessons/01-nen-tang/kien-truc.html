@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kiến trúc tổng quan của một hệ thống RAG — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Hai pipeline của RAG (indexing và truy vấn), các thành phần chính và sự tiến hoá từ Naive RAG đến Modular RAG." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Kiến trúc tổng quan của một hệ thống RAG</h1>
+      <p class="lesson-lead">Mọi hệ thống RAG, từ demo 60 dòng đến sản phẩm phục vụ triệu người dùng, đều có cùng một bộ khung: một pipeline chạy offline để chuẩn bị dữ liệu và một pipeline chạy online để trả lời.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Phân biệt pipeline <strong>indexing</strong> (offline) và <strong>query</strong> (online).</li>
+          <li>Biết vai trò của từng thành phần và nó được dạy ở bài nào trong khoá.</li>
+          <li>Hiểu ba "thế hệ" kiến trúc: Naive, Advanced và Modular RAG.</li>
+        </ul>
+      </section>
+
+      <h2 id="pipeline-indexing">Pipeline 1 — Indexing (offline)</h2>
+      <p>Chạy khi có tài liệu mới hoặc tài liệu thay đổi. Mục tiêu: biến tài liệu thô thành một chỉ mục có thể tìm kiếm nhanh.</p>
+      <ol class="flow">
+        <li>Load<small>PDF, HTML, Docx, DB</small></li>
+        <li>Clean<small>chuẩn hoá, bỏ rác</small></li>
+        <li>Chunk<small>chia đoạn</small></li>
+        <li>Embed<small>văn bản → vector</small></li>
+        <li>Store<small>vector DB + metadata</small></li>
+      </ol>
+      <ul>
+        <li><strong>Load &amp; Clean</strong>: trích văn bản và metadata (nguồn, ngày cập nhật, quyền truy cập). Rác vào thì rác ra — xem bài <em>Nạp và làm sạch dữ liệu</em>.</li>
+        <li><strong>Chunk</strong>: chia tài liệu thành đoạn vừa đủ nghĩa. Đây là quyết định ảnh hưởng chất lượng lớn nhất ở phía indexing.</li>
+        <li><strong>Embed</strong>: mỗi chunk thành một vector biểu diễn ý nghĩa (bài tiếp theo).</li>
+        <li><strong>Store</strong>: lưu vector + nội dung + metadata vào vector database, thường kèm một chỉ mục từ khoá (BM25) cho hybrid search.</li>
+      </ul>
+
+      <h2 id="pipeline-truy-van">Pipeline 2 — Query (online)</h2>
+      <p>Chạy cho mỗi câu hỏi, thường phải xong trong vài giây.</p>
+      <ol class="flow">
+        <li>Query<small>câu hỏi + lịch sử chat</small></li>
+        <li>Transform<small>viết lại, tách ý</small></li>
+        <li>Retrieve<small>vector + BM25</small></li>
+        <li>Rerank<small>chọn top 5–10</small></li>
+        <li>Generate<small>LLM + trích dẫn</small></li>
+      </ol>
+      <ul>
+        <li><strong>Transform</strong>: biến câu hỏi hội thoại ("thế còn năm ngoái?") thành câu hỏi độc lập, có thể tách thành nhiều truy vấn con.</li>
+        <li><strong>Retrieve</strong>: lấy nhiều ứng viên (20–100) bằng tìm kiếm ngữ nghĩa và từ khoá, có lọc metadata (phòng ban, quyền).</li>
+        <li><strong>Rerank</strong>: model chuyên chấm độ liên quan sắp xếp lại và giữ vài chunk tốt nhất.</li>
+        <li><strong>Generate</strong>: LLM trả lời chỉ dựa trên context, dẫn nguồn, và nói "không biết" khi thiếu thông tin.</li>
+      </ul>
+      <div class="callout callout--tip">
+        <span class="callout__title">Tư duy hai giai đoạn: recall rồi precision</span>
+        <p>Retrieval cố gắng <em>không bỏ sót</em> (recall cao, chấp nhận lẫn rác). Rerank cố gắng <em>chọn tinh</em> (precision cao). Tách hai mục tiêu này ra cho phép dùng thuật toán nhanh ở bước đầu và model chính xác nhưng chậm ở bước sau.</p>
+      </div>
+
+      <h2 id="ba-the-he">Ba thế hệ kiến trúc RAG</h2>
+      <p>Bài khảo sát của Gao và cộng sự (2023) chia sự phát triển của RAG thành ba giai đoạn — một khung rất hữu ích để định vị hệ thống của bạn:</p>
+      <h3 id="naive-rag">Naive RAG</h3>
+      <p>Chunk cố định → embed → top-k theo cosine → nhét vào prompt. Làm được trong một buổi chiều và đủ cho demo. Điểm yếu: tìm sai khi câu hỏi dùng từ khác tài liệu, bỏ sót mã số/tên riêng, context lẫn nhiều đoạn không liên quan.</p>
+      <h3 id="advanced-rag">Advanced RAG</h3>
+      <p>Thêm tối ưu ở <strong>trước retrieval</strong> (chunking tốt hơn, metadata, viết lại truy vấn) và <strong>sau retrieval</strong> (rerank, nén context). Đây là chuẩn tối thiểu cho sản phẩm thật, và là trọng tâm của Module 2–4.</p>
+      <h3 id="modular-rag">Modular RAG</h3>
+      <p>Pipeline không còn là đường thẳng: các module (tìm kiếm, định tuyến, đánh giá, tra cứu lại) được ghép linh hoạt, có vòng lặp và rẽ nhánh. Agentic RAG — nơi LLM tự quyết định khi nào và tra cứu gì — là dạng phổ biến nhất (Module 5).</p>
+
+      <h2 id="thanh-phan-va-lua-chon">Bản đồ thành phần</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Thành phần</th><th>Lựa chọn phổ biến</th><th>Bài học</th></tr></thead>
+          <tbody>
+            <tr><td>Parser</td><td>pypdf, PyMuPDF, Docling, Unstructured, Trafilatura</td><td>2.1</td></tr>
+            <tr><td>Embedding model</td><td>bge-m3, multilingual-e5, Qwen3-Embedding, API (OpenAI, Gemini, Voyage, Cohere)</td><td>1.3</td></tr>
+            <tr><td>Vector store</td><td>pgvector, Qdrant, Milvus, Weaviate, Elasticsearch/OpenSearch</td><td>2.4</td></tr>
+            <tr><td>Từ khoá</td><td>BM25 (Elasticsearch, rank_bm25), sparse vector</td><td>3.1</td></tr>
+            <tr><td>Reranker</td><td>bge-reranker-v2-m3, Cohere/Jina/Voyage rerank, ColBERT</td><td>3.2</td></tr>
+            <tr><td>LLM</td><td>Bất kỳ model nào đủ giỏi đọc hiểu và tuân thủ chỉ dẫn</td><td>4.1</td></tr>
+            <tr><td>Đánh giá</td><td>Bộ golden set tự xây, RAGAS, LLM-as-judge</td><td>4.3–4.4</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout callout--warn">
+        <span class="callout__title">Về framework</span>
+        <p>LangChain, LlamaIndex, Haystack giúp ghép nhanh các thành phần trên. Khoá học viết code thuần Python để bạn hiểu từng bước; khi đã hiểu, dùng framework hay không là lựa chọn kỹ thuật bình thường, không phải điều kiện tiên quyết.</p>
+      </div>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>RAG gồm pipeline indexing (offline) và pipeline query (online).</li>
+          <li>Retrieve lấy rộng để không bỏ sót; rerank chọn tinh để context gọn và đúng.</li>
+          <li>Naive RAG đủ cho demo; sản phẩm thật cần ít nhất Advanced RAG.</li>
+          <li>Modular/Agentic RAG thêm vòng lặp và rẽ nhánh khi câu hỏi phức tạp.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Vì sao bước retrieve lấy 50 ứng viên rồi mới rerank xuống 5, thay vì lấy luôn top 5?</summary>
+        <p>Thuật toán retrieve (ANN, BM25) nhanh nhưng xếp hạng thô; đoạn đúng có thể nằm ở hạng 17. Lấy rộng giữ recall cao, rồi reranker chính xác hơn (nhưng chậm hơn) chọn lại thứ tự — chỉ chạy trên 50 ứng viên nên vẫn đủ nhanh.</p>
+      </details>
+      <details class="quiz">
+        <summary>Tài liệu được cập nhật hằng ngày. Pipeline nào phải chạy lại?</summary>
+        <p>Pipeline indexing — nhưng chỉ cho tài liệu thay đổi (indexing tăng dần, dựa trên hash nội dung). Pipeline query không đổi.</p>
+      </details>
+      <details class="quiz">
+        <summary>Hệ thống "embed → top-5 cosine → prompt" thuộc thế hệ nào? Thêm gì để lên thế hệ kế tiếp?</summary>
+        <p>Naive RAG. Thêm tối ưu pre-retrieval (chunking theo cấu trúc, metadata, viết lại truy vấn) và post-retrieval (hybrid search, rerank, nén context) để thành Advanced RAG.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Gao et al. (2023). <a href="https://arxiv.org/abs/2312.10997">Retrieval-Augmented Generation for Large Language Models: A Survey</a>.</li>
+        <li>Gao et al. (2024). <a href="https://arxiv.org/abs/2407.21059">Modular RAG: Transforming RAG Systems into LEGO-like Reconfigurable Frameworks</a>.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

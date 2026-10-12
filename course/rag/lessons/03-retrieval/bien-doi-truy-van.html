@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biến đổi truy vấn: rewrite, multi-query, HyDE — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Viết lại câu hỏi hội thoại, sinh nhiều truy vấn, HyDE, step-back và tách câu hỏi phức tạp để tìm kiếm tốt hơn." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Biến đổi truy vấn: rewrite, multi-query, HyDE</h1>
+      <p class="lesson-lead">Người dùng không viết câu hỏi để máy tìm kiếm dễ: họ hỏi "thế còn năm ngoái?", gõ không dấu, hay gộp ba câu hỏi làm một. Biến đổi truy vấn là bước "phiên dịch" ý định người dùng thành những truy vấn tìm kiếm tốt.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Viết lại câu hỏi hội thoại thành câu hỏi độc lập.</li>
+          <li>Áp dụng multi-query, HyDE, step-back và decomposition đúng chỗ.</li>
+          <li>Kiểm soát độ trễ và chi phí do các lời gọi LLM bổ sung.</li>
+        </ul>
+      </section>
+
+      <h2 id="rewrite">1. Viết lại câu hỏi hội thoại — quan trọng nhất</h2>
+      <p>Trong chatbot, câu hỏi thứ hai thường phụ thuộc câu trước: "Còn nghỉ ốm thì sao?" Đem câu này đi tìm kiếm thì vô nghĩa. Bước <strong>condense</strong> dùng LLM viết lại thành câu hỏi độc lập, đồng thời sửa chính tả và khôi phục dấu tiếng Việt:</p>
+      <pre><code>REWRITE_PROMPT = """Dựa vào lịch sử hội thoại, viết lại câu hỏi cuối thành MỘT câu hỏi
+độc lập, đầy đủ ngữ cảnh, bằng tiếng Việt có dấu. Không trả lời câu hỏi.
+
+Lịch sử:
+{history}
+
+Câu hỏi cuối: {question}
+Câu hỏi độc lập:"""
+
+def condense(history: list[tuple[str, str]], question: str) -> str:
+    if not history:
+        return question
+    turns = "\n".join(f"{role}: {text}" for role, text in history[-6:])  # vài lượt gần nhất
+    return call_llm(REWRITE_PROMPT.format(history=turns, question=question)).strip()
+
+# "con nghi om thi sao?" + lịch sử về nghỉ phép
+# → "Chính sách nghỉ ốm của công ty quy định những gì?"</code></pre>
+
+      <h2 id="multi-query">2. Multi-query (RAG-Fusion)</h2>
+      <p>Một câu hỏi có nhiều cách diễn đạt; mỗi cách có thể khớp với tài liệu khác nhau. Sinh 3–5 biến thể, tìm kiếm song song rồi hợp nhất bằng RRF (bài Hybrid search):</p>
+      <pre><code>import json
+from concurrent.futures import ThreadPoolExecutor
+
+# search_ids(q, k): trả về id các chunk theo thứ hạng (ví dụ từ HybridIndex)
+def multi_query_search(question: str, n: int = 4, k: int = 20) -> list[int]:
+    prompt = (f"Viết {n} cách diễn đạt khác nhau cho câu hỏi tìm kiếm sau, dùng từ ngữ "
+              f"khác nhau. Trả về JSON array các chuỗi.\nCâu hỏi: {question}")
+    variants = [question] + json.loads(call_llm(prompt))[:n]
+    with ThreadPoolExecutor() as pool:
+        rankings = list(pool.map(lambda q: search_ids(q, k), variants))
+    return rrf(rankings)</code></pre>
+      <p>Thực tế nên dùng chế độ structured output/JSON của nhà cung cấp LLM, hoặc bọc <code>json.loads</code> trong try/except và rơi về câu hỏi gốc khi LLM trả sai định dạng.</p>
+
+      <h2 id="hyde">3. HyDE — tìm bằng câu trả lời giả định</h2>
+      <p>Câu hỏi ngắn và tài liệu dài nằm ở "vùng" khác nhau trong không gian vector. <strong>HyDE</strong> (Gao và cộng sự, 2022) yêu cầu LLM viết một đoạn trả lời <em>giả định</em>, rồi embed đoạn đó để tìm tài liệu thật — so khớp tài liệu với tài liệu.</p>
+      <div class="callout callout--warn">
+        <span class="callout__title">Con dao hai lưỡi</span>
+        <p>Đoạn giả định có thể chứa chi tiết bịa (con số, tên riêng) kéo kết quả lệch hướng, và LLM không biết thuật ngữ nội bộ của bạn. HyDE hữu ích khi câu hỏi ngắn, mơ hồ; kém khi câu hỏi chứa từ khoá chính xác. Luôn đo trước khi bật.</p>
+      </div>
+
+      <h2 id="step-back">4. Step-back prompting</h2>
+      <p>Với câu hỏi rất cụ thể, đôi khi cần nguyên tắc chung trước. Step-back (Zheng và cộng sự, 2023) sinh thêm một câu hỏi <em>tổng quát hơn</em> và tìm cho cả hai. Ví dụ: "Thử việc 2 tháng có được nghỉ phép không?" → thêm "Quy định về nghỉ phép năm và điều kiện hưởng là gì?"</p>
+
+      <h2 id="decomposition">5. Tách câu hỏi phức tạp</h2>
+      <p>"So sánh chính sách làm việc từ xa của văn phòng Hà Nội và TP.HCM" cần hai lần tìm riêng. Câu hỏi nhiều bước ("Trưởng nhóm của người phụ trách dự án X là ai?") thậm chí cần tìm <em>tuần tự</em>: kết quả bước 1 trở thành đầu vào của bước 2 — tiền đề của Agentic RAG ở Module 5.</p>
+
+      <h2 id="khi-nao-dung">Dùng kỹ thuật nào, khi nào?</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Kỹ thuật</th><th>Dùng khi</th><th>Thêm</th></tr></thead>
+          <tbody>
+            <tr><td>Condense</td><td>Mọi chatbot nhiều lượt</td><td>1 lời gọi LLM nhỏ</td></tr>
+            <tr><td>Multi-query</td><td>Câu hỏi diễn đạt đa dạng, recall thấp</td><td>1 lời gọi + N lần tìm</td></tr>
+            <tr><td>HyDE</td><td>Câu hỏi ngắn, mơ hồ; tài liệu dài</td><td>1 lời gọi sinh đoạn văn</td></tr>
+            <tr><td>Step-back</td><td>Câu hỏi cụ thể cần nguyên tắc nền</td><td>1 lời gọi + 1 lần tìm</td></tr>
+            <tr><td>Decomposition</td><td>So sánh, nhiều ý, nhiều bước</td><td>1+ lời gọi, có thể tuần tự</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Mỗi kỹ thuật thêm độ trễ. Dùng model nhỏ, nhanh cho bước biến đổi; chạy song song các lần tìm; cache kết quả biến đổi cho câu hỏi lặp lại; và chỉ bật kỹ thuật nào cải thiện số đo trên golden set.</p>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Condense câu hỏi hội thoại là bắt buộc với chatbot; tiện thể khôi phục dấu tiếng Việt.</li>
+          <li>Multi-query + RRF tăng recall khi người dùng diễn đạt khác tài liệu.</li>
+          <li>HyDE và step-back hữu ích có điều kiện — đo trước khi bật.</li>
+          <li>Câu hỏi nhiều ý/nhiều bước cần tách nhỏ, có khi phải tìm tuần tự.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Người dùng hỏi "Điều 37 quy định gì?". HyDE có phù hợp không?</summary>
+        <p>Không. Câu hỏi có từ khoá chính xác ("Điều 37") — BM25 xử lý tốt nhất. Đoạn trả lời giả định của HyDE có thể bịa nội dung và kéo kết quả lệch.</p>
+      </details>
+      <details class="quiz">
+        <summary>Vì sao condense chỉ đưa vài lượt hội thoại gần nhất vào prompt?</summary>
+        <p>Ngữ cảnh cần thiết gần như luôn nằm ở vài lượt cuối; đưa cả lịch sử dài làm tăng chi phí, độ trễ và nguy cơ model bám vào chủ đề cũ.</p>
+      </details>
+      <details class="quiz">
+        <summary>Multi-query làm độ trễ tăng 800 ms. Có những cách nào giảm?</summary>
+        <p>Dùng model nhỏ để sinh biến thể; chạy các lần tìm song song; giảm số biến thể; cache theo câu hỏi; hoặc chỉ bật multi-query khi lần tìm đầu có điểm rerank thấp.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Gao et al. (2022). <a href="https://arxiv.org/abs/2212.10496">Precise Zero-Shot Dense Retrieval without Relevance Labels (HyDE)</a>.</li>
+        <li>Zheng et al. (2023). <a href="https://arxiv.org/abs/2310.06117">Take a Step Back: Evoking Reasoning via Abstraction in LLMs</a>.</li>
+        <li>Ma et al. (2023). <a href="https://arxiv.org/abs/2305.14283">Query Rewriting for Retrieval-Augmented Large Language Models</a>.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

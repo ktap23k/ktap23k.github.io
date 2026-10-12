@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vector database và chỉ mục ANN — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Tìm kiếm láng giềng gần đúng (ANN): HNSW, IVF, quantization; chọn vector database; lọc metadata và ví dụ pgvector." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Vector database và chỉ mục ANN</h1>
+      <p class="lesson-lead">So câu hỏi với từng vector một (như bài Lab) ổn với vài chục nghìn chunk. Với hàng chục triệu, ta cần chỉ mục <em>gần đúng</em>: hy sinh một chút độ chính xác để nhanh hơn hàng trăm lần.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Hiểu cách HNSW và IVF tăng tốc tìm kiếm, cùng các tham số cần chỉnh.</li>
+          <li>Ước lượng bộ nhớ và biết khi nào dùng quantization.</li>
+          <li>Chọn vector database phù hợp và lọc metadata đúng cách.</li>
+        </ul>
+      </section>
+
+      <h2 id="exact-vs-ann">Tìm chính xác và tìm gần đúng</h2>
+      <p>Tìm chính xác (flat/brute-force) có độ phức tạp O(N·d) cho mỗi truy vấn. Các thuật toán <strong>ANN</strong> (Approximate Nearest Neighbor) chỉ xét một phần nhỏ dữ liệu, đổi lại có thể bỏ sót vài láng giềng thật. Thước đo chất lượng của ANN là <strong>recall</strong> so với tìm chính xác — thường đặt mục tiêu 0,95–0,99.</p>
+
+      <h3 id="hnsw">HNSW — đồ thị nhiều tầng</h3>
+      <p>HNSW (Malkov &amp; Yashunin) xây đồ thị trong đó mỗi vector nối với vài láng giềng gần; các tầng trên thưa như "đường cao tốc", tầng dưới dày như "đường nội đô". Tìm kiếm bắt đầu từ tầng trên cùng rồi đi dần xuống. Đây là chỉ mục mặc định của phần lớn vector database.</p>
+      <ul>
+        <li><code>M</code>: số cạnh mỗi nút (thường 16–32). Lớn hơn → recall cao hơn, tốn RAM hơn.</li>
+        <li><code>ef_construction</code>: độ kỹ khi xây (64–200). Lớn hơn → index chậm hơn, chất lượng tốt hơn.</li>
+        <li><code>ef_search</code>: độ rộng khi tìm — <strong>núm vặn chính</strong> giữa tốc độ và recall, chỉnh được lúc chạy.</li>
+      </ul>
+
+      <h3 id="ivf">IVF — chia cụm</h3>
+      <p>Gom vector thành <code>nlist</code> cụm bằng k-means; lúc tìm chỉ quét <code>nprobe</code> cụm gần câu hỏi nhất. Tốn ít RAM hơn HNSW, xây nhanh, nhưng phải train lại cụm khi phân bố dữ liệu thay đổi nhiều.</p>
+
+      <h2 id="bo-nho">Ước lượng bộ nhớ và quantization</h2>
+      <p>Vector float32 tốn 4 byte mỗi chiều: <strong>1 triệu chunk × 1024 chiều × 4 byte ≈ 4 GB</strong>, chưa kể overhead của đồ thị HNSW. Ba cách giảm:</p>
+      <ul>
+        <li><strong>Giảm số chiều</strong> với model hỗ trợ Matryoshka (ví dụ 1024 → 512).</li>
+        <li><strong>Scalar quantization</strong> (int8): nhỏ hơn 4 lần, giảm chất lượng rất ít.</li>
+        <li><strong>Binary quantization</strong>: nhỏ hơn 32 lần; dùng để lọc ứng viên nhanh rồi <em>rescore</em> bằng vector gốc.</li>
+      </ul>
+
+      <h2 id="chon-vector-db">Chọn vector database</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Lựa chọn</th><th>Phù hợp khi</th></tr></thead>
+          <tbody>
+            <tr><td><strong>pgvector</strong> (PostgreSQL)</td><td>Đã dùng Postgres; muốn JOIN với dữ liệu nghiệp vụ, transaction, backup sẵn có. Đủ tốt tới vài chục triệu vector.</td></tr>
+            <tr><td><strong>Qdrant, Milvus, Weaviate</strong></td><td>Cần hiệu năng cao ở quy mô lớn, lọc metadata mạnh, hybrid search và sparse vector tích hợp.</td></tr>
+            <tr><td><strong>Elasticsearch / OpenSearch</strong></td><td>Đã có cụm search; BM25 mạnh sẵn, thêm vector để làm hybrid.</td></tr>
+            <tr><td><strong>Chroma, LanceDB, FAISS</strong></td><td>Prototype, chạy local, nhúng trong ứng dụng.</td></tr>
+            <tr><td><strong>Dịch vụ managed</strong></td><td>Không muốn tự vận hành, chấp nhận chi phí và dữ liệu nằm ở nhà cung cấp.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout callout--tip">
+        <span class="callout__title">Lời khuyên thực dụng</span>
+        <p>Nếu team đã chạy PostgreSQL, hãy bắt đầu với pgvector. Một hệ thống ít thành phần dễ vận hành hơn nhiều; chỉ chuyển sang vector database chuyên dụng khi số đo cho thấy cần.</p>
+      </div>
+
+      <h2 id="pgvector">Ví dụ với pgvector</h2>
+      <pre><code>CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE chunks (
+  id          bigserial PRIMARY KEY,
+  doc_id      text   NOT NULL,
+  content     text   NOT NULL,
+  metadata    jsonb  NOT NULL DEFAULT '{}',
+  embedding   vector(1024) NOT NULL
+);
+
+CREATE INDEX ON chunks USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
+CREATE INDEX ON chunks USING gin (metadata jsonb_path_ops);
+
+-- 5 chunk gần nhất trong các tài liệu người dùng được phép xem
+SET hnsw.ef_search = 100;
+SELECT id, content, 1 - (embedding &lt;=&gt; $1) AS similarity
+FROM chunks
+WHERE metadata @&gt; '{"department": "hr"}'
+ORDER BY embedding &lt;=&gt; $1
+LIMIT 5;</code></pre>
+      <p>Toán tử <code>&lt;=&gt;</code> là khoảng cách cosine (<code>&lt;-&gt;</code> là L2, <code>&lt;#&gt;</code> là tích vô hướng âm). Index HNSW chỉ được dùng khi <code>ORDER BY</code> đúng toán tử tương ứng với opclass.</p>
+
+      <h2 id="loc-metadata">Bẫy khi lọc metadata</h2>
+      <p>Với chỉ mục ANN, có hai cách kết hợp lọc và tìm:</p>
+      <ul>
+        <li><strong>Post-filter</strong>: tìm top-k trước rồi lọc. Nếu bộ lọc chặt (chỉ 1% tài liệu thoả mãn), kết quả có thể còn 0–1 chunk dù dữ liệu phù hợp vẫn tồn tại.</li>
+        <li><strong>Pre-filter / lọc trong lúc duyệt</strong>: đúng hơn, nhưng cần database hỗ trợ tốt. Qdrant, Milvus, Weaviate lọc trong quá trình duyệt đồ thị; pgvector từ bản 0.8 có <em>iterative index scan</em> (<code>SET hnsw.iterative_scan = relaxed_order</code>) để quét tiếp khi lọc làm thiếu kết quả.</li>
+      </ul>
+      <p>Với phân quyền nhiều tenant, cân nhắc tách collection/partition theo tenant thay vì lọc trên một chỉ mục chung.</p>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>ANN đổi một chút recall lấy tốc độ; HNSW là mặc định, <code>ef_search</code> là núm vặn chính.</li>
+          <li>Ước lượng RAM: số vector × số chiều × 4 byte (+ overhead); giảm bằng Matryoshka hoặc quantization.</li>
+          <li>Đã có Postgres → bắt đầu với pgvector.</li>
+          <li>Lọc metadata chặt có thể làm thiếu kết quả nếu database chỉ post-filter.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>5 triệu chunk, 768 chiều, float32 cần khoảng bao nhiêu RAM cho riêng vector?</summary>
+        <p>5.000.000 × 768 × 4 byte ≈ 15,4 GB (chưa tính overhead đồ thị). Với int8 quantization còn khoảng 3,8 GB.</p>
+      </details>
+      <details class="quiz">
+        <summary>Người dùng phòng "legal" (2% tài liệu) luôn nhận kết quả rất ít dù có nhiều tài liệu phù hợp. Nguyên nhân khả dĩ?</summary>
+        <p>Post-filtering: ANN lấy top-k trên toàn bộ kho, phần lớn thuộc phòng khác và bị lọc bỏ. Cần lọc trong lúc duyệt (filterable HNSW, iterative scan) hoặc tách partition theo phòng ban.</p>
+      </details>
+      <details class="quiz">
+        <summary>Recall đo trên ANN chỉ đạt 0,85. Chỉnh gì trước?</summary>
+        <p>Tăng <code>ef_search</code> (không cần xây lại index). Nếu vẫn thấp, xây lại với <code>M</code> hoặc <code>ef_construction</code> lớn hơn.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Malkov &amp; Yashunin. <a href="https://arxiv.org/abs/1603.09320">Efficient and robust approximate nearest neighbor search using HNSW graphs</a>.</li>
+        <li><a href="https://github.com/pgvector/pgvector">pgvector</a> — tài liệu về HNSW, IVFFlat, iterative scan.</li>
+        <li>Bài blog: <a href="../../../../posts/postgresql-index.html">Tối ưu PostgreSQL: Index không phải là cây đũa thần</a>.</li>
+        <li>Bài blog: <a href="../../../../posts/qdrant-thuc-chien.html">Qdrant thực chiến</a>.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

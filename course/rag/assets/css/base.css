@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* =========================================
+   RAG COURSE — token & tiện ích bổ sung cho /assets/css/style.css
+   (style.css của site đã có màu chính, header, footer, TOC, post-nav, skeleton...)
+   ========================================= */
+:root {
+  --accent-ring:  rgba(232, 93, 4, .15);
+  --font-mono:    'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --ok:           #1a6e33;
+  --ok-bg:        #e6f9ec;
+  --ok-border:    #b3e5c0;
+  --info:         #1d4ed8;
+  --info-bg:      #eaf1ff;
+  --warn:         #92400e;
+  --warn-bg:      #fff7e0;
+}
+
+[data-theme="dark"] {
+  --ok:           #5dd87a;
+  --ok-bg:        #0f2d1a;
+  --ok-border:    #1d5430;
+  --info:         #8ab4ff;
+  --info-bg:      #111d33;
+  --warn:         #f5c46b;
+  --warn-bg:      #2b2010;
+}
+
+[hidden] { display: none !important; }
+
+button { font: inherit; color: inherit; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Chừa chỗ cho header sticky khi nhảy tới anchor */
+h2[id], h3[id] { scroll-margin-top: calc(var(--header-h) + 16px); }
+
+.muted-note { color: var(--text-muted); padding: 20px; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* Thanh tiến độ học */
+.meter {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.meter__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #ffb347);
+  transition: width 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+}

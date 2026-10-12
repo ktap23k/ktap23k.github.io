@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chiến lược chunking — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Kích thước chunk, overlap, các chiến lược fixed-size, recursive, theo cấu trúc, semantic và bằng chứng thực nghiệm mới nhất." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Chiến lược chunking</h1>
+      <p class="lesson-lead">Chunk là đơn vị mà hệ thống tìm, xếp hạng và đưa cho LLM. Cắt sai thì câu trả lời bị chia đôi giữa hai chunk, hoặc một chunk ôm ba chủ đề khiến vector "nhoè" nghĩa.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Hiểu đánh đổi giữa chunk nhỏ và chunk lớn.</li>
+          <li>Cài đặt recursive splitting và chunking theo heading Markdown.</li>
+          <li>Biết bằng chứng thực nghiệm nói gì về các chiến lược phổ biến.</li>
+        </ul>
+      </section>
+
+      <h2 id="kich-thuoc">Kích thước: nhỏ hay lớn?</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Chunk nhỏ (100–200 token)</th><th>Chunk lớn (800–1500 token)</th></tr></thead>
+          <tbody>
+            <tr><td>Vector</td><td>Sắc nét, một ý</td><td>Trung bình nhiều ý → "nhoè"</td></tr>
+            <tr><td>Độ chính xác khi tìm</td><td>Cao</td><td>Thấp hơn</td></tr>
+            <tr><td>Ngữ cảnh cho LLM</td><td>Thiếu (đại từ "nó", "điều này" mồ côi)</td><td>Đầy đủ</td></tr>
+            <tr><td>Số chunk, chi phí lưu trữ</td><td>Nhiều</td><td>Ít</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Điểm khởi đầu hợp lý cho văn bản thông thường: <strong>300–500 token mỗi chunk, overlap 10–15%</strong>, rồi điều chỉnh bằng số đo. Overlap giúp một câu nằm ở ranh giới vẫn xuất hiện đủ trong ít nhất một chunk, nhưng overlap quá lớn tạo nhiều bản gần trùng lặp.</p>
+      <div class="callout callout--tip">
+        <span class="callout__title">Không phải chọn một</span>
+        <p>Bài tiếp theo giới thiệu kỹ thuật <em>parent-child</em>: tìm bằng chunk nhỏ cho chính xác, nhưng đưa chunk cha lớn hơn cho LLM để đủ ngữ cảnh.</p>
+      </div>
+
+      <h2 id="chien-luoc">Các chiến lược phổ biến</h2>
+      <h3 id="fixed-size">1. Fixed-size</h3>
+      <p>Cắt mỗi N ký tự/token. Đơn giản, nhanh, nhưng cắt ngang câu và ngang ý. Chỉ nên dùng làm baseline để so sánh.</p>
+      <h3 id="recursive">2. Recursive splitting</h3>
+      <p>Thử cắt theo dấu phân tách "to" nhất trước (đoạn văn), phần nào vẫn quá dài thì cắt tiếp bằng dấu nhỏ hơn (dòng, câu, từ). Giữ được ranh giới tự nhiên trong hầu hết trường hợp — lựa chọn mặc định tốt.</p>
+      <pre><code>SEPARATORS = ["\n\n", "\n", ". ", " "]
+
+def split_recursive(text: str, max_len: int = 1500, seps=SEPARATORS) -> list[str]:
+    if len(text) &lt;= max_len:
+        return [text]
+    sep, *rest = seps or [""]
+    parts = text.split(sep) if sep else list(text)
+    chunks, buf = [], ""
+    for part in parts:
+        candidate = f"{buf}{sep}{part}" if buf else part
+        if len(candidate) &lt;= max_len:
+            buf = candidate
+            continue
+        if buf:
+            chunks.append(buf)
+        if len(part) &gt; max_len:                 # một phần vẫn quá dài → cắt nhỏ hơn
+            chunks.extend(split_recursive(part, max_len, rest))
+            buf = ""
+        else:
+            buf = part
+    return chunks + [buf] if buf else chunks</code></pre>
+      <h3 id="theo-cau-truc">3. Theo cấu trúc tài liệu</h3>
+      <p>Tận dụng cấu trúc sẵn có: heading Markdown/HTML, điều khoản văn bản pháp luật ("Điều 12", "Khoản 3"), hàm/lớp trong code, hàng trong bảng. Mỗi section thành một chunk (section quá dài thì recursive split tiếp). Đặc biệt nên <strong>gắn đường dẫn heading</strong> vào đầu chunk:</p>
+      <pre><code>import re
+
+def split_markdown(md: str) -> list[tuple[str, str]]:
+    """Trả về [(đường dẫn heading, nội dung section)]."""
+    sections, path, lines = [], [], []
+
+    def flush():
+        body = "\n".join(lines).strip()
+        if body:
+            sections.append((" &gt; ".join(path), body))
+
+    for line in md.splitlines():
+        heading = re.match(r"^(#{1,6})\s+(.+)", line)
+        if heading:
+            flush()
+            level = len(heading.group(1))
+            path = path[:level - 1] + [heading.group(2).strip()]
+            lines = []
+        else:
+            lines.append(line)
+    flush()
+    return sections
+
+# Văn bản đem embed: "Sổ tay nhân sự &gt; Nghỉ phép &gt; Nghỉ ốm\n\nNhân viên được..."
+chunks = [f"{path}\n\n{piece}" for path, body in split_markdown(md)
+          for piece in split_recursive(body)]</code></pre>
+      <h3 id="semantic">4. Semantic chunking</h3>
+      <p>Embed từng câu, cắt ở nơi độ tương đồng giữa hai câu liền kề giảm mạnh (chuyển chủ đề). Nghe hợp lý nhưng tốn chi phí embed thêm và kết quả không ổn định giữa các loại tài liệu.</p>
+
+      <h2 id="bang-chung">Bằng chứng thực nghiệm</h2>
+      <p>Một nghiên cứu hệ thống công bố tháng 3/2026 (Shaukat và cộng sự) so sánh <strong>36 chiến lược chunking</strong> trên 6 lĩnh vực với 5 embedding model:</p>
+      <ul>
+        <li>Các phương pháp tôn trọng cấu trúc nội dung vượt trội rõ rệt so với cắt cố định. <strong>Paragraph Group Chunking</strong> (gom các đoạn văn liền nhau) đạt kết quả tổng thể tốt nhất, nDCG@5 trung bình khoảng 0,459.</li>
+        <li>Cắt cố định theo ký tự cho kết quả kém nhất, nDCG@5 dưới 0,244.</li>
+        <li>Chiến lược tốt nhất <em>thay đổi theo lĩnh vực</em>: chunk kích thước động thắng ở sinh học, vật lý, y tế; gom đoạn văn thắng ở pháp luật và toán.</li>
+        <li>Embedding tốt hơn và chunking tốt hơn bổ trợ cho nhau: model lớn vẫn giảm điểm khi tài liệu bị cắt kém.</li>
+      </ul>
+      <p>Kết luận thực dụng: <strong>bắt đầu bằng chunking theo cấu trúc + recursive</strong> (chính là hàm <code>chunk_text</code> ở bài Lab, phiên bản tốt hơn), rồi đo trên dữ liệu của bạn trước khi thử các phương pháp đắt hơn.</p>
+      <div class="callout callout--warn">
+        <span class="callout__title">Cẩn thận với bảng và code</span>
+        <p>Không bao giờ cắt ngang một bảng hay một hàm. Bảng dài thì tách theo nhóm hàng và <em>lặp lại dòng tiêu đề</em> ở mỗi chunk; code thì tách theo hàm/lớp kèm chữ ký và docstring.</p>
+      </div>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Chunk nhỏ tìm chính xác, chunk lớn đủ ngữ cảnh; khởi đầu 300–500 token, overlap 10–15%.</li>
+          <li>Recursive splitting là mặc định tốt; chunking theo cấu trúc còn tốt hơn khi tài liệu có heading.</li>
+          <li>Gắn đường dẫn heading vào chunk để chunk "biết" mình thuộc phần nào.</li>
+          <li>Nghiên cứu 2026: phương pháp theo cấu trúc thắng cắt cố định; semantic chunking không đáng chi phí trong đa số trường hợp.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Chunk "Mức phạt là 5 triệu đồng." được tìm thấy nhưng LLM không biết phạt cho hành vi nào. Nguyên nhân và cách sửa?</summary>
+        <p>Chunk quá nhỏ, mất ngữ cảnh. Sửa bằng cách gắn đường dẫn heading/điều khoản vào chunk, tăng kích thước theo cấu trúc (cả khoản/điều), hoặc dùng parent-child.</p>
+      </details>
+      <details class="quiz">
+        <summary>Bảng giá 200 dòng nên chunk thế nào?</summary>
+        <p>Chuyển sang Markdown, tách theo nhóm hàng (ví dụ 20–30 hàng), lặp lại dòng tiêu đề và tên bảng ở mỗi chunk. Nếu người dùng hay hỏi kiểu tổng hợp/so sánh số liệu, cân nhắc lưu bảng vào database và dùng text-to-SQL.</p>
+      </details>
+      <details class="quiz">
+        <summary>Theo nghiên cứu năm 2026, có nên mặc định dùng semantic chunking?</summary>
+        <p>Không. Phương pháp theo cấu trúc (như gom đoạn văn) cho kết quả tổng thể tốt nhất với chi phí thấp hơn; và chiến lược tối ưu phụ thuộc lĩnh vực — nên đo trên dữ liệu của bạn.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Shaukat et al. (2026). <a href="https://arxiv.org/abs/2603.06976">A Systematic Investigation of Document Chunking Strategies and Embedding Sensitivity</a>.</li>
+        <li>Wang et al. (2024). <a href="https://arxiv.org/abs/2407.01219">Searching for Best Practices in Retrieval-Augmented Generation</a>.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đưa RAG lên production: hiệu năng, bảo mật, vận hành — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Ingestion tăng dần, phiên bản chỉ mục, ngân sách độ trễ, cache, quan sát hệ thống, phân quyền, prompt injection gián tiếp và đầu độc dữ liệu." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Đưa RAG lên production: hiệu năng, bảo mật, vận hành</h1>
+      <p class="lesson-lead">Demo chạy trên laptop với 20 tài liệu khác rất xa hệ thống phục vụ nghìn người dùng, dữ liệu đổi mỗi ngày và có tài liệu mật. Bài này là checklist những gì thường bị quên cho tới khi sự cố xảy ra.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Thiết kế ingestion tăng dần và quản lý phiên bản chỉ mục.</li>
+          <li>Kiểm soát độ trễ, chi phí và quan sát hệ thống.</li>
+          <li>Phòng thủ các rủi ro bảo mật đặc thù của RAG.</li>
+        </ul>
+      </section>
+
+      <h2 id="ingestion">Ingestion: dữ liệu luôn thay đổi</h2>
+      <ul>
+        <li><strong>Tăng dần theo hash</strong>: chỉ chunk và embed lại tài liệu có <code>content_hash</code> thay đổi.</li>
+        <li><strong>Xử lý xoá</strong>: tài liệu bị xoá hoặc thu hồi quyền ở nguồn phải biến mất khỏi chỉ mục — đây vừa là chuyện chất lượng, vừa là chuyện tuân thủ. Đồng bộ định kỳ danh sách id để dọn chunk "mồ côi".</li>
+        <li><strong>Idempotent</strong>: chạy lại job cho cùng tài liệu không tạo bản trùng (dùng id chunk xác định, ví dụ <code>doc_id#section#index</code>).</li>
+        <li><strong>Phiên bản chỉ mục</strong>: đổi embedding model hay chiến lược chunking → dựng chỉ mục mới song song, chạy golden set, rồi chuyển alias (blue-green); giữ bản cũ để rollback.</li>
+      </ul>
+
+      <h2 id="do-tre">Ngân sách độ trễ</h2>
+      <p>Phân bổ thời gian cho từng bước rồi đo thực tế. Một phân bổ <em>tham khảo</em> cho câu trả lời trong khoảng 3 giây:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Bước</th><th>Ngân sách</th><th>Cách giảm</th></tr></thead>
+          <tbody>
+            <tr><td>Viết lại truy vấn</td><td>200–400 ms</td><td>Model nhỏ; bỏ qua khi không có lịch sử</td></tr>
+            <tr><td>Embed + tìm hybrid</td><td>50–150 ms</td><td>Model embedding gần dữ liệu; chạy BM25 và vector song song</td></tr>
+            <tr><td>Rerank</td><td>100–300 ms</td><td>GPU, batch, giảm số ứng viên</td></tr>
+            <tr><td>Sinh câu trả lời</td><td>1–2 s tới khi xong</td><td><strong>Streaming</strong>, context gọn, prompt caching</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Streaming không làm hệ thống nhanh hơn nhưng làm người dùng <em>thấy</em> nhanh hơn rất nhiều — luôn bật. Đặt timeout cho từng bước và có đường lui (ví dụ bỏ rerank khi reranker quá tải).</p>
+
+      <h2 id="cache">Cache: cẩn thận với semantic cache</h2>
+      <p>Cache theo câu hỏi chính xác (sau chuẩn hoá) an toàn và hiệu quả với câu hỏi lặp lại. <strong>Semantic cache</strong> (trả lại câu trả lời cũ cho câu hỏi "na ná") tiết kiệm nhiều hơn nhưng rủi ro: "nghỉ phép năm 2025" và "nghỉ phép năm 2026" rất gần nhau về vector nhưng đáp án khác. Cache cũng phải gắn với <strong>quyền của người hỏi</strong> và bị xoá khi tài liệu nguồn đổi.</p>
+
+      <h2 id="quan-sat">Quan sát hệ thống</h2>
+      <p>Mỗi request nên để lại một bản ghi truy vết: câu hỏi gốc và sau khi viết lại, id + điểm các chunk tìm được và được rerank, phiên bản prompt và model, số token, độ trễ từng bước, câu trả lời, phản hồi của người dùng. Có dữ liệu này, mỗi lời phàn nàn "bot trả lời sai" trở thành một ca debug cụ thể — và có thể bổ sung vào golden set.</p>
+      <ul>
+        <li>Dashboard: p50/p95 độ trễ, chi phí/ngày, tỉ lệ từ chối, tỉ lệ phản hồi tiêu cực.</li>
+        <li>Đánh giá online: chấm faithfulness tự động trên một mẫu nhỏ request mỗi ngày.</li>
+        <li>Mỗi tuần đọc thủ công 20–30 cuộc hội thoại — vẫn là cách phát hiện vấn đề tốt nhất.</li>
+      </ul>
+
+      <h2 id="bao-mat">Bảo mật</h2>
+      <h3 id="phan-quyen">Phân quyền tài liệu</h3>
+      <p>Lọc theo quyền của người dùng (lấy từ hệ thống xác thực) <strong>trong truy vấn retrieval</strong>, trước khi bất cứ chunk nào vào prompt. Đồng bộ ACL từ nguồn (Drive, Confluence, SharePoint) như một phần của ingestion. Với nhiều khách hàng (multi-tenant), tách chỉ mục hoặc partition theo tenant. Không bao giờ giao việc phân quyền cho LLM.</p>
+      <h3 id="prompt-injection">Prompt injection gián tiếp</h3>
+      <p>Greshake và cộng sự (2023) chỉ ra rằng chỉ dẫn độc hại có thể nằm <em>trong tài liệu được truy xuất</em> — trang web, email, file người dùng tải lên — và LLM có thể làm theo. Không có biện pháp nào chặn tuyệt đối; hãy phòng thủ nhiều lớp:</p>
+      <ul>
+        <li>Đánh dấu rõ tài liệu là dữ liệu, không phải chỉ dẫn (bài Prompt cho RAG).</li>
+        <li>Công cụ của agent chỉ có quyền tối thiểu; hành động có tác dụng phụ cần người xác nhận.</li>
+        <li>Lọc đầu ra: chặn render ảnh/link Markdown trỏ tới domain lạ — một kênh rò rỉ dữ liệu đã được ghi nhận.</li>
+        <li>Kiểm soát nguồn nào được đưa vào chỉ mục; ghi log và giám sát bất thường.</li>
+      </ul>
+      <h3 id="dau-doc">Đầu độc kho tri thức</h3>
+      <p>PoisonedRAG (Zou và cộng sự, 2024) cho thấy chèn chỉ 5 đoạn văn độc hại cho mỗi câu hỏi mục tiêu vào kho hàng triệu đoạn có thể đạt tỉ lệ tấn công thành công khoảng 90%. Ai có quyền <em>ghi</em> vào nguồn dữ liệu là người có thể điều khiển câu trả lời: giới hạn quyền ghi, lưu nguồn gốc (provenance), duyệt nội dung từ nguồn kém tin cậy.</p>
+      <h3 id="pii">Dữ liệu cá nhân</h3>
+      <p>Log truy vết chứa câu hỏi và tài liệu — tức là chứa dữ liệu nhạy cảm. Che PII trước khi index/ghi log khi có thể, đặt thời hạn lưu, và giới hạn ai được xem log. OWASP Top 10 cho ứng dụng LLM (bản 2025) có hẳn mục <em>Vector and Embedding Weaknesses</em> bên cạnh Prompt Injection và Sensitive Information Disclosure — nên dùng làm checklist rà soát.</p>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Ingestion tăng dần, xử lý xoá, chỉ mục có phiên bản và rollback.</li>
+          <li>Ngân sách độ trễ từng bước, streaming, timeout và đường lui.</li>
+          <li>Truy vết đầy đủ mỗi request; đọc hội thoại thật hằng tuần.</li>
+          <li>Phân quyền bằng code trước retrieval; phòng prompt injection và đầu độc dữ liệu nhiều lớp.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Một tài liệu bị gỡ khỏi Confluence vì chứa thông tin sai, nhưng bot vẫn trích dẫn nó. Thiếu gì trong pipeline?</summary>
+        <p>Xử lý xoá: ingestion chỉ thêm/cập nhật mà không đồng bộ danh sách tài liệu còn tồn tại, nên chunk của tài liệu đã gỡ vẫn nằm trong chỉ mục (và có thể cả trong cache).</p>
+      </details>
+      <details class="quiz">
+        <summary>Vì sao semantic cache có thể làm lộ dữ liệu?</summary>
+        <p>Nếu cache không gắn với quyền người hỏi, câu trả lời dựng từ tài liệu mật cho người A có thể được trả lại cho người B hỏi câu tương tự nhưng không có quyền.</p>
+      </details>
+      <details class="quiz">
+        <summary>Cách phòng thủ nào quan trọng nhất trước prompt injection gián tiếp khi agent có công cụ gửi email?</summary>
+        <p>Quyền tối thiểu và người xác nhận: agent không được tự gửi email (hoặc thực hiện hành động có tác dụng phụ) chỉ dựa trên nội dung tài liệu. Các lớp khác giảm rủi ro nhưng không loại bỏ được.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Greshake et al. (2023). <a href="https://arxiv.org/abs/2302.12173">Not what you've signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection</a>.</li>
+        <li>Zou et al. (2024). <a href="https://arxiv.org/abs/2402.07867">PoisonedRAG: Knowledge Corruption Attacks to Retrieval-Augmented Generation of LLMs</a>.</li>
+        <li>OWASP. <a href="https://genai.owasp.org/llm-top-10/">Top 10 for LLM Applications</a>.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

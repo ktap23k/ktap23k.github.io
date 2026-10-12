@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nạp và làm sạch dữ liệu — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Trích xuất văn bản từ PDF, HTML, bảng biểu; thiết kế metadata; chuẩn hoá Unicode tiếng Việt và loại bỏ trùng lặp trước khi index." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Nạp và làm sạch dữ liệu</h1>
+      <p class="lesson-lead">Phần lớn lỗi "RAG trả lời sai" mà mình từng debug bắt nguồn từ đây: bảng biểu bị trích thành chuỗi số vô nghĩa, header/footer lặp lại trên mọi trang, hay cùng một chữ tiếng Việt nhưng mã hoá Unicode khác nhau.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Chọn công cụ trích xuất phù hợp cho từng loại tài liệu.</li>
+          <li>Thiết kế metadata phục vụ lọc, phân quyền, dẫn nguồn và cập nhật.</li>
+          <li>Chuẩn hoá văn bản tiếng Việt và loại bỏ trùng lặp.</li>
+        </ul>
+      </section>
+
+      <h2 id="trich-xuat">Trích xuất văn bản theo loại tài liệu</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Loại</th><th>Khó khăn</th><th>Công cụ gợi ý</th></tr></thead>
+          <tbody>
+            <tr><td>PDF có lớp chữ</td><td>Thứ tự đọc nhiều cột, header/footer, bảng</td><td>PyMuPDF, pdfplumber; Docling hoặc Marker khi cần giữ bố cục và bảng</td></tr>
+            <tr><td>PDF scan, ảnh</td><td>Không có lớp chữ</td><td>OCR (Tesseract, PaddleOCR) hoặc model thị giác — xem bài RAG đa phương thức</td></tr>
+            <tr><td>HTML</td><td>Menu, quảng cáo, footer lẫn vào nội dung</td><td>Trafilatura, BeautifulSoup + chọn đúng thẻ nội dung</td></tr>
+            <tr><td>Docx, PPTX</td><td>Style heading, bảng, ghi chú slide</td><td>python-docx, python-pptx, Unstructured</td></tr>
+            <tr><td>Markdown, code</td><td>Ít — đã có cấu trúc</td><td>Đọc trực tiếp; tách theo heading hoặc theo hàm/lớp</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Nguyên tắc chung: <strong>đưa mọi định dạng về Markdown</strong> (hoặc văn bản có đánh dấu heading). Heading giúp chunking theo cấu trúc, bảng ở dạng Markdown giữ được quan hệ hàng–cột mà LLM đọc hiểu rất tốt.</p>
+      <div class="callout callout--warn">
+        <span class="callout__title">Luôn nhìn tận mắt kết quả trích xuất</span>
+        <p>Trước khi embed, in ngẫu nhiên 20 đoạn đã trích xuất và đọc. Mười phút này phát hiện được những lỗi mà không metric nào bắt được: chữ dính nhau, cột bị đọc xen kẽ, bảng biến thành một dòng số.</p>
+      </div>
+
+      <h2 id="metadata">Thiết kế metadata</h2>
+      <p>Metadata là thứ biến "một đống vector" thành hệ thống vận hành được. Mỗi chunk nên mang theo:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Trường</th><th>Ví dụ</th><th>Dùng để</th></tr></thead>
+          <tbody>
+            <tr><td><code>doc_id</code>, <code>chunk_id</code></td><td><code>hr/nghi-phep.md#3</code></td><td>Cập nhật, xoá, đánh giá retrieval</td></tr>
+            <tr><td><code>source_url</code>, <code>title</code></td><td>Link wiki, tên tài liệu</td><td>Dẫn nguồn cho người dùng</td></tr>
+            <tr><td><code>section_path</code></td><td>Chính sách &gt; Nghỉ phép &gt; Nghỉ ốm</td><td>Bổ sung ngữ cảnh cho chunk</td></tr>
+            <tr><td><code>updated_at</code>, <code>version</code></td><td><code>2026-09-01</code></td><td>Ưu tiên bản mới, loại bản cũ</td></tr>
+            <tr><td><code>allowed_groups</code></td><td><code>["hr", "managers"]</code></td><td>Phân quyền khi truy vấn</td></tr>
+            <tr><td><code>doc_type</code>, <code>language</code>, <code>page</code></td><td><code>policy</code>, <code>vi</code>, <code>12</code></td><td>Lọc, định tuyến, hiển thị</td></tr>
+            <tr><td><code>content_hash</code></td><td>SHA-256</td><td>Bỏ qua chunk không đổi khi index lại</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="tieng-viet">Chuẩn hoá văn bản tiếng Việt</h2>
+      <p>Tiếng Việt có ba "cái bẫy" mà tài liệu tiếng Anh không gặp:</p>
+      <ol>
+        <li><strong>NFC và NFD.</strong> Chữ "ệ" có thể là một ký tự dựng sẵn (NFC) hoặc "e" + dấu mũ + dấu nặng (NFD). Mắt thường thấy giống hệt, nhưng so khớp chuỗi và BM25 coi là khác nhau. Văn bản copy từ macOS hay một số PDF thường ở dạng NFD.</li>
+        <li><strong>Vị trí dấu thanh.</strong> "hoà" và "hòa", "thuý" và "thúy", "khoẻ" và "khỏe" đều đúng chính tả nhưng là chuỗi khác nhau. Chọn một quy ước và áp dụng cho cả tài liệu lẫn câu hỏi — thư viện <code>underthesea</code> có hàm <code>text_normalize</code> làm việc này.</li>
+        <li><strong>Ký tự vô hình.</strong> Khoảng trắng không ngắt (<code> </code>), zero-width space (<code>​</code>), soft hyphen từ PDF.</li>
+      </ol>
+      <pre><code>import hashlib
+import re
+import unicodedata
+
+INVISIBLE = dict.fromkeys(map(ord, "​‌‍­﻿"))
+
+def clean_text(text: str) -> str:
+    text = unicodedata.normalize("NFC", text)        # dấu tiếng Việt về dạng dựng sẵn
+    text = text.translate(INVISIBLE).replace(" ", " ")
+    text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)     # nối từ bị ngắt dòng trong PDF
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+def content_hash(text: str) -> str:
+    return hashlib.sha256(clean_text(text).lower().encode("utf-8")).hexdigest()</code></pre>
+      <div class="callout callout--note">
+        <span class="callout__title">Áp dụng cho cả câu hỏi</span>
+        <p>Mọi bước chuẩn hoá áp dụng lúc index thì cũng phải áp dụng cho câu hỏi lúc truy vấn. Đặt chúng trong một hàm dùng chung để không bao giờ lệch nhau.</p>
+      </div>
+
+      <h2 id="loai-rac">Loại bỏ rác và trùng lặp</h2>
+      <ul>
+        <li><strong>Boilerplate</strong>: header/footer lặp lại trên mọi trang PDF, menu website, chữ ký email. Mẹo: dòng nào xuất hiện ở hơn 50% số trang của cùng tài liệu thì gần như chắc chắn là rác.</li>
+        <li><strong>Trùng lặp chính xác</strong>: cùng nội dung ở nhiều nơi (bản copy trên Drive và Wiki) → so <code>content_hash</code>, chỉ giữ một bản, gộp metadata nguồn.</li>
+        <li><strong>Gần trùng lặp</strong>: các phiên bản v1, v2, v3 của cùng tài liệu → MinHash/SimHash để phát hiện; giữ bản mới nhất hoặc đánh dấu <code>is_latest</code>.</li>
+      </ul>
+      <p>Trùng lặp không chỉ tốn chỗ: năm bản gần giống nhau sẽ chiếm hết top-5 kết quả, đẩy các đoạn hữu ích khác ra ngoài, và nếu các phiên bản mâu thuẫn nhau thì LLM không biết tin bản nào.</p>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Đưa mọi định dạng về Markdown để giữ heading và bảng.</li>
+          <li>Metadata phục vụ dẫn nguồn, lọc, phân quyền và cập nhật — thiết kế ngay từ đầu.</li>
+          <li>Chuẩn hoá Unicode NFC, quy ước dấu thanh và ký tự vô hình — cho cả tài liệu và câu hỏi.</li>
+          <li>Loại boilerplate và trùng lặp để top-k không bị chiếm bởi nội dung lặp.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Người dùng tìm "hòa đồng" nhưng BM25 không khớp tài liệu viết "hoà đồng". Khắc phục thế nào?</summary>
+        <p>Chuẩn hoá vị trí dấu thanh về một quy ước (ví dụ bằng <code>underthesea.text_normalize</code>) và chuẩn hoá NFC — áp dụng giống nhau cho cả tài liệu khi index lẫn câu hỏi khi truy vấn.</p>
+      </details>
+      <details class="quiz">
+        <summary>Vì sao nên lưu <code>allowed_groups</code> trong metadata của từng chunk thay vì kiểm tra quyền sau khi LLM trả lời?</summary>
+        <p>Vì phải lọc <em>trước</em> khi đưa vào prompt. Một khi chunk mật đã nằm trong context, LLM có thể làm lộ nội dung trong câu trả lời; kiểm tra sau là quá muộn.</p>
+      </details>
+      <details class="quiz">
+        <summary>Tại sao trùng lặp làm giảm chất lượng câu trả lời chứ không chỉ tốn dung lượng?</summary>
+        <p>Các bản trùng chiếm nhiều vị trí trong top-k, đẩy thông tin hữu ích khác ra ngoài; nếu là các phiên bản mâu thuẫn thì LLM có thể trả lời theo bản cũ.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li><a href="https://github.com/docling-project/docling">Docling</a> — chuyển PDF/Docx/PPTX sang Markdown, giữ bảng.</li>
+        <li><a href="https://trafilatura.readthedocs.io/">Trafilatura</a> — trích nội dung chính từ trang web.</li>
+        <li><a href="https://github.com/undertheseanlp/underthesea">underthesea</a> — xử lý ngôn ngữ tự nhiên tiếng Việt.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

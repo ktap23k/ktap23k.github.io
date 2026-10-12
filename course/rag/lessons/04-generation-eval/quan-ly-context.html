@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý context window và chi phí — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Ngân sách token, MMR để đa dạng hoá context, nén context, prompt caching và khi nào dùng long-context thay cho RAG." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Quản lý context window và chi phí</h1>
+      <p class="lesson-lead">Context window hàng trăm nghìn token không có nghĩa là nên dùng hết. Mỗi token thêm vào làm tăng tiền, tăng độ trễ, và quá một mức nào đó còn làm câu trả lời kém đi.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Lập ngân sách token cho từng phần của prompt.</li>
+          <li>Chọn context đa dạng bằng MMR và đóng gói theo ngân sách.</li>
+          <li>Dùng prompt caching và biết khi nào long-context thay được RAG.</li>
+        </ul>
+      </section>
+
+      <h2 id="ngan-sach">Ngân sách token</h2>
+      <pre><code>context window ≥ system prompt + lịch sử hội thoại + tài liệu + câu hỏi + chỗ cho câu trả lời</code></pre>
+      <p>Hãy cố định ngân sách cho từng phần thay vì "còn bao nhiêu nhét bấy nhiêu". Ví dụ cho một chatbot nội bộ: system 1.000 token, lịch sử 2.000, tài liệu 6.000, câu trả lời 1.500. Khi lịch sử vượt ngân sách, tóm tắt các lượt cũ thay vì cắt bỏ.</p>
+
+      <h2 id="nhieu-hon-khong-tot-hon">Nhiều context hơn không phải lúc nào cũng tốt hơn</h2>
+      <ul>
+        <li><strong>Chi phí</strong> tăng tuyến tính theo token đầu vào, nhân với số truy vấn mỗi ngày.</li>
+        <li><strong>Độ trễ</strong>: thời gian tới token đầu tiên tăng theo độ dài prompt.</li>
+        <li><strong>Chất lượng</strong>: nghiên cứu "Context Rot" của Chroma (2025) thử 18 model và thấy hiệu năng giảm khi input dài ra, kể cả với tác vụ đơn giản; cộng thêm hiện tượng lost in the middle ở bài trước.</li>
+        <li><strong>Nhiễu</strong>: đoạn gần liên quan nhưng sai (quy định cũ, sản phẩm khác) dễ khiến model trả lời nhầm.</li>
+      </ul>
+
+      <h2 id="mmr">Đa dạng hoá context với MMR</h2>
+      <p>Top-5 theo độ liên quan thường gồm năm đoạn gần giống nhau. <strong>Maximal Marginal Relevance</strong> chọn từng đoạn sao cho vừa liên quan tới câu hỏi, vừa <em>khác</em> các đoạn đã chọn: điểm = λ·liên_quan − (1−λ)·trùng_lặp_lớn_nhất.</p>
+      <pre><code>import numpy as np
+
+def mmr(query_vec: np.ndarray, doc_vecs: np.ndarray, k: int = 5, lam: float = 0.7) -> list[int]:
+    relevance = doc_vecs @ query_vec
+    selected: list[int] = []
+    candidates = list(range(len(doc_vecs)))
+    while candidates and len(selected) &lt; k:
+        redundancy = (doc_vecs[candidates] @ doc_vecs[selected].T).max(axis=1) \
+            if selected else np.zeros(len(candidates))
+        scores = lam * relevance[candidates] - (1 - lam) * redundancy
+        best = candidates[int(np.argmax(scores))]
+        selected.append(best)
+        candidates.remove(best)
+    return selected
+
+def pack(chunks: list[str], budget: int, count_tokens) -> list[str]:
+    """Lấy lần lượt các chunk (đã xếp theo độ liên quan) cho tới khi hết ngân sách token."""
+    packed, used = [], 0
+    for chunk in chunks:
+        cost = count_tokens(chunk)
+        if used + cost &lt;= budget:
+            packed.append(chunk)
+            used += cost
+    return packed</code></pre>
+      <p><code>count_tokens</code> nên dùng tokenizer của đúng model bạn gọi (hoặc API đếm token của nhà cung cấp); ước lượng theo số ký tự sai lệch đáng kể với tiếng Việt.</p>
+
+      <h2 id="nen-context">Nén context</h2>
+      <ul>
+        <li><strong>Trích câu</strong>: giữ lại những câu trong chunk liên quan tới câu hỏi (dùng embedding hoặc reranker ở mức câu).</li>
+        <li><strong>Loại token thừa</strong>: các phương pháp như LLMLingua dùng model nhỏ để bỏ token ít thông tin — tiết kiệm nhiều nhưng có thể làm mất chi tiết quan trọng.</li>
+        <li><strong>Tóm tắt lịch sử</strong>: giữ nguyên văn vài lượt gần nhất, tóm tắt phần cũ hơn.</li>
+      </ul>
+
+      <h2 id="prompt-caching">Prompt caching</h2>
+      <p>Hầu hết nhà cung cấp LLM lớn đều hỗ trợ cache phần đầu prompt lặp lại giữa các request, giảm mạnh chi phí và độ trễ cho phần đó (Anthropic báo cáo giảm độ trễ hơn 2 lần và chi phí tới 90% trong trường hợp của Contextual Retrieval). Để tận dụng:</p>
+      <ol>
+        <li>Phần <strong>ổn định</strong> đặt trước: system prompt, định nghĩa tool, tài liệu tĩnh dùng chung.</li>
+        <li>Phần <strong>thay đổi</strong> đặt sau: chunk vừa tìm được, câu hỏi.</li>
+        <li>Đừng chèn thứ thay đổi liên tục (thời gian hiện tại, request id) vào đầu prompt — nó phá cache.</li>
+      </ol>
+
+      <h2 id="long-context">Khi nào long-context thay được RAG?</h2>
+      <p>Nếu cả kho nhỏ (dưới khoảng 200.000 token) và ít thay đổi, đưa toàn bộ vào prompt kết hợp caching thường đơn giản và tốt hơn RAG. Hướng tiếp cận "Cache-Augmented Generation" (Chan và cộng sự, 2024) đẩy ý tưởng này xa hơn bằng cách tính sẵn KV-cache cho toàn bộ tri thức. Khi kho lớn, thay đổi thường xuyên, cần phân quyền theo người dùng hoặc cần dẫn nguồn chính xác — RAG vẫn là lựa chọn đúng.</p>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Đặt ngân sách token cố định cho từng phần prompt.</li>
+          <li>Nhiều context hơn làm tăng chi phí, độ trễ và có thể giảm chất lượng.</li>
+          <li>MMR loại đoạn trùng lặp; đóng gói theo ngân sách bằng tokenizer thật.</li>
+          <li>Phần ổn định ở đầu prompt để tận dụng caching; kho nhỏ thì cân nhắc bỏ RAG.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Với λ = 1, MMR hoạt động thế nào? Với λ = 0?</summary>
+        <p>λ = 1: chỉ xét độ liên quan — giống top-k thông thường. λ = 0: chỉ xét sự khác biệt — chọn đoạn khác nhau nhất bất kể liên quan hay không. Giá trị 0,5–0,8 thường hợp lý.</p>
+      </details>
+      <details class="quiz">
+        <summary>Prompt bắt đầu bằng "Hôm nay là 12/10/2026 14:03:27". Ảnh hưởng gì tới caching?</summary>
+        <p>Phần đầu prompt thay đổi mỗi giây nên cache không bao giờ khớp. Đưa thông tin thời gian xuống sau phần ổn định (hoặc chỉ ghi ngày, không ghi giờ).</p>
+      </details>
+      <details class="quiz">
+        <summary>Kho tài liệu 120 trang, cập nhật mỗi quý, mọi nhân viên đều được xem. RAG hay long-context?</summary>
+        <p>Long-context + prompt caching đáng thử trước: kho nhỏ (ước chừng vài chục nghìn token), ít thay đổi, không cần phân quyền. Đơn giản hơn nhiều so với vận hành pipeline RAG.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Chroma Research (2025). <a href="https://www.trychroma.com/research/context-rot">Context Rot: How Increasing Input Tokens Impacts LLM Performance</a>.</li>
+        <li>Chan et al. (2024). <a href="https://arxiv.org/abs/2412.15605">Don't Do RAG: When Cache-Augmented Generation is All You Need for Knowledge Tasks</a>.</li>
+        <li>Carbonell &amp; Goldstein (1998). The Use of MMR, Diversity-Based Reranking for Reordering Documents and Producing Summaries.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

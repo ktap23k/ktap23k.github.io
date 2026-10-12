@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Khoá học RAG từ cơ bản đến nâng cao — Ktap</title>
+  <meta name="description" content="Khoá học miễn phí bằng tiếng Việt về Retrieval-Augmented Generation: embedding, chunking, hybrid search, reranking, đánh giá, GraphRAG, Agentic RAG và production." />
+  <link rel="icon" type="image/svg+xml" href="../../favicon.svg" />
+  <link rel="stylesheet" href="../../assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/rag.css" />
+  <script type="module" src="assets/js/course/overview.js"></script>
+</head>
+<body>
+<main>
+
+  <section class="rag-hero">
+    <div class="container">
+      <p class="rag-hero__eyebrow">Khoá học miễn phí · Cơ bản → Nâng cao</p>
+      <h1 class="rag-hero__title">RAG từ cơ bản đến nâng cao</h1>
+      <p class="rag-hero__lead">Học cách cho LLM "đọc" tài liệu của riêng bạn và trả lời có dẫn nguồn. Khoá học đi từ embedding và RAG 60 dòng code đầu tiên, qua chunking, hybrid search, reranking, đến đánh giá có hệ thống, GraphRAG, Agentic RAG và những gì cần để chạy ổn định trên production.</p>
+      <div class="rag-hero__stats" id="courseStats"></div>
+      <div class="rag-hero__cta">
+        <a class="btn btn--primary" id="courseCta" href="lessons/01-nen-tang/rag-la-gi.html">Bắt đầu học →</a>
+        <div class="rag-hero__progress">
+          <p class="rag-hero__progress-label" id="courseProgressLabel"></p>
+          <div class="meter" aria-hidden="true"><div class="meter__fill" id="courseMeter" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rag-section">
+    <div class="container">
+      <h2 class="section-title">Bạn sẽ học được gì</h2>
+      <ul class="goal-grid">
+        <li><strong>Hiểu bản chất</strong>Vì sao LLM bịa, khi nào RAG là lời giải và khi nào fine-tuning hay long-context hợp hơn.</li>
+        <li><strong>Indexing đúng cách</strong>Làm sạch dữ liệu tiếng Việt, chọn chiến lược chunking, gắn ngữ cảnh cho từng chunk.</li>
+        <li><strong>Retrieval chất lượng cao</strong>Hybrid search BM25 + vector, RRF, reranker, biến đổi và định tuyến truy vấn.</li>
+        <li><strong>Trả lời có căn cứ</strong>Prompt grounding, trích dẫn nguồn, biết nói "không biết" và quản lý context window.</li>
+        <li><strong>Đo lường được</strong>Recall@k, MRR, nDCG, faithfulness; xây golden set và vòng lặp cải tiến có số liệu.</li>
+        <li><strong>Kiến trúc nâng cao</strong>GraphRAG, Agentic RAG, RAG đa phương thức, bảo mật và vận hành production.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="rag-section">
+    <div class="container">
+      <h2 class="section-title">Yêu cầu đầu vào</h2>
+      <ul class="plain-list">
+        <li><strong>Python cơ bản</strong>: hàm, list/dict, đọc file, cài package bằng <code>pip</code>.</li>
+        <li><strong>Đã từng gọi API của một LLM</strong> (OpenAI, Anthropic, Gemini, Ollama… đều được). Code trong khoá học không phụ thuộc nhà cung cấp.</li>
+        <li>Không cần nền tảng machine learning — các khái niệm cần thiết đều được giải thích từ đầu.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="rag-section">
+    <div class="container">
+      <h2 class="section-title">Lộ trình học</h2>
+      <ol class="module-list" id="moduleList">
+        <li class="post-skeleton" aria-hidden="true"><div class="skeleton-line skeleton-line--title"></div><div class="skeleton-line"></div></li>
+        <li class="post-skeleton" aria-hidden="true"><div class="skeleton-line skeleton-line--title"></div><div class="skeleton-line"></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="rag-section">
+    <div class="container">
+      <h2 class="section-title">Cách học hiệu quả</h2>
+      <ul class="plain-list">
+        <li><strong>Học theo thứ tự</strong>: mỗi module dựa trên module trước. Module 1–2 là bắt buộc, module 3–5 có thể chọn theo nhu cầu.</li>
+        <li><strong>Gõ lại code của các bài Lab</strong> với chính tài liệu của bạn (quy trình nội bộ, README, ghi chú…) — dữ liệu thật dạy nhiều hơn dữ liệu mẫu.</li>
+        <li><strong>Làm phần "Kiểm tra nhanh"</strong> cuối mỗi bài trước khi mở đáp án, rồi bấm "Đánh dấu đã học" để theo dõi tiến độ.</li>
+        <li><strong>Đo trước khi tối ưu</strong>: từ Module 4 trở đi, mọi thay đổi nên đi kèm một con số trên bộ đánh giá của bạn.</li>
+      </ul>
+      <p class="rag-note">Nội dung cập nhật tháng 10/2026. Số liệu nghiên cứu được trích kèm nguồn trong từng bài.</p>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

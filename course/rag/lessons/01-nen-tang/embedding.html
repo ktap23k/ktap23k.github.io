@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Embedding và tìm kiếm ngữ nghĩa — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Embedding là gì, đo độ tương đồng bằng cosine, chọn embedding model cho tiếng Việt và những bẫy thường gặp." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Embedding và tìm kiếm ngữ nghĩa</h1>
+      <p class="lesson-lead">Làm sao máy biết "nghỉ phép năm" và "số ngày nghỉ có lương" nói cùng một chuyện? Câu trả lời là embedding — biến văn bản thành toạ độ trong một không gian nơi ý nghĩa gần nhau thì nằm gần nhau.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Hiểu embedding là gì và vì sao nó tìm được theo nghĩa thay vì theo chữ.</li>
+          <li>Tính cosine similarity và biết khi nào cosine, dot product, L2 cho cùng kết quả.</li>
+          <li>Chọn embedding model phù hợp cho tiếng Việt và tránh các bẫy phổ biến.</li>
+        </ul>
+      </section>
+
+      <h2 id="embedding-la-gi">Embedding là gì?</h2>
+      <p>Embedding model nhận một đoạn văn bản và trả về một vector số thực có độ dài cố định (thường 384–4096 chiều). Model được huấn luyện bằng <em>contrastive learning</em>: cặp câu cùng nghĩa (câu hỏi ↔ đoạn trả lời đúng) bị kéo lại gần nhau, cặp không liên quan bị đẩy ra xa. Sau hàng trăm triệu cặp như vậy, khoảng cách giữa các vector phản ánh khoảng cách về ý nghĩa.</p>
+      <pre><code>"Nhân viên được nghỉ phép bao nhiêu ngày?"  → [ 0.021, -0.113, 0.087, ...]  (1024 số)
+"Số ngày nghỉ có lương mỗi năm là 12 ngày."  → [ 0.019, -0.098, 0.091, ...]  ← rất gần
+"Hướng dẫn cấu hình VPN cho máy Mac."         → [-0.140,  0.052, 0.003, ...]  ← xa</code></pre>
+      <p>Hai câu đầu gần như không chung từ nào ("nghỉ phép" ↔ "nghỉ có lương", "bao nhiêu ngày" ↔ "12 ngày") nhưng vector rất gần nhau. Đó là sức mạnh của tìm kiếm ngữ nghĩa so với tìm theo từ khoá.</p>
+
+      <h2 id="do-tuong-dong">Đo độ tương đồng</h2>
+      <p><strong>Cosine similarity</strong> đo góc giữa hai vector, bỏ qua độ dài: <code>cos(a, b) = (a · b) / (‖a‖ · ‖b‖)</code>, giá trị từ −1 đến 1. Nếu bạn <strong>chuẩn hoá</strong> mọi vector về độ dài 1 (hầu hết thư viện có tuỳ chọn này), thì cosine chính là dot product, và xếp hạng theo khoảng cách L2 cũng cho cùng thứ tự. Vì vậy:</p>
+      <ul>
+        <li>Chuẩn hoá vector một lần khi index → dùng dot product cho nhanh.</li>
+        <li>Dùng đúng metric mà nhà cung cấp model khuyến nghị.</li>
+        <li>Điểm tuyệt đối (0.82 hay 0.65) <em>không</em> so sánh được giữa các model khác nhau — chỉ thứ hạng mới có ý nghĩa.</li>
+      </ul>
+      <pre><code>import numpy as np
+
+def normalize(v: np.ndarray) -> np.ndarray:
+    return v / np.linalg.norm(v, axis=-1, keepdims=True)
+
+docs = normalize(doc_vectors)       # shape (n_docs, dim)
+query = normalize(query_vector)     # shape (dim,)
+scores = docs @ query               # cosine của query với từng doc
+top_k = np.argsort(-scores)[:5]     # chỉ số 5 doc gần nhất</code></pre>
+
+      <h2 id="bi-encoder">Bi-encoder: vì sao tìm kiếm nhanh được</h2>
+      <p>Embedding model là một <strong>bi-encoder</strong>: câu hỏi và tài liệu được mã hoá <em>độc lập</em>. Nhờ đó vector tài liệu được tính sẵn lúc indexing; lúc truy vấn chỉ cần embed câu hỏi rồi so với hàng triệu vector có sẵn. Đánh đổi: model không bao giờ "nhìn" câu hỏi và tài liệu cùng lúc, nên xếp hạng kém tinh hơn cross-encoder — lý do ta cần reranking (Module 3).</p>
+      <div class="callout callout--warn">
+        <span class="callout__title">Embedding bất đối xứng: đừng quên prefix</span>
+        <p>Nhiều model phân biệt câu hỏi và đoạn văn. Họ E5 yêu cầu thêm <code>"query: "</code> và <code>"passage: "</code>; một số model khác dùng instruction riêng cho query. Quên prefix có thể làm giảm chất lượng tìm kiếm đáng kể mà không báo lỗi gì. Luôn đọc model card.</p>
+      </div>
+
+      <h2 id="chon-model">Chọn embedding model</h2>
+      <p>Bảng xếp hạng <strong>MTEB</strong> (và bản đa ngôn ngữ MMTEB) là điểm khởi đầu, nhưng điểm trung bình trên benchmark không dự đoán chính xác hiệu quả trên dữ liệu của bạn. Các tiêu chí thực tế:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tiêu chí</th><th>Câu hỏi cần trả lời</th></tr></thead>
+          <tbody>
+            <tr><td>Ngôn ngữ</td><td>Model có được huấn luyện đa ngôn ngữ, có tiếng Việt không?</td></tr>
+            <tr><td>Độ dài tối đa</td><td>512 token hay 8K+? Chunk dài hơn giới hạn sẽ bị cắt mất phần đuôi.</td></tr>
+            <tr><td>Số chiều</td><td>Nhiều chiều = tốn RAM/ổ đĩa hơn. Model hỗ trợ <em>Matryoshka</em> cho phép cắt bớt chiều mà mất ít chất lượng.</td></tr>
+            <tr><td>Triển khai</td><td>Tự host (dữ liệu không rời hệ thống) hay gọi API (không cần GPU)?</td></tr>
+            <tr><td>Chi phí</td><td>Phải embed lại toàn bộ kho mỗi khi đổi model.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Một số lựa chọn đa ngôn ngữ đáng thử (tại thời điểm viết, tháng 10/2026): <strong>BAAI/bge-m3</strong> (mã nguồn mở, 8192 token, 1024 chiều, có cả dense lẫn sparse), <strong>intfloat/multilingual-e5</strong> (nhỏ, nhanh, phù hợp để học), họ <strong>Qwen3-Embedding</strong> (mạnh trên MTEB đa ngôn ngữ, nhiều kích cỡ), và các API như Gemini Embedding, OpenAI <code>text-embedding-3</code>, Voyage, Cohere.</p>
+      <div class="callout callout--tip">
+        <span class="callout__title">Cách chọn đúng: tự đo</span>
+        <p>Lấy 50–100 câu hỏi thật kèm đoạn trả lời đúng, chạy 2–3 model ứng viên và so Recall@5. Một buổi chiều đo đạc đáng giá hơn nhiều giờ đọc bảng xếp hạng. Bài Lab ở Module 4 hướng dẫn chi tiết.</p>
+      </div>
+
+      <h2 id="bay-thuong-gap">Những bẫy thường gặp</h2>
+      <ul>
+        <li><strong>Trộn vector của hai model khác nhau</strong> trong cùng một chỉ mục: kết quả vô nghĩa. Đổi model = embed lại toàn bộ.</li>
+        <li><strong>Từ khoá hiếm, mã số, tên riêng</strong> ("lỗi E-4012", "điều 37"): embedding thường yếu ở đây → cần hybrid search với BM25.</li>
+        <li><strong>Phủ định và con số</strong>: "được phép" và "không được phép" có thể có vector rất gần nhau. Đó là việc của reranker và LLM, không phải embedding.</li>
+        <li><strong>Unicode tiếng Việt chưa chuẩn hoá</strong>: cùng chữ "hoà" nhưng dựng sẵn (NFC) và tổ hợp (NFD) là hai chuỗi byte khác nhau → chuẩn hoá trước khi embed (Module 2).</li>
+      </ul>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Embedding biến văn bản thành vector; ý nghĩa gần → vector gần.</li>
+          <li>Chuẩn hoá vector để cosine = dot product; chỉ so thứ hạng, không so điểm tuyệt đối giữa các model.</li>
+          <li>Bi-encoder nhanh vì tính sẵn vector tài liệu, nhưng xếp hạng thô → cần rerank.</li>
+          <li>Chọn model bằng cách đo trên dữ liệu của chính bạn; nhớ prefix query/passage.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Vector đã chuẩn hoá về độ dài 1. Xếp hạng theo cosine và theo dot product khác nhau thế nào?</summary>
+        <p>Không khác gì: với vector độ dài 1, cosine = dot product, nên thứ tự xếp hạng giống hệt nhau.</p>
+      </details>
+      <details class="quiz">
+        <summary>Bạn đổi từ model A sang model B nhưng chỉ embed lại tài liệu mới. Chuyện gì xảy ra?</summary>
+        <p>Chỉ mục chứa vector từ hai không gian khác nhau; câu hỏi embed bằng B so với vector của A cho kết quả vô nghĩa. Phải embed lại toàn bộ kho bằng B (thường dựng chỉ mục mới rồi chuyển sang).</p>
+      </details>
+      <details class="quiz">
+        <summary>Người dùng tìm "mã lỗi E-4012" nhưng tìm kiếm ngữ nghĩa trả về các đoạn nói chung chung về lỗi. Vì sao, và khắc phục thế nào?</summary>
+        <p>Embedding nén ý nghĩa tổng quát và yếu với chuỗi ký tự hiếm như mã lỗi. Khắc phục bằng hybrid search: kết hợp BM25 (khớp chính xác từ khoá) với vector search (Module 3).</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li><a href="https://huggingface.co/spaces/mteb/leaderboard">MTEB Leaderboard</a> — nhớ lọc theo tác vụ Retrieval và ngôn ngữ.</li>
+        <li>Kusupati et al. (2022). <a href="https://arxiv.org/abs/2205.13147">Matryoshka Representation Learning</a>.</li>
+        <li>Chen et al. (2024). <a href="https://arxiv.org/abs/2402.03216">BGE M3-Embedding</a>.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chunk có ngữ cảnh: parent-child, contextual retrieval, late chunking — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Giải quyết bài toán chunk mất ngữ cảnh: contextual header, parent-child, Contextual Retrieval của Anthropic, late chunking và RAPTOR." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Chunk có ngữ cảnh: parent-child, contextual retrieval, late chunking</h1>
+      <p class="lesson-lead">"Doanh thu tăng 3% so với quý trước." — của công ty nào, quý nào? Chunk bị tách khỏi tài liệu mất luôn ngữ cảnh. Bài này giới thiệu năm cách trả lại ngữ cảnh đó, xếp từ rẻ đến đắt.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Nhận diện vấn đề "chunk mồ côi ngữ cảnh".</li>
+          <li>Cài đặt contextual header và parent-child retrieval.</li>
+          <li>Hiểu Contextual Retrieval, late chunking, RAPTOR và khi nào đáng dùng.</li>
+        </ul>
+      </section>
+
+      <h2 id="contextual-header">1. Contextual header — gần như miễn phí</h2>
+      <p>Gắn tiêu đề tài liệu và đường dẫn heading vào đầu chunk trước khi embed (đã làm ở bài trước). Chunk "Doanh thu tăng 3%..." trở thành "Báo cáo tài chính ACME 2026 &gt; Quý 2 &gt; Kết quả kinh doanh — Doanh thu tăng 3%...". Không tốn gì thêm ngoài vài token, nên luôn làm.</p>
+
+      <h2 id="parent-child">2. Parent-child (small-to-big)</h2>
+      <p>Tách hai vai trò: chunk <strong>con</strong> nhỏ (1–3 câu) để <em>tìm</em> cho chính xác; chunk <strong>cha</strong> (cả section) để <em>đưa cho LLM</em> đọc. Một biến thể là <em>sentence window</em>: tìm theo câu, trả về câu đó kèm vài câu trước và sau.</p>
+      <pre><code>from dataclasses import dataclass
+
+@dataclass
+class Child:
+    id: str
+    parent_id: str
+    text: str          # câu/đoạn ngắn — được embed và tìm kiếm
+
+def retrieve_parents(query: str, k: int = 20, max_parents: int = 4) -> list[str]:
+    children = child_index.search(query, k=k)           # tìm trên chunk con
+    parent_ids = list(dict.fromkeys(c.parent_id for c in children))  # bỏ trùng, giữ thứ tự
+    return [parent_store[pid] for pid in parent_ids[:max_parents]]  # trả chunk cha</code></pre>
+      <p>Lưu ý: nhiều chunk con cùng cha thường được tìm thấy cùng lúc — hãy gộp lại để không đưa một section vào prompt hai lần.</p>
+
+      <h2 id="contextual-retrieval">3. Contextual Retrieval</h2>
+      <p>Anthropic công bố kỹ thuật này năm 2024: dùng một LLM nhỏ, đưa cho nó <em>toàn bộ tài liệu</em> và <em>một chunk</em>, yêu cầu viết 50–100 token mô tả chunk đó nằm ở đâu, nói về gì trong tài liệu. Đoạn mô tả được ghép vào đầu chunk trước khi embed <strong>và</strong> trước khi đưa vào chỉ mục BM25.</p>
+      <pre><code>CONTEXT_PROMPT = """&lt;document&gt;
+{document}
+&lt;/document&gt;
+Đây là một đoạn trích từ tài liệu trên:
+&lt;chunk&gt;
+{chunk}
+&lt;/chunk&gt;
+Viết một đoạn ngữ cảnh ngắn gọn (tối đa 2 câu) để định vị đoạn trích này trong toàn bộ
+tài liệu, nhằm cải thiện việc tìm kiếm. Chỉ trả lời bằng đoạn ngữ cảnh, không thêm gì khác."""
+
+def contextualize(document: str, chunks: list[str]) -> list[str]:
+    # Phần {document} giống hệt nhau cho mọi chunk của một tài liệu → bật prompt caching
+    return [f"{call_llm(CONTEXT_PROMPT.format(document=document, chunk=c))}\n\n{c}" for c in chunks]</code></pre>
+      <p>Kết quả Anthropic báo cáo (tỉ lệ thất bại = 1 − recall@20, trung bình nhiều bộ dữ liệu, với embedding model tốt nhất trong thử nghiệm):</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cấu hình</th><th>Tỉ lệ thất bại top-20</th><th>Giảm</th></tr></thead>
+          <tbody>
+            <tr><td>Embedding thường</td><td>5,7%</td><td>—</td></tr>
+            <tr><td>Contextual Embeddings</td><td>3,7%</td><td>35%</td></tr>
+            <tr><td>+ Contextual BM25</td><td>2,9%</td><td>49%</td></tr>
+            <tr><td>+ Reranking (150 → 20)</td><td>1,9%</td><td>67%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Chi phí ước tính một lần khoảng 1,02 USD cho mỗi triệu token tài liệu (với giả định chunk 800 token, tài liệu 8.000 token, có prompt caching). Bài viết gốc cũng khuyên: nếu cả kho dưới ~200.000 token, đưa thẳng toàn bộ vào prompt.</p>
+      <div class="callout callout--warn">
+        <span class="callout__title">Đừng tin con số, hãy đo</span>
+        <p>Các con số trên là của bộ dữ liệu và model mà Anthropic thử nghiệm. Mức cải thiện trên dữ liệu của bạn có thể khác — hãy so sánh trên golden set trước khi trả chi phí LLM cho toàn bộ kho.</p>
+      </div>
+
+      <h2 id="late-chunking">4. Late chunking</h2>
+      <p>Cách làm thông thường là cắt trước, embed sau, nên mỗi chunk được mã hoá như thể đứng một mình. <strong>Late chunking</strong> (Jina AI, 2024) làm ngược lại: đưa cả tài liệu qua một embedding model hỗ trợ ngữ cảnh dài để có vector cho <em>từng token</em> (mỗi token đã "nhìn thấy" toàn bộ tài liệu), <em>sau đó</em> mới gom (mean-pool) các token thuộc từng chunk thành vector của chunk.</p>
+      <ul>
+        <li><strong>Ưu</strong>: không tốn lời gọi LLM; đại từ và tham chiếu trong chunk được "hiểu" nhờ ngữ cảnh.</li>
+        <li><strong>Nhược</strong>: cần model ngữ cảnh dài và truy cập vector cấp token (không phải API nào cũng có); mức cải thiện báo cáo trên BEIR ở mức vừa phải (vài phần trăm nDCG@10); tài liệu dài hơn giới hạn của model vẫn phải chia.</li>
+      </ul>
+
+      <h2 id="raptor">5. RAPTOR — cây tóm tắt</h2>
+      <p>RAPTOR (Sarthi và cộng sự, 2024) gom cụm các chunk theo ngữ nghĩa, dùng LLM tóm tắt mỗi cụm, rồi lặp lại trên các bản tóm tắt để tạo thành một cây nhiều tầng. Khi truy vấn, tìm trên mọi tầng: câu hỏi chi tiết khớp với lá, câu hỏi tổng quát ("tài liệu này kết luận gì?") khớp với các nút tóm tắt. Đắt khi index và phải dựng lại khi dữ liệu đổi nhiều — hợp với kho tài liệu dài, ít thay đổi như sách, báo cáo nghiên cứu.</p>
+
+      <h2 id="chon-ky-thuat">Chọn kỹ thuật nào?</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Kỹ thuật</th><th>Chi phí index</th><th>Khi nào dùng</th></tr></thead>
+          <tbody>
+            <tr><td>Contextual header</td><td>~0</td><td>Luôn luôn</td></tr>
+            <tr><td>Parent-child</td><td>Thấp</td><td>Tài liệu có section rõ, câu trả lời cần đọc cả đoạn</td></tr>
+            <tr><td>Late chunking</td><td>Thấp</td><td>Tự host embedding model ngữ cảnh dài</td></tr>
+            <tr><td>Contextual Retrieval</td><td>Trung bình (1 lời gọi LLM/chunk)</td><td>Chunk nhiều tham chiếu ngầm: báo cáo, hợp đồng, biên bản</td></tr>
+            <tr><td>RAPTOR</td><td>Cao</td><td>Câu hỏi tổng hợp trên tài liệu dài, ít thay đổi</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Chunk mất ngữ cảnh khi tách khỏi tài liệu; gắn header là bước rẻ nhất.</li>
+          <li>Parent-child: tìm bằng chunk nhỏ, trả chunk lớn cho LLM.</li>
+          <li>Contextual Retrieval dùng LLM viết ngữ cảnh cho từng chunk; Anthropic báo cáo giảm 35–67% lỗi retrieval tuỳ cấu hình.</li>
+          <li>Late chunking lấy ngữ cảnh mà không cần LLM; RAPTOR phục vụ câu hỏi tổng hợp.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Vì sao Contextual Retrieval ghép ngữ cảnh vào cả chỉ mục BM25 chứ không chỉ vào embedding?</summary>
+        <p>Ngữ cảnh thêm vào thường chứa từ khoá quan trọng (tên công ty, kỳ báo cáo, mã sản phẩm) mà chunk gốc thiếu. Đưa vào BM25 giúp khớp chính xác các từ khoá đó — Anthropic đo được mức giảm lỗi từ 35% lên 49% khi thêm Contextual BM25.</p>
+      </details>
+      <details class="quiz">
+        <summary>Prompt caching giúp gì cho Contextual Retrieval?</summary>
+        <p>Mọi chunk của cùng một tài liệu dùng chung phần {document} dài ở đầu prompt. Cache phần đó giúp các lời gọi sau rẻ và nhanh hơn nhiều, nên chi phí index chấp nhận được.</p>
+      </details>
+      <details class="quiz">
+        <summary>Parent-child trả về 3 chunk con thuộc cùng một section. Nên đưa gì vào prompt?</summary>
+        <p>Chỉ đưa section cha <em>một lần</em> (gộp theo parent_id), rồi dùng chỗ trống còn lại cho các section khác.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Anthropic (2024). <a href="https://www.anthropic.com/news/contextual-retrieval">Introducing Contextual Retrieval</a>.</li>
+        <li>Günther et al. (2024). <a href="https://arxiv.org/abs/2409.04701">Late Chunking: Contextual Chunk Embeddings Using Long-Context Embedding Models</a>.</li>
+        <li>Sarthi et al. (2024). <a href="https://arxiv.org/abs/2401.18059">RAPTOR: Recursive Abstractive Processing for Tree-Organized Retrieval</a>.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

@@ -1,0 +1,75 @@
+/* =========================================
+   LESSON PAGE — bố cục bài học
+   ========================================= */
+.container--wide { max-width: 1240px; }
+
+.lesson-layout {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+  padding-top: 32px;
+  padding-bottom: 64px;
+}
+.lesson { max-width: 780px; min-width: 0; }
+
+.lesson-header {
+  padding-bottom: 28px;
+  margin-bottom: 36px;
+  border-bottom: 1px solid var(--border);
+}
+.lesson-header__eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.lesson-header__eyebrow a { color: inherit; text-decoration: none; }
+.lesson-header__eyebrow a:hover { text-decoration: underline; }
+.lesson-header__eyebrow span { color: var(--text-muted); font-weight: 500; }
+
+.lesson-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.7rem, 4vw, 2.3rem);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+}
+.lesson-lead {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--text-muted);
+}
+
+/* Footer: đánh dấu hoàn thành + điều hướng bài */
+.lesson-footer {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+.lesson-complete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+}
+.lesson-complete p { font-size: 0.92rem; color: var(--text-muted); }
+.lesson-complete.is-done { background: var(--ok-bg); border-color: var(--ok-border); }
+.lesson-complete.is-done p { color: var(--ok); font-weight: 600; }
+.lesson-footer .post-nav { border-top: none; padding-bottom: 0; }
+.lesson-footer .post-nav__item--next { grid-column: 2; }
+
+@media (max-width: 960px) {
+  .lesson-layout { grid-template-columns: 1fr; gap: 24px; padding-top: 20px; }
+}
+@media (max-width: 560px) {
+  .lesson-footer .post-nav__item--next { grid-column: auto; }
+}

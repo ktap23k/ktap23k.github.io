@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hybrid search: BM25 + vector + RRF — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Kết hợp tìm kiếm từ khoá BM25 với tìm kiếm vector bằng Reciprocal Rank Fusion; xử lý tách từ tiếng Việt." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Hybrid search: BM25 + vector + RRF</h1>
+      <p class="lesson-lead">Embedding hiểu nghĩa nhưng mù mã số; BM25 bắt chính xác từ khoá nhưng không biết "nghỉ phép" và "ngày nghỉ có lương" là một. Ghép hai thứ lại, ta có retrieval đáng tin cậy hơn hẳn từng cái riêng lẻ.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Hiểu trực giác của BM25 và điểm mạnh/yếu so với dense retrieval.</li>
+          <li>Kết hợp hai bảng xếp hạng bằng Reciprocal Rank Fusion.</li>
+          <li>Tách từ tiếng Việt hợp lý cho BM25.</li>
+        </ul>
+      </section>
+
+      <h2 id="bm25">BM25 trong 3 ý</h2>
+      <p>BM25 là thuật toán xếp hạng từ khoá kinh điển, vẫn là xương sống của Elasticsearch, OpenSearch, Lucene. Điểm của một tài liệu với một truy vấn là tổng điểm của từng từ trong truy vấn, dựa trên:</p>
+      <ol>
+        <li><strong>IDF</strong> — từ càng hiếm trong toàn kho càng có giá trị ("E-4012" quan trọng hơn "của").</li>
+        <li><strong>TF có bão hoà</strong> — từ xuất hiện nhiều lần thì điểm tăng, nhưng tăng chậm dần (tham số <code>k1</code>, thường 1,2–2).</li>
+        <li><strong>Chuẩn hoá độ dài</strong> — tài liệu dài không được lợi chỉ vì dài (tham số <code>b</code>, thường 0,75).</li>
+      </ol>
+
+      <h2 id="so-sanh">Ai giỏi việc gì?</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Loại câu hỏi</th><th>BM25</th><th>Vector</th></tr></thead>
+          <tbody>
+            <tr><td>Mã lỗi, mã sản phẩm, số hiệu điều khoản</td><td>Rất tốt</td><td>Kém</td></tr>
+            <tr><td>Tên riêng, từ viết tắt nội bộ</td><td>Tốt</td><td>Không ổn định</td></tr>
+            <tr><td>Diễn đạt khác tài liệu, đồng nghĩa</td><td>Kém</td><td>Rất tốt</td></tr>
+            <tr><td>Câu hỏi dài, mô tả tình huống</td><td>Trung bình</td><td>Tốt</td></tr>
+            <tr><td>Hỏi tiếng Anh, tài liệu tiếng Việt</td><td>Không khớp</td><td>Tốt (model đa ngôn ngữ)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Hai phương pháp sai ở những chỗ <em>khác nhau</em>, nên kết hợp lại hiệu quả. Trong các khảo sát thực hành năm 2026, hybrid retrieval được xem là lựa chọn mặc định cho hệ thống RAG production.</p>
+
+      <h2 id="rrf">Reciprocal Rank Fusion</h2>
+      <p>Điểm BM25 (0–30+) và điểm cosine (0–1) không cùng thang đo, nên cộng trực tiếp là sai. <strong>RRF</strong> (Cormack và cộng sự, 2009) chỉ dùng <em>thứ hạng</em>:</p>
+      <pre><code>RRF(d) = Σ  1 / (k + rank_i(d))      với k = 60, tổng trên mọi bảng xếp hạng i</code></pre>
+      <p>Tài liệu đứng đầu ở cả hai bảng được cộng dồn điểm và vượt lên; tài liệu chỉ xuất hiện ở một bảng vẫn có cơ hội. Không cần chuẩn hoá điểm, không cần tinh chỉnh trọng số — đó là lý do RRF trở thành mặc định.</p>
+
+      <h2 id="code">Cài đặt</h2>
+      <pre><code># pip install rank-bm25
+import re
+import unicodedata
+import numpy as np
+from rank_bm25 import BM25Okapi
+
+def tokenize(text: str) -> list[str]:
+    words = re.findall(r"\w+", unicodedata.normalize("NFC", text).lower())
+    # Từ tiếng Việt thường gồm nhiều âm tiết ("nghỉ phép") → thêm bigram âm tiết
+    return words + [f"{a}_{b}" for a, b in zip(words, words[1:])]
+
+def rrf(rankings: list[list[int]], k: int = 60) -> list[int]:
+    scores: dict[int, float] = {}
+    for ranking in rankings:
+        for rank, doc_id in enumerate(ranking, start=1):
+            scores[doc_id] = scores.get(doc_id, 0.0) + 1 / (k + rank)
+    return sorted(scores, key=scores.get, reverse=True)
+
+class HybridIndex:
+    def __init__(self, chunks: list[str], vectors: np.ndarray):
+        self.chunks, self.vectors = chunks, vectors          # vectors đã chuẩn hoá
+        self.bm25 = BM25Okapi([tokenize(c) for c in chunks])
+
+    def search(self, query: str, k: int = 5, depth: int = 50) -> list[str]:
+        dense = np.argsort(-(self.vectors @ embed([query], "query")[0]))[:depth]
+        sparse = np.argsort(-self.bm25.get_scores(tokenize(query)))[:depth]
+        fused = rrf([dense.tolist(), sparse.tolist()])
+        return [self.chunks[i] for i in fused[:k]]</code></pre>
+      <p>Hàm <code>embed</code> lấy từ bài Lab. Tham số <code>depth</code> là số ứng viên lấy từ mỗi bên trước khi hợp nhất; ở bài tiếp theo ta sẽ đưa kết quả hợp nhất qua reranker.</p>
+
+      <h2 id="tieng-viet">Tách từ tiếng Việt cho BM25</h2>
+      <p>Tiếng Việt viết cách nhau theo <em>âm tiết</em>, không theo <em>từ</em>: "học sinh" là một từ hai âm tiết. Tách theo khoảng trắng làm "học" khớp cả "học sinh", "học phí", "đại học". Ba cách xử lý, từ đơn giản đến kỹ:</p>
+      <ul>
+        <li><strong>Âm tiết + bigram</strong> (như code trên): không cần thư viện, bigram "học_sinh" giúp khớp cụm từ chính xác hơn.</li>
+        <li><strong>Tách từ</strong> bằng <code>underthesea</code> hoặc <code>pyvi</code>: chính xác hơn, nhưng chậm hơn và có thể tách sai thuật ngữ chuyên ngành.</li>
+        <li><strong>Sparse vector học được</strong> (SPLADE, phần sparse của bge-m3): model tự học trọng số từ, xử lý cả đồng nghĩa ở mức nào đó.</li>
+      </ul>
+      <div class="callout callout--note">
+        <span class="callout__title">Không cần tự viết khi đã có hạ tầng</span>
+        <p>Elasticsearch/OpenSearch, Qdrant, Weaviate, Milvus đều hỗ trợ hybrid search và RRF tích hợp. Trên PostgreSQL, có thể kết hợp full-text search (cấu hình <code>simple</code>, vì không có stemmer tiếng Việt) với pgvector rồi hợp nhất bằng RRF trong SQL.</p>
+      </div>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>BM25 mạnh với từ khoá chính xác, vector mạnh với ngữ nghĩa — chúng bù trừ nhau.</li>
+          <li>Không cộng trực tiếp điểm khác thang đo; dùng RRF với k = 60.</li>
+          <li>Tiếng Việt: thêm bigram âm tiết hoặc dùng công cụ tách từ cho BM25.</li>
+          <li>Hybrid search là mặc định nên có của RAG production.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Tài liệu A đứng hạng 1 ở vector, không có trong top BM25. Tài liệu B đứng hạng 3 ở cả hai. Theo RRF (k = 60), ai đứng trên?</summary>
+        <p>A: 1/61 ≈ 0,0164. B: 1/63 + 1/63 ≈ 0,0317. B đứng trên — tài liệu được cả hai phương pháp đồng thuận được ưu tiên.</p>
+      </details>
+      <details class="quiz">
+        <summary>Vì sao không nên lấy 0,5 × điểm BM25 + 0,5 × điểm cosine?</summary>
+        <p>Hai điểm khác thang đo và phân bố (BM25 không bị chặn trên, phụ thuộc truy vấn); trọng số 0,5 không có ý nghĩa. Muốn cộng điểm phải chuẩn hoá cẩn thận theo từng truy vấn — RRF tránh được vấn đề này.</p>
+      </details>
+      <details class="quiz">
+        <summary>Người dùng hỏi bằng tiếng Anh về tài liệu tiếng Việt. Thành phần nào của hybrid search còn hoạt động?</summary>
+        <p>Chủ yếu là dense retrieval với embedding đa ngôn ngữ. BM25 gần như không khớp — một lý do để chuẩn hoá/dịch câu hỏi ở bước biến đổi truy vấn.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Cormack, Clarke &amp; Büttcher (2009). <a href="https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf">Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods</a>.</li>
+        <li>Robertson &amp; Zaragoza (2009). The Probabilistic Relevance Framework: BM25 and Beyond.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

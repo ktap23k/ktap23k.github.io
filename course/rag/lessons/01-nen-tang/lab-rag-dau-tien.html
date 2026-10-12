@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab: dựng RAG đầu tiên trong 60 dòng Python — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Tự tay xây một hệ thống RAG hoàn chỉnh chạy được: chunk, embed, tìm kiếm bằng numpy và sinh câu trả lời có trích dẫn." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Lab: dựng RAG đầu tiên trong 60 dòng Python</h1>
+      <p class="lesson-lead">Không framework, không vector database — chỉ numpy, một embedding model chạy local và LLM bạn đang dùng. Mục tiêu là thấy rõ từng bánh răng trước khi thay chúng bằng bản xịn hơn.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Cài đặt môi trường và chuẩn bị bộ tài liệu mẫu.</li>
+          <li>Viết đủ 4 bước: chunk → embed → search → generate.</li>
+          <li>Quan sát các lỗi điển hình của Naive RAG để hiểu vì sao cần các module sau.</li>
+        </ul>
+      </section>
+
+      <h2 id="chuan-bi">1. Chuẩn bị</h2>
+      <pre><code>python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install sentence-transformers numpy</code></pre>
+      <p>Tạo thư mục <code>docs/</code> và đặt vào đó vài file Markdown — tốt nhất là tài liệu thật của bạn (quy trình nội bộ, README dự án, ghi chú học tập). Nếu chưa có, hãy tự viết 3 file ngắn: <code>nghi-phep.md</code>, <code>lam-viec-tu-xa.md</code>, <code>bao-hiem.md</code>.</p>
+      <p>Tiếp theo, tạo <code>llm.py</code> — lớp bọc mỏng quanh SDK của nhà cung cấp LLM mà bạn dùng. Toàn bộ khoá học chỉ gọi LLM qua hàm này, nên đổi nhà cung cấp không ảnh hưởng phần còn lại:</p>
+      <pre><code># llm.py
+def call_llm(prompt: str, system: str = "") -> str:
+    """Gửi prompt tới LLM bạn chọn (OpenAI, Anthropic, Gemini, Ollama...) và trả về văn bản."""
+    raise NotImplementedError("Gọi SDK của nhà cung cấp tại đây")</code></pre>
+
+      <h2 id="ma-nguon">2. Toàn bộ mã nguồn</h2>
+      <pre><code># rag.py
+from pathlib import Path
+import numpy as np
+from sentence_transformers import SentenceTransformer
+from llm import call_llm
+
+model = SentenceTransformer("intfloat/multilingual-e5-small")  # nhỏ, có tiếng Việt
+
+def embed(texts: list[str], kind: str) -> np.ndarray:
+    # E5 là model bất đối xứng: câu hỏi và đoạn văn cần prefix khác nhau
+    return model.encode([f"{kind}: {t}" for t in texts], normalize_embeddings=True)
+
+def chunk_text(text: str, max_chars: int = 800) -> list[str]:
+    """Gom các đoạn văn liền nhau thành chunk không quá max_chars ký tự."""
+    chunks, current = [], ""
+    for para in (p.strip() for p in text.split("\n\n")):
+        if current and len(current) + len(para) > max_chars:
+            chunks.append(current)
+            current = ""
+        current = f"{current}\n\n{para}".strip()
+    return chunks + [current] if current else chunks
+
+class TinyIndex:
+    def __init__(self):
+        self.chunks: list[tuple[str, str]] = []   # (nguồn, nội dung)
+        self.vectors = np.empty((0, 384), dtype=np.float32)
+
+    def add(self, source: str, text: str):
+        pieces = chunk_text(text)
+        self.chunks += [(source, p) for p in pieces]
+        self.vectors = np.vstack([self.vectors, embed(pieces, "passage")])
+
+    def search(self, query: str, k: int = 4):
+        scores = self.vectors @ embed([query], "query")[0]   # cosine vì đã chuẩn hoá
+        best = np.argsort(-scores)[:k]
+        return [(*self.chunks[i], float(scores[i])) for i in best]
+
+PROMPT = """Trả lời câu hỏi CHỈ dựa trên các đoạn tài liệu dưới đây.
+Nếu tài liệu không đủ thông tin, trả lời: "Mình không tìm thấy thông tin này trong tài liệu."
+Ghi nguồn dạng [1], [2] ngay sau ý sử dụng nó.
+
+{context}
+
+Câu hỏi: {question}"""
+
+def answer(index: TinyIndex, question: str) -> str:
+    hits = index.search(question)
+    context = "\n\n".join(f"[{i}] ({src})\n{text}" for i, (src, text, _) in enumerate(hits, 1))
+    return call_llm(PROMPT.format(context=context, question=question))
+
+if __name__ == "__main__":
+    index = TinyIndex()
+    for path in sorted(Path("docs").glob("*.md")):
+        index.add(path.name, path.read_text(encoding="utf-8"))
+    print(f"Đã index {len(index.chunks)} chunk.")
+    while question := input("\nHỏi (Enter để thoát): ").strip():
+        for src, text, score in index.search(question):
+            print(f"  {score:.3f}  {src}: {text[:70]!r}")
+        print("\n" + answer(index, question))</code></pre>
+      <div class="callout callout--note">
+        <span class="callout__title">Số 384 ở đâu ra?</span>
+        <p>Đó là số chiều vector của <code>multilingual-e5-small</code>. Đổi model thì đổi theo — hoặc lấy tự động bằng <code>model.get_sentence_embedding_dimension()</code>.</p>
+      </div>
+
+      <h2 id="giai-thich">3. Đọc hiểu từng phần</h2>
+      <ul>
+        <li><strong><code>chunk_text</code></strong>: gom đoạn văn đến khi chạm ngưỡng 800 ký tự. Thô sơ nhưng tôn trọng ranh giới đoạn — tốt hơn cắt cứng mỗi N ký tự.</li>
+        <li><strong><code>embed</code></strong>: chuẩn hoá vector (<code>normalize_embeddings=True</code>) nên tích vô hướng chính là cosine.</li>
+        <li><strong><code>search</code></strong>: "vector database" phiên bản nhỏ nhất — nhân ma trận rồi sắp xếp. Với vài chục nghìn chunk, phép nhân này chỉ mất vài mili-giây; phần tốn thời gian nhất là embed câu hỏi.</li>
+        <li><strong><code>PROMPT</code></strong>: ba chỉ dẫn quan trọng nhất — chỉ dùng context, được phép nói không biết, và dẫn nguồn.</li>
+      </ul>
+
+      <h2 id="thu-nghiem">4. Thử nghiệm và quan sát</h2>
+      <p>Hãy thử lần lượt các loại câu hỏi sau và ghi lại kết quả. Đây chính là cách "cảm" được điểm yếu của Naive RAG:</p>
+      <ol>
+        <li><strong>Câu hỏi diễn đạt khác tài liệu</strong> ("được nghỉ mấy hôm?"): thường vẫn tìm đúng — sức mạnh của embedding.</li>
+        <li><strong>Câu hỏi có mã số, tên riêng</strong> ("điều 12 nói gì?"): hay tìm sai — cần hybrid search (bài 3.1).</li>
+        <li><strong>Câu hỏi không có trong tài liệu</strong>: model có nói "không tìm thấy" không, hay vẫn bịa?</li>
+        <li><strong>Câu hỏi cần tổng hợp hai tài liệu</strong>: top-4 có đủ cả hai nguồn không?</li>
+        <li><strong>Câu hỏi gõ không dấu</strong> ("nghi phep nam"): điểm số giảm thế nào?</li>
+      </ol>
+      <div class="callout callout--tip">
+        <span class="callout__title">Thói quen tốt từ ngày đầu</span>
+        <p>Lưu các câu hỏi bạn vừa thử cùng đáp án đúng vào một file <code>golden.jsonl</code>. Đến Module 4, file này sẽ trở thành bộ đánh giá giúp bạn biết mỗi cải tiến có thật sự tốt hơn hay không.</p>
+      </div>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Một RAG hoàn chỉnh chỉ cần 4 bước: chunk, embed, search, generate.</li>
+          <li>Tìm kiếm vector ở quy mô nhỏ chỉ là một phép nhân ma trận.</li>
+          <li>Prompt phải cho phép model nói "không biết" và bắt buộc dẫn nguồn.</li>
+          <li>Naive RAG yếu với mã số, câu hỏi đa nguồn và câu hỏi không dấu — động lực cho các module sau.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Điều gì xảy ra nếu bỏ prefix "query: " khi embed câu hỏi với model E5?</summary>
+        <p>Code vẫn chạy, nhưng câu hỏi được mã hoá như một đoạn văn bình thường nên chất lượng tìm kiếm giảm — một lỗi "im lặng" khó phát hiện nếu không có bộ đánh giá.</p>
+      </details>
+      <details class="quiz">
+        <summary>Khi nào cách tìm kiếm bằng numpy trong bài này không còn phù hợp?</summary>
+        <p>Khi kho lên hàng triệu chunk (tốn RAM, quét toàn bộ chậm), khi cần lọc metadata, cập nhật/xoá từng chunk hoặc nhiều tiến trình dùng chung — lúc đó cần vector database với chỉ mục ANN (bài 2.4).</p>
+      </details>
+      <details class="quiz">
+        <summary>Vì sao prompt đánh số [1], [2] cho từng đoạn context?</summary>
+        <p>Để model trích dẫn được và để code kiểm tra/hiển thị nguồn: mỗi số ánh xạ về file gốc, người dùng bấm vào là xem được đoạn tài liệu.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li><a href="https://sbert.net/">Tài liệu Sentence Transformers</a>.</li>
+        <li><a href="https://huggingface.co/intfloat/multilingual-e5-small">Model card multilingual-e5-small</a> — phần hướng dẫn prefix.</li>
+        <li>Bài blog: <a href="../../../../posts/rag-thuc-chien.html">RAG thực chiến — khi LLM biết đọc tài liệu của bạn</a>.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

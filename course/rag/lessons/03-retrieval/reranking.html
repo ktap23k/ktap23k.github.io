@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reranking: xếp hạng lại để chọn đúng context — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Bi-encoder, cross-encoder, late interaction (ColBERT) và LLM reranker; cách đặt reranker vào pipeline và đánh đổi độ trễ." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Reranking: xếp hạng lại để chọn đúng context</h1>
+      <p class="lesson-lead">Retrieval đưa về 50 ứng viên, trong đó đoạn đúng đứng hạng 14. Reranker đọc kỹ từng cặp (câu hỏi, đoạn văn) và kéo nó lên đầu — thường là cải tiến có tỉ lệ "công sức / hiệu quả" tốt nhất trong cả pipeline.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Phân biệt bi-encoder, cross-encoder, late interaction và LLM reranker.</li>
+          <li>Tích hợp cross-encoder vào pipeline hybrid search.</li>
+          <li>Cân bằng chất lượng với độ trễ và chi phí.</li>
+        </ul>
+      </section>
+
+      <h2 id="vi-sao">Vì sao cần reranker?</h2>
+      <p>Embedding model là <strong>bi-encoder</strong>: câu hỏi và tài liệu được mã hoá riêng rẽ thành hai vector rồi so sánh. Nhanh, nhưng mọi sắc thái của tài liệu bị nén vào một vector duy nhất trước khi biết câu hỏi là gì.</p>
+      <p><strong>Cross-encoder</strong> đưa <em>cả câu hỏi và đoạn văn vào cùng một lượt</em> qua transformer, để attention so khớp từng từ của câu hỏi với từng từ của đoạn văn, rồi trả về một điểm liên quan. Chính xác hơn nhiều, nhưng không tính sẵn được: mỗi cặp phải chạy model một lần. Vì vậy chỉ dùng cho vài chục ứng viên, không dùng để quét cả kho.</p>
+      <ol class="flow">
+        <li>Hybrid retrieve<small>top 50–150, ưu tiên recall</small></li>
+        <li>Cross-encoder<small>chấm từng cặp</small></li>
+        <li>Top 5–10<small>ưu tiên precision</small></li>
+        <li>LLM</li>
+      </ol>
+      <p>Trong thử nghiệm Contextual Retrieval của Anthropic, thêm bước rerank (lấy 150 ứng viên, giữ 20) đưa tỉ lệ thất bại từ 2,9% xuống 1,9%.</p>
+
+      <h2 id="cac-loai">Các loại reranker</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Loại</th><th>Cách hoạt động</th><th>Đánh đổi</th></tr></thead>
+          <tbody>
+            <tr><td>Cross-encoder</td><td>Chấm điểm từng cặp (query, doc)</td><td>Chuẩn mực về chất lượng/chi phí. Ví dụ: <code>bge-reranker-v2-m3</code> (mở, đa ngôn ngữ), Cohere/Jina/Voyage Rerank (API)</td></tr>
+            <tr><td>Late interaction (ColBERT)</td><td>Lưu vector cho <em>từng token</em> tài liệu; điểm = tổng MaxSim giữa token câu hỏi và token tài liệu</td><td>Nhanh hơn cross-encoder vì tính sẵn phía tài liệu; tốn lưu trữ nhiều</td></tr>
+            <tr><td>LLM reranker</td><td>Hỏi LLM đoạn nào liên quan (từng đoạn hoặc cả danh sách)</td><td>Linh hoạt, hiểu chỉ dẫn phức tạp; đắt và chậm nhất</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="code">Cài đặt với cross-encoder</h2>
+      <pre><code>from sentence_transformers import CrossEncoder
+
+reranker = CrossEncoder("BAAI/bge-reranker-v2-m3", max_length=512)
+
+def rerank(query: str, candidates: list[str], top_n: int = 5,
+           min_score: float | None = None) -> list[tuple[str, float]]:
+    scores = reranker.predict([(query, text) for text in candidates], batch_size=16)
+    ranked = sorted(zip(candidates, scores), key=lambda pair: pair[1], reverse=True)
+    if min_score is not None:                     # bỏ hẳn các đoạn không liên quan
+        ranked = [(text, s) for text, s in ranked if s &gt;= min_score]
+    return [(text, float(s)) for text, s in ranked[:top_n]]
+
+def retrieve(query: str) -> list[tuple[str, float]]:
+    candidates = hybrid_index.search(query, k=50)   # từ bài Hybrid search
+    return rerank(query, candidates, top_n=5)</code></pre>
+      <div class="callout callout--tip">
+        <span class="callout__title">Ngưỡng điểm giúp nói "không biết"</span>
+        <p>Reranker cho điểm liên quan tuyệt đối có ý nghĩa hơn cosine. Nếu ứng viên tốt nhất vẫn dưới ngưỡng, đừng gọi LLM với context rác — trả lời ngay là không tìm thấy. Ngưỡng phải hiệu chỉnh trên golden set của bạn, vì thang điểm khác nhau giữa các model.</p>
+      </div>
+
+      <h2 id="do-tre">Độ trễ và chi phí</h2>
+      <ul>
+        <li>Chi phí tỉ lệ với <strong>số ứng viên × độ dài mỗi đoạn</strong>. Rerank 50 đoạn 300 token trên GPU thường mất vài chục đến vài trăm mili-giây; trên CPU chậm hơn nhiều.</li>
+        <li>Giảm số ứng viên khi recall ở top-30 đã đủ cao (đo bằng golden set).</li>
+        <li>Cắt bớt đoạn quá dài: <code>max_length</code> của model sẽ cắt phần đuôi, nên chunk quá dài cũng làm reranker "không đọc tới" thông tin cuối đoạn.</li>
+        <li>Dịch vụ API tiện nhưng thêm một chặng mạng và gửi dữ liệu ra ngoài — cân nhắc với tài liệu nhạy cảm.</li>
+      </ul>
+      <div class="callout callout--note">
+        <span class="callout__title">Late interaction: công thức MaxSim</span>
+        <p>score(q, d) = Σ<sub>i</sub> max<sub>j</sub> (q<sub>i</sub> · d<sub>j</sub>) — với mỗi token câu hỏi, lấy token tài liệu khớp nhất rồi cộng lại. Ý tưởng này cũng là nền tảng của ColPali cho tài liệu dạng ảnh ở Module 5.</p>
+      </div>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Bi-encoder nhanh để tìm; cross-encoder chính xác để chọn — dùng cả hai theo hai giai đoạn.</li>
+          <li>Mẫu phổ biến: hybrid lấy 50–150 → rerank → giữ 5–10 cho LLM.</li>
+          <li>Ngưỡng điểm reranker giúp loại context rác và trả lời "không tìm thấy" đúng lúc.</li>
+          <li>Chi phí tỉ lệ với số ứng viên × độ dài; đo để chọn con số vừa đủ.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Vì sao không dùng cross-encoder để tìm trực tiếp trên toàn bộ 1 triệu chunk?</summary>
+        <p>Cross-encoder phải chạy model cho từng cặp (câu hỏi, chunk) ngay lúc truy vấn — 1 triệu lượt chạy cho mỗi câu hỏi là quá chậm. Nó chỉ phù hợp cho vài chục ứng viên đã được lọc trước.</p>
+      </details>
+      <details class="quiz">
+        <summary>Sau khi thêm reranker, Recall@5 tăng nhưng Recall@50 không đổi. Có hợp lý không?</summary>
+        <p>Hoàn toàn hợp lý: reranker chỉ sắp xếp lại các ứng viên đã có, không tìm thêm được tài liệu mới. Recall@50 do bước retrieval quyết định; reranker cải thiện thứ hạng bên trong tập đó.</p>
+      </details>
+      <details class="quiz">
+        <summary>Ứng viên tốt nhất có điểm rerank rất thấp. Nên làm gì?</summary>
+        <p>Coi như không có tài liệu phù hợp: trả lời không tìm thấy, hoặc thử biến đổi truy vấn/tìm nguồn khác (ý tưởng của Corrective RAG ở Module 5), thay vì đưa context không liên quan cho LLM.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Khattab &amp; Zaharia (2020). <a href="https://arxiv.org/abs/2004.12832">ColBERT: Efficient and Effective Passage Search via Contextualized Late Interaction over BERT</a>.</li>
+        <li><a href="https://huggingface.co/BAAI/bge-reranker-v2-m3">Model card bge-reranker-v2-m3</a>.</li>
+        <li><a href="https://sbert.net/docs/cross_encoder/usage/usage.html">Sentence Transformers — Cross-Encoder</a>.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

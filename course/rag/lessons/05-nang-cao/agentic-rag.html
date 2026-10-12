@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agentic RAG: để LLM tự quyết định tra cứu — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Retrieval như một công cụ: vòng lặp agent, ReAct, Self-RAG, Corrective RAG, giới hạn an toàn và đánh đổi chi phí, độ trễ." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Agentic RAG: để LLM tự quyết định tra cứu</h1>
+      <p class="lesson-lead">Pipeline RAG cổ điển tìm đúng một lần rồi trả lời. Agentic RAG đưa việc tìm kiếm thành một công cụ: LLM tự quyết định tìm gì, đọc kết quả, tìm tiếp nếu thiếu, và chỉ trả lời khi đã đủ căn cứ.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Hiểu vòng lặp agent và khi nào nó đáng chi phí.</li>
+          <li>Nắm ý tưởng của ReAct, Self-RAG và Corrective RAG.</li>
+          <li>Cài đặt một agent tra cứu có giới hạn an toàn.</li>
+        </ul>
+      </section>
+
+      <h2 id="khi-nao">Khi nào cần agent?</h2>
+      <p>Câu hỏi "Ai là trưởng nhóm của người phụ trách dự án Phoenix?" cần hai bước: tìm người phụ trách dự án, <em>rồi</em> tìm trưởng nhóm của người đó. Truy vấn thứ hai phụ thuộc kết quả thứ nhất — pipeline tìm một lần không làm được. Agent hợp với:</p>
+      <ul>
+        <li>Câu hỏi đa bước (multi-hop) và so sánh nhiều đối tượng.</li>
+        <li>Câu hỏi mơ hồ cần thử vài hướng tìm.</li>
+        <li>Nhiều nguồn/công cụ: wiki, database, API, tìm kiếm web.</li>
+      </ul>
+
+      <h2 id="vong-lap">Vòng lặp agent</h2>
+      <ol class="flow">
+        <li>Suy nghĩ<small>cần biết thêm gì?</small></li>
+        <li>Hành động<small>search(query)</small></li>
+        <li>Quan sát<small>đọc kết quả</small></li>
+        <li>Đủ chưa?<small>lặp lại hoặc trả lời</small></li>
+      </ol>
+      <pre><code>import json
+
+AGENT_PROMPT = """Bạn trả lời câu hỏi bằng cách tra cứu tài liệu nội bộ.
+Mỗi lượt, trả về đúng MỘT JSON:
+  {{"action": "search", "query": "..."}}   để tìm thêm thông tin
+  {{"action": "answer", "text": "..."}}    khi đã đủ căn cứ (ghi nguồn [id])
+Nếu đã tìm vài lần mà vẫn thiếu thông tin, hãy trả lời rằng không tìm thấy.
+
+Câu hỏi: {question}
+
+Ghi chép:
+{notes}"""
+
+def agentic_answer(question: str, max_steps: int = 5) -> str:
+    notes: list[str] = []
+    seen: set[str] = set()
+    for _ in range(max_steps):
+        prompt = AGENT_PROMPT.format(question=question, notes="\n".join(notes) or "(chưa có)")
+        decision = json.loads(call_llm(prompt))
+        if decision["action"] == "answer":
+            return decision["text"]
+        query = decision["query"].strip()
+        if query in seen:                                  # chặn vòng lặp tìm lại y hệt
+            notes.append(f"(Đã tìm '{query}'. Hãy đổi truy vấn hoặc trả lời.)")
+            continue
+        seen.add(query)
+        notes += [f"[{c.id}] {c.text}" for c in retrieve(query)[:3]]
+    # Hết lượt: buộc trả lời bằng những gì đã có
+    return call_llm(f"Chỉ dựa trên ghi chép sau, trả lời câu hỏi '{question}' và ghi nguồn [id]. "
+                    f"Nếu không đủ, nói không tìm thấy.\n\n" + "\n".join(notes))</code></pre>
+      <p>Trong thực tế, hãy dùng tính năng <strong>tool calling</strong> có sẵn của nhà cung cấp LLM thay vì tự parse JSON: model trả về lời gọi công cụ có cấu trúc, ít lỗi định dạng hơn, và hỗ trợ gọi nhiều công cụ song song.</p>
+
+      <h2 id="cac-mau">Các mẫu thiết kế tiêu biểu</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mẫu</th><th>Ý tưởng chính</th></tr></thead>
+          <tbody>
+            <tr><td>ReAct (Yao và cộng sự, 2022)</td><td>Xen kẽ suy luận và hành động (gọi công cụ, quan sát kết quả) — nền tảng của vòng lặp ở trên.</td></tr>
+            <tr><td>Self-RAG (Asai và cộng sự, 2023)</td><td>Huấn luyện model sinh "reflection token" để tự quyết định khi nào cần tìm, đoạn tìm được có liên quan không, câu trả lời có được hỗ trợ không.</td></tr>
+            <tr><td>Corrective RAG (Yan và cộng sự, 2024)</td><td>Một bộ đánh giá chấm chất lượng tài liệu tìm được: tốt → lọc tinh rồi dùng; kém → bỏ và tìm nguồn khác (ví dụ web); mơ hồ → kết hợp cả hai.</td></tr>
+            <tr><td>Adaptive-RAG (Jeong và cộng sự, 2024)</td><td>Phân loại độ khó trước: câu dễ không tìm, câu vừa tìm một lần, câu khó mới chạy nhiều bước.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Bằng chứng gần đây ủng hộ hướng này: benchmark RAGSearch (2026) cho thấy agentic search cải thiện dense RAG đáng kể, thu hẹp khoảng cách với GraphRAG ở câu hỏi đa bước.</p>
+
+      <h2 id="danh-doi">Đánh đổi và giới hạn an toàn</h2>
+      <ul>
+        <li><strong>Chi phí và độ trễ nhân lên</strong> theo số bước: một câu trả lời 4 bước có thể tốn gấp nhiều lần pipeline thường. Dùng router (bài 3.4) để chỉ câu khó mới vào agent.</li>
+        <li><strong>Giới hạn cứng</strong>: số bước tối đa, ngân sách token, timeout tổng; phát hiện truy vấn lặp lại.</li>
+        <li><strong>Quyền tối thiểu</strong>: công cụ của agent chỉ đọc; mọi hành động có tác dụng phụ (gửi email, sửa dữ liệu) cần người xác nhận.</li>
+        <li><strong>Truy vết</strong>: lưu toàn bộ chuỗi suy nghĩ–hành động–quan sát để debug; đánh giá cả <em>quỹ đạo</em> (có tìm đúng thứ cần tìm không), không chỉ câu trả lời cuối.</li>
+        <li><strong>Kết quả không tất định</strong>: cùng câu hỏi có thể đi đường khác nhau; golden set nên chạy nhiều lần để thấy độ dao động.</li>
+      </ul>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Agentic RAG biến retrieval thành công cụ trong vòng lặp suy nghĩ–hành động–quan sát.</li>
+          <li>Hợp với câu hỏi đa bước, so sánh, mơ hồ, nhiều nguồn.</li>
+          <li>Self-RAG, CRAG, Adaptive-RAG thêm khả năng tự đánh giá và chọn chiến lược.</li>
+          <li>Luôn có giới hạn bước/ngân sách, công cụ chỉ đọc và truy vết đầy đủ.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>Vì sao code ghi nhớ các truy vấn đã tìm (<code>seen</code>)?</summary>
+        <p>Agent đôi khi lặp lại cùng một truy vấn khi không tìm được gì mới, tốn chi phí mà không tiến triển. Phát hiện lặp và nhắc agent đổi hướng hoặc trả lời giúp thoát vòng lặp.</p>
+      </details>
+      <details class="quiz">
+        <summary>Corrective RAG làm gì khi bộ đánh giá kết luận tài liệu tìm được không liên quan?</summary>
+        <p>Bỏ các tài liệu đó và tìm nguồn khác (trong bài báo gốc là tìm kiếm web, thường kèm viết lại truy vấn), thay vì ép LLM trả lời từ context kém.</p>
+      </details>
+      <details class="quiz">
+        <summary>80% câu hỏi của người dùng là tra cứu đơn giản. Có nên đưa tất cả qua agent?</summary>
+        <p>Không. Dùng router/Adaptive-RAG: câu đơn giản đi pipeline một bước (nhanh, rẻ), chỉ câu phức tạp mới vào agent.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Yao et al. (2022). <a href="https://arxiv.org/abs/2210.03629">ReAct: Synergizing Reasoning and Acting in Language Models</a>.</li>
+        <li>Asai et al. (2023). <a href="https://arxiv.org/abs/2310.11511">Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection</a>.</li>
+        <li>Yan et al. (2024). <a href="https://arxiv.org/abs/2401.15884">Corrective Retrieval Augmented Generation</a>.</li>
+        <li>Bài blog: <a href="../../../../posts/llm-agents-thuc-chien.html">LLM Agents thực chiến</a>.</li>
+        <li>Khoá học: <a href="../../../outer-harness/index.html">Outer Harness cho LLM Agents</a> — đi sâu vào tool loop, guardrails, tracing.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Định tuyến truy vấn và lọc metadata — Khoá học RAG — Ktap</title>
+  <meta name="description" content="Định tuyến câu hỏi tới đúng nguồn và đúng chiến lược, trích bộ lọc metadata từ câu hỏi an toàn, và khi nào nên dùng text-to-SQL." />
+  <link rel="icon" type="image/svg+xml" href="../../../../favicon.svg" />
+  <link rel="stylesheet" href="../../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../assets/css/rag.css" />
+  <script type="module" src="../../assets/js/course/lesson.js"></script>
+</head>
+<body>
+<main class="container container--wide lesson-layout">
+  <aside class="syllabus" id="syllabus" aria-label="Giáo trình"></aside>
+
+  <article class="lesson">
+    <header class="lesson-header">
+      <h1 class="lesson-title">Định tuyến truy vấn và lọc metadata</h1>
+      <p class="lesson-lead">Không phải câu hỏi nào cũng nên đi cùng một đường. "Chào bạn" không cần tra cứu; "doanh thu tháng 3" cần SQL chứ không cần vector; "quy định năm 2025 của phòng nhân sự" cần lọc metadata trước khi tìm.</p>
+    </header>
+
+    <div class="article-body">
+      <section class="objectives">
+        <h2>Mục tiêu bài học</h2>
+        <ul>
+          <li>Thiết kế router chọn nguồn dữ liệu và chiến lược xử lý.</li>
+          <li>Trích bộ lọc metadata từ câu hỏi một cách an toàn.</li>
+          <li>Xử lý câu hỏi phụ thuộc thời gian và dữ liệu có cấu trúc.</li>
+        </ul>
+      </section>
+
+      <h2 id="router">Router: chọn đường cho câu hỏi</h2>
+      <p>Router là một bộ phân loại đặt trước retrieval. Nó có thể chọn <strong>nguồn</strong> (wiki nhân sự, tài liệu kỹ thuật, cơ sở dữ liệu đơn hàng) và/hoặc <strong>chiến lược</strong> (trả lời thẳng, tìm một lần, tìm nhiều bước). Adaptive-RAG (Jeong và cộng sự, 2024) là ví dụ tiêu biểu: một bộ phân loại độ phức tạp quyết định câu hỏi không cần tra cứu, cần tra cứu một bước hay nhiều bước — tiết kiệm chi phí cho câu dễ, dành tài nguyên cho câu khó.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cách làm</th><th>Ưu</th><th>Nhược</th></tr></thead>
+          <tbody>
+            <tr><td>Luật (từ khoá, regex)</td><td>Nhanh, dễ hiểu, miễn phí</td><td>Cứng nhắc, khó mở rộng</td></tr>
+            <tr><td>So embedding với câu mẫu mỗi nhánh</td><td>Nhanh, không cần LLM</td><td>Cần chuẩn bị câu mẫu tốt</td></tr>
+            <tr><td>LLM + structured output</td><td>Linh hoạt, hiểu ý định phức tạp</td><td>Thêm độ trễ và chi phí</td></tr>
+            <tr><td>Bộ phân loại nhỏ tự huấn luyện</td><td>Nhanh, rẻ, chính xác với domain</td><td>Cần dữ liệu gán nhãn</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="self-query">Trích bộ lọc từ câu hỏi (self-query)</h2>
+      <p>"Quy định công tác phí năm 2025 của phòng kinh doanh" chứa hai bộ lọc ẩn: <code>year = 2025</code>, <code>department = sales</code>. Tìm kiếm ngữ nghĩa thuần thường trả về quy định năm 2023 vì nội dung na ná. Giải pháp: LLM trích bộ lọc + truy vấn ngữ nghĩa, <em>code</em> kiểm tra hợp lệ rồi mới áp dụng.</p>
+      <pre><code>import json
+
+ALLOWED = {
+    "department": {"hr", "sales", "engineering", "finance"},
+    "year": set(range(2015, 2031)),
+    "doc_type": {"policy", "guide", "faq", "meeting_notes"},
+}
+
+ROUTE_PROMPT = """Phân tích câu hỏi và trả về JSON:
+{{"query": "&lt;phần nội dung cần tìm&gt;",
+  "filters": {{"department": ..., "year": ..., "doc_type": ...}}}}
+Chỉ điền filter khi câu hỏi nói rõ; không chắc thì bỏ trống.
+Giá trị department hợp lệ: hr, sales, engineering, finance.
+Câu hỏi: {question}"""
+
+def parse_query(question: str) -> tuple[str, dict]:
+    try:
+        data = json.loads(call_llm(ROUTE_PROMPT.format(question=question)))
+        query, raw = data.get("query") or question, dict(data.get("filters") or {})
+    except (ValueError, TypeError, AttributeError):    # JSON hỏng hoặc sai cấu trúc
+        return question, {}
+    filters = {key: value for key, value in raw.items()  # chỉ giữ giá trị hợp lệ
+               if key in ALLOWED and isinstance(value, (str, int)) and value in ALLOWED[key]}
+    return query, filters</code></pre>
+      <div class="callout callout--warn">
+        <span class="callout__title">Bộ lọc từ LLM không bao giờ là phân quyền</span>
+        <p>Bộ lọc trích từ câu hỏi chỉ để <em>tăng độ liên quan</em>. Quyền truy cập (người dùng được xem tài liệu nào) phải lấy từ hệ thống xác thực và áp dụng bằng code — nếu không, người dùng chỉ cần viết "bỏ qua bộ lọc phòng ban" là đọc được tài liệu mật.</p>
+      </div>
+
+      <h2 id="thoi-gian">Câu hỏi phụ thuộc thời gian</h2>
+      <ul>
+        <li><strong>Phiên bản</strong>: đánh dấu <code>is_latest</code> khi index; mặc định chỉ tìm bản mới nhất, trừ khi câu hỏi nhắc rõ thời điểm.</li>
+        <li><strong>"Gần đây", "tháng trước"</strong>: chuyển thành khoảng ngày cụ thể bằng code dựa trên ngày hiện tại, không để LLM tự đoán ngày.</li>
+        <li><strong>Ưu tiên tài liệu mới</strong>: cộng một điểm thưởng nhỏ theo độ mới khi xếp hạng tin tức, changelog.</li>
+      </ul>
+
+      <h2 id="du-lieu-cau-truc">Khi câu trả lời nằm trong bảng số liệu</h2>
+      <p>"Có bao nhiêu đơn hàng bị huỷ trong quý 3?" là phép <em>tổng hợp</em>, không phải tra cứu đoạn văn. RAG sẽ tìm vài đoạn nhắc đến đơn huỷ rồi để LLM đoán. Hãy định tuyến loại câu hỏi này sang <strong>text-to-SQL</strong> (LLM sinh câu SQL chỉ đọc, chạy trên view được giới hạn quyền) hoặc gọi API nghiệp vụ có sẵn. RAG và SQL có thể cùng tồn tại sau một router.</p>
+
+      <section class="takeaways">
+        <h2>Tóm tắt</h2>
+        <ul>
+          <li>Router chọn nguồn và chiến lược; câu dễ đi đường rẻ, câu khó đi đường kỹ.</li>
+          <li>Self-query trích bộ lọc metadata; luôn kiểm tra giá trị bằng danh sách cho phép.</li>
+          <li>Phân quyền là việc của code và hệ thống xác thực, không phải của LLM.</li>
+          <li>Câu hỏi tổng hợp số liệu → text-to-SQL hoặc API, không phải RAG.</li>
+        </ul>
+      </section>
+
+      <h2 id="kiem-tra-nhanh">Kiểm tra nhanh</h2>
+      <details class="quiz">
+        <summary>LLM trả về filter <code>{"department": "board"}</code> trong khi giá trị này không có trong danh sách cho phép. Code nên xử lý thế nào?</summary>
+        <p>Bỏ filter không hợp lệ (như hàm <code>parse_query</code> ở trên) và tìm không lọc theo trường đó, có thể ghi log để xem xét bổ sung giá trị mới. Không áp dụng giá trị lạ trực tiếp vào truy vấn.</p>
+      </details>
+      <details class="quiz">
+        <summary>"Tổng chi phí marketing năm nay so với năm ngoái?" nên đi đường nào?</summary>
+        <p>Text-to-SQL hoặc API báo cáo tài chính — đây là phép tính trên dữ liệu có cấu trúc. Tìm đoạn văn rồi để LLM cộng trừ dễ sai và không đầy đủ.</p>
+      </details>
+      <details class="quiz">
+        <summary>Câu "xin chào, bạn giúp được gì?" có nên đi qua retrieval không?</summary>
+        <p>Không cần. Router nhận diện câu xã giao/giới thiệu và trả lời trực tiếp, tiết kiệm chi phí và tránh đưa tài liệu không liên quan vào câu trả lời.</p>
+      </details>
+
+      <h2 id="doc-them">Đọc thêm</h2>
+      <ul class="refs">
+        <li>Jeong et al. (2024). <a href="https://arxiv.org/abs/2403.14403">Adaptive-RAG: Learning to Adapt Retrieval-Augmented LLMs through Question Complexity</a>.</li>
+        <li>OWASP. <a href="https://genai.owasp.org/llm-top-10/">Top 10 for LLM Applications</a> — mục Prompt Injection và Excessive Agency.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+</body>
+</html>
