@@ -3,25 +3,68 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tuan's Blog — Chia sẻ kiến thức & trải nghiệm</title>
-  <meta name="description" content="Blog cá nhân chia sẻ về lập trình, công nghệ và cuộc sống." />
+  <title>Ktap — Blog & khoá học về Backend, Data và AI/LLM</title>
+  <meta name="description" content="Blog cá nhân của Trần Anh Tuấn (Ktap): bài viết thực chiến và khoá học miễn phí về Backend, Data Engineering, RAG và LLM Agents." />
+  <meta name="author" content="Trần Anh Tuấn" />
+  <link rel="canonical" href="https://ktap23k.github.io/" />
+  <meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)" />
+
+  <!-- Open Graph / social preview -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Ktap" />
+  <meta property="og:locale" content="vi_VN" />
+  <meta property="og:url" content="https://ktap23k.github.io/" />
+  <meta property="og:title" content="Ktap — Blog & khoá học về Backend, Data và AI/LLM" />
+  <meta property="og:description" content="Bài viết thực chiến và khoá học miễn phí về Backend, Data Engineering, RAG và LLM Agents." />
+  <meta property="og:image" content="https://ktap23k.github.io/avt.jpg" />
+  <meta name="twitter:card" content="summary" />
+
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="alternate" type="application/rss+xml" title="Ktap Blog RSS" href="feed.xml" />
+
+  <script src="assets/js/theme-init.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "name": "Ktap",
+        "url": "https://ktap23k.github.io/",
+        "inLanguage": "vi"
+      },
+      {
+        "@type": "Person",
+        "name": "Trần Anh Tuấn",
+        "alternateName": "Ktap",
+        "jobTitle": "Backend / Full-stack Developer",
+        "url": "https://ktap23k.github.io/",
+        "image": "https://ktap23k.github.io/avt.jpg",
+        "sameAs": ["https://github.com/ktap23k"],
+        "address": { "@type": "PostalAddress", "addressLocality": "Đà Nẵng", "addressCountry": "VN" }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
+  <a class="skip-link" href="#main">Bỏ qua, tới nội dung chính</a>
 
   <!-- ===== HEADER ===== -->
   <header class="header">
     <div class="container header__inner">
-      <a href="#" class="logo">
-        <img class="logo__icon" src="avt.jpg" alt="" />
+      <a href="#home" class="logo" aria-label="Ktap — về đầu trang">
+        <img class="logo__icon" src="avt.jpg" alt="" width="28" height="28" />
         <span class="logo__text">Ktap</span>
       </a>
 
-      <nav class="nav" id="nav">
+      <nav class="nav" id="nav" aria-label="Điều hướng chính">
         <a href="#home"     class="nav__link active">Trang chủ</a>
         <a href="#posts"    class="nav__link">Bài viết</a>
         <a href="#courses"  class="nav__link">Khoá học</a>
@@ -32,48 +75,89 @@
       </nav>
 
       <div class="header__actions">
-        <button class="theme-toggle" id="themeToggle" aria-label="Chuyển giao diện">
-          <span class="theme-toggle__icon">☾</span>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Chuyển giao diện sáng/tối">
+          <span class="theme-toggle__icon" aria-hidden="true">☾</span>
         </button>
-        <button class="hamburger" id="hamburger" aria-label="Mở menu">
+        <button class="hamburger" id="hamburger" type="button" aria-label="Mở menu" aria-controls="nav" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
       </div>
     </div>
   </header>
 
-  <main>
+  <main id="main">
 
     <!-- ===== HERO ===== -->
     <section class="hero" id="home">
       <div class="container hero__inner">
         <div class="hero__text">
-          <p class="hero__greeting">Xin chào, mình là</p>
-          <h1 class="hero__name">Ktap <span class="accent">.</span></h1>
+          <p class="hero__eyebrow">
+            <span class="hero__dot" aria-hidden="true"></span>
+            Backend · Data Engineering · AI/LLM
+          </p>
+          <h1 class="hero__name">Xin chào, mình là <span class="accent">Ktap</span>.</h1>
+          <p class="hero__role">Trần Anh Tuấn — Backend / Full-stack Developer tại Đà Nẵng</p>
           <p class="hero__bio">
-            Lập trình viên · Người yêu công nghệ · Hay viết blog về
-            <strong>backend</strong>, <strong>DevOps</strong> và những điều thú vị
-            trong ngành phần mềm.
+            Mình viết về những thứ học được khi xây hệ thống thật: API, data pipeline,
+            RAG và LLM agents. Bài viết thực chiến, khoá học miễn phí, thỉnh thoảng có game.
           </p>
           <div class="hero__cta">
             <a href="#posts" class="btn btn--primary">Đọc bài viết</a>
-            <a href="#about" class="btn btn--ghost">Về tôi</a>
+            <a href="#courses" class="btn btn--ghost">Xem khoá học</a>
           </div>
+          <ul class="hero__social" aria-label="Kênh liên hệ">
+            <li>
+              <a href="https://github.com/ktap23k" target="_blank" rel="noopener" aria-label="GitHub">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.7 5.38-5.27 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+              </a>
+            </li>
+            <li>
+              <a href="mailto:ktap23k@gmail.com" aria-label="Email">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm-1 1 9 7 9-7"/></svg>
+              </a>
+            </li>
+            <li>
+              <a href="feed.xml" aria-label="RSS feed">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor"/></svg>
+              </a>
+            </li>
+            <li>
+              <a href="cv.html" aria-label="CV">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8l-5-5Zm0 0v5h5M9 13h6M9 17h6"/></svg>
+              </a>
+            </li>
+          </ul>
         </div>
         <div class="hero__avatar">
           <div class="avatar-ring">
-            <img class="avatar-image" src="avt.jpg" alt="Ktap" />
+            <img class="avatar-image" src="avt.jpg" alt="Ảnh đại diện của Trần Anh Tuấn" width="200" height="200" />
           </div>
         </div>
       </div>
+
+      <div class="container">
+        <dl class="hero-stats">
+          <div class="hero-stats__item"><dt>Năm kinh nghiệm</dt><dd>5+</dd></div>
+          <div class="hero-stats__item"><dt>Bài viết</dt><dd id="statPosts">—</dd></div>
+          <div class="hero-stats__item"><dt>Khoá học</dt><dd id="statCourses">—</dd></div>
+          <div class="hero-stats__item"><dt>Chủ đề</dt><dd id="statTags">—</dd></div>
+        </dl>
+      </div>
     </section>
 
-    <!-- ===== FEATURED POST ===== -->
-    <section class="featured" id="posts">
+    <!-- ===== BLOG: featured + list + sidebar ===== -->
+    <section class="blog-section" id="posts" aria-labelledby="postsTitle">
       <div class="container">
-        <h2 class="section-title">Bài viết nổi bật</h2>
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Blog</p>
+            <h2 class="section-title" id="postsTitle">Bài viết</h2>
+          </div>
+          <a class="section-link" href="feed.xml">Theo dõi qua RSS →</a>
+        </div>
+
         <!-- Populated by script.js from posts/manifest.json -->
-        <div id="featuredPost">
+        <div id="featuredPost" class="featured">
           <div class="post-skeleton post-skeleton--featured" aria-hidden="true">
             <div class="skeleton-line skeleton-line--tag"></div>
             <div class="skeleton-line skeleton-line--title"></div>
@@ -81,232 +165,215 @@
             <div class="skeleton-line skeleton-line--short"></div>
           </div>
         </div>
+
+        <div class="blog-layout">
+          <div class="posts">
+            <div class="post-toolbar">
+              <div class="search-bar">
+                <label for="searchInput" class="visually-hidden">Tìm bài viết</label>
+                <svg class="search-bar__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <input type="search" id="searchInput" placeholder="Tìm theo tiêu đề, nội dung, tag…" class="search-bar__input" autocomplete="off" />
+              </div>
+              <p class="post-toolbar__status" id="resultStatus" aria-live="polite"></p>
+            </div>
+
+            <div class="post-list" id="postList">
+              <div class="post-skeleton" aria-hidden="true"><div class="skeleton-line skeleton-line--tag"></div><div class="skeleton-line skeleton-line--title"></div><div class="skeleton-line"></div></div>
+              <div class="post-skeleton" aria-hidden="true"><div class="skeleton-line skeleton-line--tag"></div><div class="skeleton-line skeleton-line--title"></div><div class="skeleton-line"></div></div>
+              <div class="post-skeleton" aria-hidden="true"><div class="skeleton-line skeleton-line--tag"></div><div class="skeleton-line skeleton-line--title"></div><div class="skeleton-line"></div></div>
+              <div class="post-skeleton" aria-hidden="true"><div class="skeleton-line skeleton-line--tag"></div><div class="skeleton-line skeleton-line--title"></div><div class="skeleton-line"></div></div>
+            </div>
+
+            <div class="no-results" id="noResults" hidden>
+              <p>Không tìm thấy bài viết phù hợp.</p>
+              <button type="button" class="btn btn--ghost" id="clearFilters">Xoá bộ lọc</button>
+            </div>
+
+            <div class="load-more-wrap">
+              <button id="loadMoreBtn" type="button" class="btn btn--ghost load-more-btn" hidden>
+                Xem thêm bài
+              </button>
+            </div>
+          </div>
+
+          <aside class="sidebar" aria-label="Lọc bài viết">
+            <div class="widget">
+              <h3 class="widget__title">Chủ đề</h3>
+              <div class="tag-cloud">
+                <button type="button" class="tag tag--link" data-filter="backend">Backend</button>
+                <button type="button" class="tag tag--link" data-filter="devops">DevOps</button>
+                <button type="button" class="tag tag--link" data-filter="data engineering">Data Engineering</button>
+                <button type="button" class="tag tag--link" data-filter="llm">LLM / AI</button>
+                <button type="button" class="tag tag--link" data-filter="rag">RAG</button>
+                <button type="button" class="tag tag--link" data-filter="agents">Agents</button>
+                <button type="button" class="tag tag--link" data-filter="qdrant">Qdrant</button>
+                <button type="button" class="tag tag--link" data-filter="javascript">JavaScript</button>
+                <button type="button" class="tag tag--link" data-filter="typescript">TypeScript</button>
+                <button type="button" class="tag tag--link" data-filter="golang">Go</button>
+                <button type="button" class="tag tag--link" data-filter="database">Database</button>
+                <button type="button" class="tag tag--link" data-filter="career">Career</button>
+                <button type="button" class="tag tag--link" data-filter="life">Cuộc sống</button>
+              </div>
+            </div>
+
+            <div class="widget widget--cta">
+              <h3 class="widget__title">Góc giải trí</h3>
+              <p class="widget__text">Mấy game nhỏ mình tự viết bằng JavaScript thuần — chơi ngay trên trình duyệt.</p>
+              <a href="game/index.html" class="btn btn--ghost btn--sm">Chơi game →</a>
+            </div>
+          </aside>
+        </div>
       </div>
     </section>
 
     <!-- ===== COURSES ===== -->
-    <section class="courses-section" id="courses">
+    <section class="courses-section" id="courses" aria-labelledby="coursesTitle">
       <div class="container">
-        <h2 class="section-title">Khoá học</h2>
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Học miễn phí</p>
+            <h2 class="section-title" id="coursesTitle">Khoá học</h2>
+          </div>
+        </div>
         <div class="course-list">
-          <article class="course-card">
-            <div class="course-card__icon">🌬️</div>
-            <div class="course-card__content">
-              <h3 class="course-card__title">Apache Airflow 3.2.x</h3>
-              <p class="course-card__desc">
-                Từ LocalExecutor đến Production với PostgreSQL&nbsp;17, Redis, Celery, Kubernetes và Task SDK.
-                Dành cho Backend / Data Engineers muốn làm chủ orchestration.
-              </p>
-              <div class="course-card__meta">
-                <span class="tag tag--cat">Backend</span>
-                <span class="tag tag--cat">Data Engineering</span>
-                <span class="tag tag--cat">15–20 ngày</span>
-              </div>
-              <a href="course/airflow/index.html" class="btn btn--primary">Vào khoá học →</a>
+          <article class="course-card course-card--rag">
+            <div class="course-card__top">
+              <div class="course-card__icon" aria-hidden="true">🔎</div>
+              <span class="course-card__badge">Mới</span>
             </div>
-          </article>
-          <article class="course-card course-card--kafka">
-            <div class="course-card__icon">⚡</div>
-            <div class="course-card__content">
-              <h3 class="course-card__title">Apache Kafka 4.3.x</h3>
-              <p class="course-card__desc">
-                Từ event streaming nền tảng đến KRaft, Python producer/consumer, Kafka Connect, stream processing,
-                monitoring và vận hành production. Nội dung gọn hơn, học theo từng module thực hành.
-              </p>
-              <div class="course-card__meta">
-                <span class="tag tag--cat">Backend</span>
-                <span class="tag tag--cat">Event Streaming</span>
-                <span class="tag tag--cat">10–12 ngày</span>
-              </div>
-              <a href="course/kafka/index.html" class="btn btn--primary">Vào khoá học →</a>
+            <h3 class="course-card__title"><a href="course/rag/index.html">RAG từ cơ bản đến nâng cao</a></h3>
+            <p class="course-card__desc">
+              Xây hệ thống hỏi đáp trên tài liệu của riêng bạn: embedding, chunking, hybrid search, reranking,
+              đánh giá có số đo, GraphRAG, Agentic RAG và vận hành production.
+            </p>
+            <div class="course-card__meta">
+              <span class="tag tag--cat">LLM / AI</span>
+              <span class="tag tag--cat">RAG</span>
+              <span class="tag">5 module · 21 bài</span>
             </div>
           </article>
           <article class="course-card course-card--outer-harness">
-            <div class="course-card__icon">AI</div>
-            <div class="course-card__content">
-              <h3 class="course-card__title">Outer Harness cho LLM Agents</h3>
-              <p class="course-card__desc">
-                Xây agent harness bằng Python: tool loop, context, memory, guardrails, tracing, evals,
-                multi-agent orchestration và FastAPI production wrapper. Học từ lõi tự xây đến framework mapping.
-              </p>
-              <div class="course-card__meta">
-                <span class="tag tag--cat">LLM / AI</span>
-                <span class="tag tag--cat">Python</span>
-                <span class="tag tag--cat">14 ngày</span>
-              </div>
-              <a href="course/outer-harness/index.html" class="btn btn--primary">Vào khoá học →</a>
+            <div class="course-card__top">
+              <div class="course-card__icon" aria-hidden="true">AI</div>
+            </div>
+            <h3 class="course-card__title"><a href="course/outer-harness/index.html">Outer Harness cho LLM Agents</a></h3>
+            <p class="course-card__desc">
+              Xây agent harness bằng Python: tool loop, context, memory, guardrails, tracing, evals,
+              multi-agent orchestration và FastAPI production wrapper.
+            </p>
+            <div class="course-card__meta">
+              <span class="tag tag--cat">LLM / AI</span>
+              <span class="tag tag--cat">Python</span>
+              <span class="tag">14 ngày</span>
             </div>
           </article>
-          <article class="course-card course-card--rag">
-            <div class="course-card__icon">🔎</div>
-            <div class="course-card__content">
-              <h3 class="course-card__title">RAG từ cơ bản đến nâng cao</h3>
-              <p class="course-card__desc">
-                Xây hệ thống hỏi đáp trên tài liệu của riêng bạn: embedding, chunking, hybrid search, reranking,
-                đánh giá có số đo, GraphRAG, Agentic RAG và vận hành production. Có lab Python và theo dõi tiến độ học.
-              </p>
-              <div class="course-card__meta">
-                <span class="tag tag--cat">LLM / AI</span>
-                <span class="tag tag--cat">RAG</span>
-                <span class="tag tag--cat">5 module · 21 bài</span>
-              </div>
-              <a href="course/rag/index.html" class="btn btn--primary">Vào khoá học →</a>
+          <article class="course-card">
+            <div class="course-card__top">
+              <div class="course-card__icon" aria-hidden="true">🌬️</div>
+            </div>
+            <h3 class="course-card__title"><a href="course/airflow/index.html">Apache Airflow 3.2.x</a></h3>
+            <p class="course-card__desc">
+              Từ LocalExecutor đến production với PostgreSQL&nbsp;17, Redis, Celery, Kubernetes và Task SDK.
+              Dành cho Backend / Data Engineer muốn làm chủ orchestration.
+            </p>
+            <div class="course-card__meta">
+              <span class="tag tag--cat">Backend</span>
+              <span class="tag tag--cat">Data Engineering</span>
+              <span class="tag">15–20 ngày</span>
+            </div>
+          </article>
+          <article class="course-card course-card--kafka">
+            <div class="course-card__top">
+              <div class="course-card__icon" aria-hidden="true">⚡</div>
+            </div>
+            <h3 class="course-card__title"><a href="course/kafka/index.html">Apache Kafka 4.3.x</a></h3>
+            <p class="course-card__desc">
+              Từ event streaming nền tảng đến KRaft, Python producer/consumer, Kafka Connect, stream processing,
+              monitoring và vận hành production.
+            </p>
+            <div class="course-card__meta">
+              <span class="tag tag--cat">Backend</span>
+              <span class="tag tag--cat">Event Streaming</span>
+              <span class="tag">10–12 ngày</span>
             </div>
           </article>
         </div>
       </div>
     </section>
 
-    <!-- ===== POST GRID + SIDEBAR ===== -->
-    <section class="blog-section">
-      <div class="container blog-layout">
-
-        <!-- POST LIST -->
-        <div class="posts">
-          <h2 class="section-title">Bài viết gần đây</h2>
-
-          <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="Tìm bài viết..." class="search-bar__input" />
-            <span class="search-bar__icon">🔍</span>
-          </div>
-
-          <div class="post-list" id="postList">
-            <!-- Populated dynamically by script.js -->
-            <div class="post-skeleton" aria-hidden="true"><div class="skeleton-line skeleton-line--tag"></div><div class="skeleton-line skeleton-line--title"></div><div class="skeleton-line"></div></div>
-            <div class="post-skeleton" aria-hidden="true"><div class="skeleton-line skeleton-line--tag"></div><div class="skeleton-line skeleton-line--title"></div><div class="skeleton-line"></div></div>
-            <div class="post-skeleton" aria-hidden="true"><div class="skeleton-line skeleton-line--tag"></div><div class="skeleton-line skeleton-line--title"></div><div class="skeleton-line"></div></div>
-            <div class="post-skeleton" aria-hidden="true"><div class="skeleton-line skeleton-line--tag"></div><div class="skeleton-line skeleton-line--title"></div><div class="skeleton-line"></div></div>
-          </div><!-- /.post-list -->
-
-          <div class="no-results" id="noResults" style="display:none;">
-            <p>Không tìm thấy bài viết nào.</p>
-          </div>
-
-          <div class="load-more-wrap">
-            <button id="loadMoreBtn" class="btn btn--ghost load-more-btn" style="display:none;">
-              Xem thêm bài ↓
-            </button>
-          </div>
-        </div><!-- /.posts -->
-
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-
-          <div class="widget">
-            <h4 class="widget__title">Về mình</h4>
-            <div class="widget-about">
-              <img class="widget-about__avatar" src="avt.jpg" alt="Ktap" />
-              <p class="widget-about__bio">
-                Mình là Ktap — dev thích tìm hiểu cách hệ thống hoạt động từ bên trong.
-                Blog này là nơi mình ghi lại những kiến thức và trải nghiệm trên con đường
-                học không bao giờ kết thúc.
-              </p>
-            </div>
-          </div>
-
-          <div class="widget">
-            <h4 class="widget__title">Chủ đề</h4>
-            <div class="tag-cloud">
-              <a href="#" class="tag tag--link" data-filter="backend">Backend</a>
-              <a href="#" class="tag tag--link" data-filter="devops">DevOps</a>
-              <a href="#" class="tag tag--link" data-filter="data engineering">Data Engineering</a>
-              <a href="#" class="tag tag--link" data-filter="llm">LLM / AI</a>
-              <a href="#" class="tag tag--link" data-filter="rag">RAG</a>
-              <a href="#" class="tag tag--link" data-filter="agents">Agents</a>
-              <a href="#" class="tag tag--link" data-filter="qdrant">Qdrant</a>
-              <a href="#" class="tag tag--link" data-filter="javascript">JavaScript</a>
-              <a href="#" class="tag tag--link" data-filter="typescript">TypeScript</a>
-              <a href="#" class="tag tag--link" data-filter="golang">Go</a>
-              <a href="#" class="tag tag--link" data-filter="database">Database</a>
-              <a href="#" class="tag tag--link" data-filter="career">Career</a>
-              <a href="#" class="tag tag--link" data-filter="life">Cuộc sống</a>
-            </div>
-          </div>
-
-          <div class="widget">
-            <h4 class="widget__title">Thống kê</h4>
-            <ul class="stats-list">
-              <li><span>Bài viết</span><strong id="statTotal">—</strong></li>
-              <li><span>Chủ đề</span><strong id="statTags">—</strong></li>
-              <li><span>Năm viết blog</span><strong>3</strong></li>
-            </ul>
-          </div>
-
-        </aside>
-
-      </div>
-    </section>
-
     <!-- ===== ABOUT ===== -->
-    <section class="about-section" id="about">
+    <section class="about-section" id="about" aria-labelledby="aboutTitle">
       <div class="container about-inner">
         <div class="about-text">
-          <h2 class="section-title">Về tôi</h2>
+          <p class="section-kicker">Về tôi</p>
+          <h2 class="section-title" id="aboutTitle">Một backend dev thích hiểu hệ thống từ bên trong</h2>
           <p>
-            Mình là một backend developer với hơn 3 năm kinh nghiệm xây dựng hệ thống
-            phân tán, API hiệu năng cao và tự động hóa hạ tầng. Mình yêu thích triết lý
-            "Keep it simple" và luôn cố gắng viết code dễ đọc hơn là thông minh.
+            Mình là Trần Anh Tuấn, backend / full-stack developer với hơn 5 năm kinh nghiệm xây API Python,
+            data pipeline và các sản phẩm tích hợp AI — từ hệ thống RAG, prompt engineering đến vector search.
+            Mình theo triết lý <em>“Keep it simple”</em>: code dễ đọc quan trọng hơn code thông minh.
           </p>
           <p>
             Ngoài công việc, mình thích đọc sách về tâm lý học và kinh tế học hành vi,
             chạy bộ buổi sáng và thi thoảng thử nấu những món ăn lạ.
           </p>
-          <div class="skills">
-            <span class="skill-badge">Go</span>
-            <span class="skill-badge">Python</span>
-            <span class="skill-badge">TypeScript</span>
-            <span class="skill-badge">PostgreSQL</span>
-            <span class="skill-badge">Redis</span>
-            <span class="skill-badge">Docker</span>
-            <span class="skill-badge">Kubernetes</span>
-            <span class="skill-badge">AWS</span>
-          </div>
+          <ul class="skills" aria-label="Kỹ năng">
+            <li class="skill-badge">Python</li>
+            <li class="skill-badge">FastAPI</li>
+            <li class="skill-badge">Go</li>
+            <li class="skill-badge">TypeScript</li>
+            <li class="skill-badge">PostgreSQL</li>
+            <li class="skill-badge">Redis</li>
+            <li class="skill-badge">Kafka</li>
+            <li class="skill-badge">Airflow</li>
+            <li class="skill-badge">Docker</li>
+            <li class="skill-badge">Kubernetes</li>
+            <li class="skill-badge">RAG / LLM</li>
+          </ul>
         </div>
         <div class="about-links">
-          <a href="#" class="social-link">
-            <span class="social-link__icon">🐙</span>GitHub
+          <a href="https://github.com/ktap23k" class="social-link" target="_blank" rel="noopener">
+            <svg class="social-link__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.7 5.38-5.27 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+            <span><strong>GitHub</strong><small>github.com/ktap23k</small></span>
           </a>
-          <a href="#" class="social-link">
-            <span class="social-link__icon">💼</span>LinkedIn
+          <a href="mailto:ktap23k@gmail.com" class="social-link">
+            <svg class="social-link__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm-1 1 9 7 9-7"/></svg>
+            <span><strong>Email</strong><small>ktap23k@gmail.com</small></span>
           </a>
-          <a href="#" class="social-link">
-            <span class="social-link__icon">🐦</span>Twitter / X
-          </a>
-          <a href="#" class="social-link">
-            <span class="social-link__icon">📧</span>Email
+          <a href="cv.html" class="social-link">
+            <svg class="social-link__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8l-5-5Zm0 0v5h5M9 13h6M9 17h6"/></svg>
+            <span><strong>CV</strong><small>Song ngữ Anh/Việt · tải PDF</small></span>
           </a>
         </div>
       </div>
     </section>
 
     <!-- ===== CONTACT ===== -->
-    <section class="contact-section" id="contact">
+    <section class="contact-section" id="contact" aria-labelledby="contactTitle">
       <div class="container contact-inner">
-        <h2 class="section-title">Liên hệ</h2>
-        <p class="contact-desc">Có ý kiến, câu hỏi hoặc muốn hợp tác? Gửi cho mình một tin nhắn!</p>
-        <form class="contact-form" id="contactForm">
+        <p class="section-kicker">Liên hệ</p>
+        <h2 class="section-title" id="contactTitle">Cùng trò chuyện nhé</h2>
+        <p class="contact-desc">
+          Có ý kiến về bài viết, câu hỏi về khoá học hoặc muốn hợp tác? Điền form bên dưới —
+          trình duyệt sẽ mở ứng dụng email của bạn với nội dung đã soạn sẵn gửi tới
+          <a href="mailto:ktap23k@gmail.com">ktap23k@gmail.com</a>.
+        </p>
+        <form class="contact-form" id="contactForm" novalidate>
           <div class="form-row">
             <div class="form-group">
               <label for="name">Tên của bạn</label>
-              <input type="text" id="name" name="name" placeholder="Nguyễn Văn A" required />
+              <input type="text" id="name" name="name" placeholder="Nguyễn Văn A" autocomplete="name" required />
             </div>
             <div class="form-group">
-              <label for="email">Email</label>
-              <input type="email" id="email" name="email" placeholder="you@example.com" required />
+              <label for="subject">Chủ đề</label>
+              <input type="text" id="subject" name="subject" placeholder="Bạn muốn nói về điều gì?" />
             </div>
-          </div>
-          <div class="form-group">
-            <label for="subject">Chủ đề</label>
-            <input type="text" id="subject" name="subject" placeholder="Bạn muốn nói về điều gì?" />
           </div>
           <div class="form-group">
             <label for="message">Tin nhắn</label>
             <textarea id="message" name="message" rows="5" placeholder="Nội dung tin nhắn..." required></textarea>
           </div>
-          <button type="submit" class="btn btn--primary btn--full">Gửi tin nhắn ✉️</button>
-          <div class="form-success" id="formSuccess">
-            Cảm ơn bạn! Mình sẽ phản hồi sớm nhất có thể. 🎉
-          </div>
+          <button type="submit" class="btn btn--primary btn--full">Soạn email</button>
+          <p class="form-error" id="formError" role="alert" hidden>Vui lòng nhập tên và nội dung tin nhắn.</p>
         </form>
       </div>
     </section>
@@ -316,11 +383,11 @@
   <!-- ===== FOOTER ===== -->
   <footer class="footer">
     <div class="container footer__inner">
-      <p>© 2026 <strong>tuanta</strong> · Được xây dựng với ❤️ và HTML thuần</p>
+      <p>© 2026 <strong>Trần Anh Tuấn</strong> · Xây bằng HTML/CSS/JS thuần, host trên GitHub Pages</p>
       <div class="footer__links">
-        <a href="#">RSS</a>
-        <a href="#">Sitemap</a>
-        <a href="#">Privacy</a>
+        <a href="feed.xml">RSS</a>
+        <a href="sitemap.xml">Sitemap</a>
+        <a href="https://github.com/ktap23k/ktap23k.github.io" target="_blank" rel="noopener">Mã nguồn</a>
       </div>
     </div>
   </footer>

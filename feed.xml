@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Ktap Blog</title>
+    <link>https://ktap23k.github.io/</link>
+    <description>Bài viết thực chiến về Backend, Data Engineering và AI/LLM.</description>
+    <language>vi</language>
+    <atom:link href="https://ktap23k.github.io/feed.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 06 Jul 2026 01:00:00 GMT</lastBuildDate>
+    <item>
+      <title>MCP thực chiến — tự tạo custom server cho AI agent</title>
+      <link>https://ktap23k.github.io/posts/mcp-custom-server-thuc-chien.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/mcp-custom-server-thuc-chien.html</guid>
+      <pubDate>Mon, 06 Jul 2026 01:00:00 GMT</pubDate>
+      <category>LLM</category>
+      <category>AI</category>
+      <category>MCP</category>
+      <category>Tool Use</category>
+      <description>Phân tích Model Context Protocol: kiến trúc host-client-server, tools/resources/prompts và hướng dẫn tạo một MCP server custom bằng TypeScript.</description>
+    </item>
+    <item>
+      <title>Qdrant thực chiến — vector database mạnh mẽ và dễ dùng</title>
+      <link>https://ktap23k.github.io/posts/qdrant-thuc-chien.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/qdrant-thuc-chien.html</guid>
+      <pubDate>Sun, 05 Apr 2026 01:00:00 GMT</pubDate>
+      <category>Vector Database</category>
+      <category>Qdrant</category>
+      <category>RAG</category>
+      <category>LLM</category>
+      <description>Làm chủ Qdrant vector database: từ cài đặt, indexing, filtering đến hybrid search và tích hợp vào RAG pipeline.</description>
+    </item>
+    <item>
+      <title>LLM Agents thực chiến — từ prompt đến autonomous tool use</title>
+      <link>https://ktap23k.github.io/posts/llm-agents-thuc-chien.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/llm-agents-thuc-chien.html</guid>
+      <pubDate>Sun, 29 Mar 2026 01:00:00 GMT</pubDate>
+      <category>LLM</category>
+      <category>AI</category>
+      <category>Agents</category>
+      <category>Tool Use</category>
+      <description>Xây dựng LLM Agents thực tế với ReAct, Tool Use, Function Calling, memory và những điều cần biết trước khi đưa vào production.</description>
+    </item>
+    <item>
+      <title>Apache Airflow thực chiến — orchestrate data pipeline như một pro</title>
+      <link>https://ktap23k.github.io/posts/airflow-thuc-chien.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/airflow-thuc-chien.html</guid>
+      <pubDate>Sun, 22 Mar 2026 01:00:00 GMT</pubDate>
+      <category>Data Engineering</category>
+      <category>Airflow</category>
+      <category>Python</category>
+      <category>DevOps</category>
+      <description>Xây dựng và vận hành data pipeline với Apache Airflow: DAG, Operators, Sensors, TaskFlow API và các best practices trong thực tế.</description>
+    </item>
+    <item>
+      <title>Prompt Engineering thực chiến — viết prompt để LLM làm đúng ý</title>
+      <link>https://ktap23k.github.io/posts/prompt-engineering-thuc-chien.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/prompt-engineering-thuc-chien.html</guid>
+      <pubDate>Sun, 15 Mar 2026 01:00:00 GMT</pubDate>
+      <category>LLM</category>
+      <category>AI</category>
+      <category>Prompt Engineering</category>
+      <description>Kỹ thuật viết prompt hiệu quả cho LLM: few-shot, chain-of-thought, role prompting và các pattern thực tế trong sản xuất.</description>
+    </item>
+    <item>
+      <title>RAG thực chiến — khi LLM biết đọc tài liệu của bạn</title>
+      <link>https://ktap23k.github.io/posts/rag-thuc-chien.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/rag-thuc-chien.html</guid>
+      <pubDate>Thu, 05 Mar 2026 01:00:00 GMT</pubDate>
+      <category>LLM</category>
+      <category>RAG</category>
+      <category>Vector Database</category>
+      <description>Xây dựng hệ thống RAG (Retrieval-Augmented Generation) từ đầu: embedding, vector database, chunking strategy và đánh giá chất lượng.</description>
+    </item>
+    <item>
+      <title>Fine-tuning vs RAG — khi nào nên chọn cái nào?</title>
+      <link>https://ktap23k.github.io/posts/fine-tuning-vs-rag.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/fine-tuning-vs-rag.html</guid>
+      <pubDate>Sun, 01 Mar 2026 01:00:00 GMT</pubDate>
+      <category>LLM</category>
+      <category>Fine-tuning</category>
+      <category>RAG</category>
+      <description>So sánh chi tiết Fine-tuning và RAG: chi phí, độ phức tạp, use case phù hợp và cách kết hợp cả hai trong sản xuất.</description>
+    </item>
+    <item>
+      <title>Kiến trúc Microservices: từ lý thuyết đến thực tế trong dự án thực</title>
+      <link>https://ktap23k.github.io/posts/microservices-architecture.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/microservices-architecture.html</guid>
+      <pubDate>Sat, 28 Feb 2026 01:00:00 GMT</pubDate>
+      <category>Backend</category>
+      <category>Architecture</category>
+      <description>Những gì mình học được sau 2 năm làm việc với hệ thống Microservices trong dự án thực.</description>
+    </item>
+    <item>
+      <title>Docker Compose thực chiến — quản lý multi-container dễ như ăn cháo</title>
+      <link>https://ktap23k.github.io/posts/docker-compose-thuc-chien.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/docker-compose-thuc-chien.html</guid>
+      <pubDate>Sun, 15 Feb 2026 01:00:00 GMT</pubDate>
+      <category>DevOps</category>
+      <category>Docker</category>
+      <description>Hướng dẫn từng bước xây dựng môi trường dev hoàn chỉnh với Docker Compose.</description>
+    </item>
+    <item>
+      <title>10 tính năng TypeScript ít người dùng nhưng cực kỳ hữu ích</title>
+      <link>https://ktap23k.github.io/posts/typescript-tinh-nang-hay.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/typescript-tinh-nang-hay.html</guid>
+      <pubDate>Tue, 03 Feb 2026 01:00:00 GMT</pubDate>
+      <category>TypeScript</category>
+      <category>JavaScript</category>
+      <description>Khám phá những gem bị bỏ qua trong TypeScript: template literal types, const assertions, satisfies và nhiều hơn nữa.</description>
+    </item>
+    <item>
+      <title>Tối ưu PostgreSQL: Index không phải là cây đũa thần</title>
+      <link>https://ktap23k.github.io/posts/postgresql-index.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/postgresql-index.html</guid>
+      <pubDate>Tue, 20 Jan 2026 01:00:00 GMT</pubDate>
+      <category>Database</category>
+      <category>PostgreSQL</category>
+      <description>Cách đọc EXPLAIN ANALYZE, chọn đúng loại index và tránh những cạm bẫy phổ biến khi tối ưu PostgreSQL.</description>
+    </item>
+    <item>
+      <title>Làm thế nào để viết Pull Request mà reviewer &quot;thích mê&quot;</title>
+      <link>https://ktap23k.github.io/posts/pull-request-chat-luong.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/pull-request-chat-luong.html</guid>
+      <pubDate>Thu, 08 Jan 2026 01:00:00 GMT</pubDate>
+      <category>Career</category>
+      <category>Soft Skill</category>
+      <description>Những thói quen tạo PR chất lượng cao: mô tả rõ ràng, tách nhỏ commits, checklist tự review.</description>
+    </item>
+    <item>
+      <title>Bắt đầu với Go — ngôn ngữ của sự đơn giản và hiệu năng cao</title>
+      <link>https://ktap23k.github.io/posts/golang-bat-dau.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/golang-bat-dau.html</guid>
+      <pubDate>Mon, 22 Dec 2025 01:00:00 GMT</pubDate>
+      <category>Go</category>
+      <category>Backend</category>
+      <description>Tại sao Go ngày càng được ưa chuộng trong backend? Cú pháp, goroutines, channels và REST API đầu tiên.</description>
+    </item>
+    <item>
+      <title>Một năm làm việc remote — những điều không ai nói với bạn</title>
+      <link>https://ktap23k.github.io/posts/remote-work-mot-nam.html</link>
+      <guid isPermaLink="true">https://ktap23k.github.io/posts/remote-work-mot-nam.html</guid>
+      <pubDate>Fri, 05 Dec 2025 01:00:00 GMT</pubDate>
+      <category>Cuộc sống</category>
+      <category>Năng suất</category>
+      <description>Sự thật về remote work sau 1 năm trải nghiệm: những điều tốt, những thách thức và cách mình vượt qua.</description>
+    </item>
+  </channel>
+</rss>

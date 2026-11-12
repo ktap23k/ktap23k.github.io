@@ -104,3 +104,86 @@ console.log(`✓ manifest.json đã cập nhật — ${posts.length} bài viết
 posts.forEach(p =>
   console.log(`  ${p.featured ? '★' : '·'} [${p.dateISO}] ${p.slug}`)
 );
+
+// ── Sitemap & RSS ─────────────────────────────────────────────
+
+const SITE_URL  = 'https://ktap23k.github.io';
+const rootDir   = path.join(__dirname, '..');
+const byDateDesc = [...posts].sort((a, b) => b.dateISO.localeCompare(a.dateISO));
+
+const xmlEscape = s => String(s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+
+/** Liệt kê đệ quy các file index.html / bài học trong một thư mục (vd: course/, game/) */
+function listPages(dir) {
+  const abs = path.join(rootDir, dir);
+  if (!fs.existsSync(abs)) return [];
+  const out = [];
+  for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
+    const rel = path.posix.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === 'assets' || entry.name === 'pdfs') continue;
+      out.push(...listPages(rel));
+    } else if (entry.name.endsWith('.html')) {
+      out.push(rel);
+    }
+  }
+  return out;
+}
+
+const staticPages = ['', 'cv.html', ...listPages('game'), ...listPages('course')]
+  .map(p => p.replace(/(^|\/)index\.html$/, '$1'))
+  .sort();
+
+const sitemapUrls = [
+  ...staticPages.map(p => `  <url><loc>${SITE_URL}/${p}</loc></url>`),
+  ...byDateDesc.map(p =>
+    `  <url><loc>${SITE_URL}/posts/${p.slug}.html</loc>` +
+    (p.dateISO !== '0000-00-00' ? `<lastmod>${p.dateISO}</lastmod>` : '') +
+    `</url>`),
+];
+
+fs.writeFileSync(
+  path.join(rootDir, 'sitemap.xml'),
+  `<?xml version="1.0" encoding="UTF-8"?>\n` +
+  `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapUrls.join('\n')}\n</urlset>\n`,
+  'utf8'
+);
+console.log(`✓ sitemap.xml — ${sitemapUrls.length} URL`);
+
+const rssDate = iso => new Date(`${iso}T08:00:00+07:00`).toUTCString();
+const rssItems = byDateDesc
+  .filter(p => p.dateISO !== '0000-00-00')
+  .map(p => {
+    const url = `${SITE_URL}/posts/${p.slug}.html`;
+    return [
+      '    <item>',
+      `      <title>${xmlEscape(p.title)}</title>`,
+      `      <link>${url}</link>`,
+      `      <guid isPermaLink="true">${url}</guid>`,
+      `      <pubDate>${rssDate(p.dateISO)}</pubDate>`,
+      ...p.tags.map(t => `      <category>${xmlEscape(t)}</category>`),
+      `      <description>${xmlEscape(p.excerpt)}</description>`,
+      '    </item>',
+    ].join('\n');
+  });
+
+fs.writeFileSync(
+  path.join(rootDir, 'feed.xml'),
+  `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Ktap Blog</title>
+    <link>${SITE_URL}/</link>
+    <description>Bài viết thực chiến về Backend, Data Engineering và AI/LLM.</description>
+    <language>vi</language>
+    <atom:link href="${SITE_URL}/feed.xml" rel="self" type="application/rss+xml" />
+    ${byDateDesc.length ? `<lastBuildDate>${rssDate(byDateDesc[0].dateISO)}</lastBuildDate>` : ''}
+${rssItems.join('\n')}
+  </channel>
+</rss>
+`,
+  'utf8'
+);
+console.log(`✓ feed.xml — ${rssItems.length} bài`);

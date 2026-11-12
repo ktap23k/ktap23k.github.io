@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Không tìm thấy trang — Ktap</title>
+  <meta name="robots" content="noindex" />
+  <!-- 404 có thể được phục vụ ở bất kỳ đường dẫn nào → dùng đường dẫn tuyệt đối -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <style>
+    .notfound {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 48px 16px;
+    }
+    .notfound__code {
+      font-size: clamp(4.5rem, 18vw, 8rem);
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      line-height: 1;
+      color: var(--accent);
+    }
+    .notfound h1 { font-size: 1.5rem; margin: 12px 0 8px; }
+    .notfound p { color: var(--text-muted); margin-bottom: 28px; }
+    .notfound .hero__cta { justify-content: center; }
+  </style>
+</head>
+<body>
+  <main class="notfound">
+    <div>
+      <p class="notfound__code" aria-hidden="true">404</p>
+      <h1>Không tìm thấy trang</h1>
+      <p>Trang bạn tìm có thể đã được đổi tên hoặc không còn tồn tại.</p>
+      <div class="hero__cta">
+        <a class="btn btn--primary" href="/">Về trang chủ</a>
+        <a class="btn btn--ghost" href="/#posts">Xem bài viết</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

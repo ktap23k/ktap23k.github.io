@@ -1,10 +1,13 @@
 /**
  * antigravity.js — Particle background effect inspired by Google Antigravity
  * Particles gently float and are repelled by the mouse cursor.
- * The canvas is rendered as a subtle overlay behind UI chrome but above page content.
+ * The canvas sits BEHIND page content (z-index:-1) so it never reduces text contrast.
+ * Disabled for users who prefer reduced motion; paused while the tab is hidden.
  */
 (function () {
   'use strict';
+
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   const canvas = document.createElement('canvas');
   canvas.id = 'ag-canvas';
@@ -14,9 +17,8 @@
   canvas.style.width = '100%';
   canvas.style.height = '100%';
   canvas.style.pointerEvents = 'none';
-  /* Intentionally no z-index so it paints as a fixed overlay below
-     explicitly z-indexed UI (header z:100, progress z:200, back-to-top z:50)
-     but above normal document flow. */
+  canvas.style.zIndex = '-1';
+  canvas.setAttribute('aria-hidden', 'true');
   document.body.appendChild(canvas);
 
   const ctx = canvas.getContext('2d');
@@ -35,7 +37,7 @@
 
   const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
 
-  const PARTICLE_COUNT = Math.min(100, Math.floor((window.innerWidth * window.innerHeight) / 15000));
+  const PARTICLE_COUNT = Math.min(80, Math.floor((window.innerWidth * window.innerHeight) / 18000));
   const CONNECT_DISTANCE = 90;
   const MOUSE_RADIUS = 130;
   const MOUSE_FORCE = 3.5;
@@ -125,15 +127,21 @@
     const dark = isDark();
     ctx.clearRect(0, 0, width, height);
 
-    const fill = dark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.14)';
+    const fill = dark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.16)';
     particles.forEach(p => {
       p.update();
       p.draw(fill);
     });
 
     drawLines();
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
   }
+
+  let rafId = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { cancelAnimationFrame(rafId); rafId = 0; }
+    else if (!rafId) animate();
+  });
 
   animate();
 })();

@@ -32,28 +32,40 @@ function renderHeader() {
   header.className = 'header';
   header.innerHTML = `
     <div class="container header__inner">
-      <a href="${ROOT}index.html" class="logo">
-        <img class="logo__icon" src="${AVATAR_SRC}" alt="" />
-        <span class="logo__text">tuanta</span>
+      <a href="${ROOT}index.html" class="logo" aria-label="Ktap — Trang chủ">
+        <img class="logo__icon" src="${AVATAR_SRC}" alt="" width="28" height="28" />
+        <span class="logo__text">Ktap</span>
       </a>
-      <nav class="nav" id="nav">
+      <nav class="nav" id="nav" aria-label="Điều hướng chính">
         <a href="${ROOT}index.html"         class="nav__link">Trang chủ</a>
         <a href="${ROOT}index.html#posts"   class="nav__link">Bài viết</a>
+        <a href="${ROOT}index.html#courses" class="nav__link">Khoá học</a>
         <a href="${ROOT}index.html#about"   class="nav__link">Về tôi</a>
         <a href="${ROOT}index.html#contact" class="nav__link">Liên hệ</a>
         <a href="${GAME_LINK}"              class="nav__link">Game</a>
         <a href="${ROOT}cv.html"            class="nav__link nav__link--cv">CV</a>
       </nav>
       <div class="header__actions">
-        <button class="theme-toggle" id="themeToggle" aria-label="Chuyển giao diện">
-          <span class="theme-toggle__icon">☾</span>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Chuyển giao diện sáng/tối">
+          <span class="theme-toggle__icon" aria-hidden="true"></span>
         </button>
-        <button class="hamburger" id="hamburger" aria-label="Mở menu">
+        <button class="hamburger" id="hamburger" type="button" aria-label="Mở menu" aria-controls="nav" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
       </div>
     </div>`;
   document.body.prepend(header);
+
+  // Skip link cho người dùng bàn phím / screen reader
+  const main = document.querySelector('main');
+  if (main) {
+    if (!main.id) main.id = 'main';
+    const skip = document.createElement('a');
+    skip.className = 'skip-link';
+    skip.href = '#' + main.id;
+    skip.textContent = 'Bỏ qua, tới nội dung chính';
+    document.body.prepend(skip);
+  }
 }
 
 /* ── RENDER FOOTER ─────────────────────────────────────────── */
@@ -62,9 +74,10 @@ function renderFooter() {
   footer.className = 'footer';
   footer.innerHTML = `
     <div class="container footer__inner">
-      <p>© 2026 <strong>tuanta</strong> · Được xây dựng với ❤️ và HTML thuần</p>
+      <p>© 2026 <strong>Trần Anh Tuấn</strong> · Xây bằng HTML/CSS/JS thuần, host trên GitHub Pages</p>
       <div class="footer__links">
         <a href="${ROOT}index.html#posts">← Tất cả bài viết</a>
+        <a href="${ROOT}feed.xml">RSS</a>
         <a href="${ROOT}index.html">Trang chủ</a>
       </div>
     </div>`;
@@ -72,24 +85,31 @@ function renderFooter() {
 }
 
 /* ── DARK MODE ─────────────────────────────────────────────── */
+const ICON_MOON = '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>';
+const ICON_SUN  = '<svg viewBox="0 0 24 24" width="18" height="18"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg>';
+
 function initDarkMode() {
   const html        = document.documentElement;
   const themeToggle = document.getElementById('themeToggle');
   const themeIcon   = themeToggle.querySelector('.theme-toggle__icon');
 
-  const saved = localStorage.getItem('theme') ||
-    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  let saved = null;
+  try { saved = localStorage.getItem('theme'); } catch (e) { /* ignore */ }
+  if (saved !== 'dark' && saved !== 'light') {
+    saved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
 
   apply(saved);
   themeToggle.addEventListener('click', () => {
     const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     apply(next);
-    localStorage.setItem('theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) { /* ignore */ }
   });
 
   function apply(theme) {
     html.setAttribute('data-theme', theme);
-    themeIcon.textContent = theme === 'dark' ? '☼' : '☾';
+    themeIcon.innerHTML = theme === 'dark' ? ICON_SUN : ICON_MOON;
+    themeToggle.setAttribute('aria-pressed', String(theme === 'dark'));
   }
 }
 
@@ -97,10 +117,15 @@ function initDarkMode() {
 function initMobileMenu() {
   const hamburger = document.getElementById('hamburger');
   const nav       = document.getElementById('nav');
-  hamburger.addEventListener('click', () => {
-    const open = nav.classList.toggle('open');
+  const setMenu = open => {
+    nav.classList.toggle('open', open);
     hamburger.classList.toggle('open', open);
-  });
+    hamburger.setAttribute('aria-expanded', String(open));
+    hamburger.setAttribute('aria-label', open ? 'Đóng menu' : 'Mở menu');
+  };
+  hamburger.addEventListener('click', () => setMenu(!nav.classList.contains('open')));
+  nav.querySelectorAll('.nav__link').forEach(a => a.addEventListener('click', () => setMenu(false)));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
 }
 
 /* ── READING PROGRESS BAR ──────────────────────────────────── */
@@ -120,6 +145,7 @@ function initProgressBar() {
 function initBackToTop() {
   const btn = document.createElement('button');
   btn.className   = 'back-to-top';
+  btn.type        = 'button';
   btn.textContent = '↑';
   btn.setAttribute('aria-label', 'Lên đầu trang');
   document.body.appendChild(btn);
